@@ -1,5 +1,5 @@
 //! Constants used in the library.
-use ssz_types::typenum::{U1073741824, U128, U2, U20, U256, U32, U64, U65536};
+use ssz_types::typenum::{U1, U128, U2, U20, U256, U32, U64, U65536, U1073741824};
 
 /// Number of blocks in a group of appearances. Data is stored in discrete ranges
 /// so that as the chain progresses it is clear how new appearances are to be stored.
@@ -150,3 +150,13 @@ pub type MAX_PUBLISH_ID_BYTES = U64;
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
 pub type NUM_CHAPTERS = U256;
+
+
+/// This type is defined in the [specification][1].
+///
+/// # Typed Number
+/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
+/// for ssz operations.
+///
+/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
+pub type NUM_COMMON_BYTES = U1;

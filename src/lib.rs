@@ -227,6 +227,7 @@ impl IndexConfig {
     /// Fetches the sample data and places it in the project data directory.
     pub async fn get_sample_data(&self, unchained: &UnchainedPath) -> Result<(), anyhow::Error> {
         fetch::samples(&self.path, unchained, &self.network).await?;
+        manifest::generate(&self.path, &self.network)?;
         Ok(())
     }
 }

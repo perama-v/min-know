@@ -10,9 +10,9 @@ use tree_hash_derive::TreeHash;
 
 use crate::{
     constants::{
-        ADDRESS_CHARS_SIMILARITY_DEPTH, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME,
+        DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME,
         MAX_BYTES_PER_CID, MAX_NETWORK_NAME_BYTES, MAX_PUBLISH_ID_BYTES,
-        MAX_SCHEMAS_RESOURCE_BYTES, MAX_TXS_PER_VOLUME, MAX_VOLUMES, NUM_CHAPTERS,
+        MAX_SCHEMAS_RESOURCE_BYTES, MAX_TXS_PER_VOLUME, MAX_VOLUMES, NUM_CHAPTERS, NUM_COMMON_BYTES
     },
     unchained::structure::{AddressData, TransactionId},
 };
@@ -138,7 +138,7 @@ pub struct ManifestVolumeChapter {
 #[derive(Clone, Debug, Decode, Default, Encode, Serialize, Deserialize)]
 pub struct ChapterIdentifier {
     /// The byte representation of hex characters that similar addresses share.
-    pub address_common_bytes: FixedVector<u8, ADDRESS_CHARS_SIMILARITY_DEPTH>,
+    pub address_common_bytes: FixedVector<u8, NUM_COMMON_BYTES>,
 }
 
 impl ChapterIdentifier {
@@ -158,7 +158,7 @@ pub struct ManifestChapter {
     /// Used to refer to the given chapter.
     pub identifier: ChapterIdentifier,
     /// Represents the metadata of volumes within a single chapter.
-    pub volume_metadata: VariableList<ManifestVolumeChapter, MAX_VOLUMES>,
+    pub volume_chapter_metadata: VariableList<ManifestVolumeChapter, MAX_VOLUMES>,
 }
 
 /// An SSZ list of the bytes that represent a network name string.
