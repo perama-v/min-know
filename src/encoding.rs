@@ -79,8 +79,10 @@ pub fn decompress(ssz_snappy_bytes: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
 
 #[test]
 fn encode_decode() -> Result<(), anyhow::Error> {
-    use crate::spec::{AddressAppearances, AddressIndexVolume, AppearanceTx, VolumeIdentifier};
-    let data_in = AddressIndexVolume {
+    use crate::spec::{
+        AddressAppearances, AddressIndexVolumeChapter, AppearanceTx, VolumeIdentifier,
+    };
+    let data_in = AddressIndexVolumeChapter {
         address_prefix: <_>::from("a3".as_bytes().to_vec()),
         identifier: VolumeIdentifier { oldest_block: 0 },
         addresses: <_>::from(vec![

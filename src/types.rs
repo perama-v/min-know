@@ -250,11 +250,7 @@ impl AddressIndexPath {
     /// # Example
     /// For `mainnet` and chapter "0x4e", returns
     /// "xyz/address_appearance_index_mainnet/chapter_0x4e"
-    pub fn chapter_dir(
-        &self,
-        network: &Network,
-        chapter: &str,
-    ) -> Result<PathBuf, anyhow::Error> {
+    pub fn chapter_dir(&self, network: &Network, chapter: &str) -> Result<PathBuf, anyhow::Error> {
         let index_dir = self.index_dir(network);
         let chap_name = chapter_dir_name(chapter);
         Ok(index_dir?.join(chap_name))

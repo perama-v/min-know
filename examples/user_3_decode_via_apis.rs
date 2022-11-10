@@ -5,9 +5,7 @@ use eip55::checksum;
 use reqwest::{header::CONTENT_TYPE, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use web3::{
-    types::{BlockNumber, H160, H256},
-};
+use web3::types::{BlockNumber, H160, H256};
 
 use min_know::{
     contract_utils::metadata::ipfs_cid_from_runtime_bytecode,
@@ -58,13 +56,15 @@ async fn main() -> Result<(), anyhow::Error> {
     let network = Network::default();
     let index = IndexConfig::new(&data_dir, &network);
     let appearances = index.find_transactions(address)?;
-    println!("(sample index data) Address {} appeared in {} transactions",
-        &address, appearances.len());
+    println!(
+        "(sample index data) Address {} appeared in {} transactions",
+        &address,
+        appearances.len()
+    );
 
     let portal_node = "http://localhost:8545";
     let transport = web3::transports::Http::new(portal_node)?;
     let web3 = web3::Web3::new(transport);
-
 
     let tx = appearances
         .get(0)
@@ -93,7 +93,10 @@ async fn main() -> Result<(), anyhow::Error> {
         let event_name = method_from_fourbyte_api(topic).await?;
 
         // Call 4byte registry for event signatures.
-        println!("\tTopic {:?}, signature {:?} decoded using 4byte.directory", event_name, topic);
+        println!(
+            "\tTopic {:?}, signature {:?} decoded using 4byte.directory",
+            event_name, topic
+        );
 
         // portal node eth_getCode
         let code = web3
@@ -108,7 +111,10 @@ async fn main() -> Result<(), anyhow::Error> {
         // Later can instead fetch ABI from IPFS.
         match maybe_cid {
             Some(cid) => {
-                println!("\tAn IPFS CID for contract metadata was in bytecode metadata: {:#?}", cid);
+                println!(
+                    "\tAn IPFS CID for contract metadata was in bytecode metadata: {:#?}",
+                    cid
+                );
             }
             None => {}
         }
@@ -155,12 +161,11 @@ pub async fn method_from_fourbyte_api(topic: &H256) -> Result<Option<String>, an
         let target = hex::encode(&topic);
         let candidate_full_hash = r.hex_signature.trim_start_matches("0x");
         if candidate_full_hash == target {
-            return Ok(Some(r.text_signature))
+            return Ok(Some(r.text_signature));
         }
     }
-    return Ok(None)
+    return Ok(None);
 }
-
 
 /// Returns the sourcify url target for a given contract address.
 pub async fn abi_from_sourcify_api(address: &H160) -> Result<Option<String>, anyhow::Error> {

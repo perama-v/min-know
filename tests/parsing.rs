@@ -1,7 +1,7 @@
 use std::fs;
 
 use min_know::{
-    constants::BLOCK_RANGE_WIDTH,
+    constants::BLOCKS_PER_VOLUME,
     discover,
     fetch::{appearance_index_samples_present, unchained_samples_present},
 };
@@ -61,6 +61,6 @@ fn tx_in_correct() {
     let first = appearances.get(0).unwrap();
 
     assert_eq!(first.block >= volume_oldest, true);
-    assert_eq!(first.block < volume_oldest + BLOCK_RANGE_WIDTH, true);
+    assert_eq!(first.block < volume_oldest + BLOCKS_PER_VOLUME, true);
     assert_eq!(address.starts_with(chapter), true);
 }

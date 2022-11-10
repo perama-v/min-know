@@ -19,13 +19,14 @@ use tree_hash::TreeHash;
 
 use crate::{
     constants::{
-        ADDRESS_CHARS_SIMILARITY_DEPTH, BLOCK_RANGE_WIDTH, SPEC_VER_MAJOR, SPEC_VER_MINOR,
-        SPEC_VER_PATCH, SPEC_RESOURCE_LOCATION, PUBLISHING_PREFIX,
+        ADDRESS_CHARS_SIMILARITY_DEPTH, BLOCKS_PER_VOLUME, PUBLISHING_PREFIX,
+        SPEC_RESOURCE_LOCATION, SPEC_VER_MAJOR, SPEC_VER_MINOR, SPEC_VER_PATCH,
     },
     encoding::decode_and_decompress,
     spec::{
-        AddressIndexVolume, ChapterIdentifier, IndexManifest, ManifestChapter, ManifestVolume,
-        NetworkName, VolumeIdentifier, IndexSpecificationVersion, IndexSpecificationSchemas, IndexPublishingIdentifier,
+        AddressIndexVolumeChapter, ChapterIdentifier, IndexManifest, IndexPublishingIdentifier,
+        IndexSpecificationSchemas, IndexSpecificationVersion, ManifestChapter,
+        ManifestVolumeChapter, NetworkName, VolumeIdentifier,
     },
     types::{AddressIndexPath, ChapterCompleteness, IndexCompleteness, Network},
     utils::{self},
@@ -58,7 +59,7 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
         })
         .enumerate();
     for (index, chapter) in chapters {
-        let mut volume_metadata: Vec<ManifestVolume> = vec![];
+        let mut volume_metadata: Vec<ManifestVolumeChapter> = vec![];
         println!("Generating hash for chapter {} of n", index);
         let files = fs::read_dir(chapter.path())
             .with_context(|| format!("Failed to read dir: {:?}", &chapter.path()))?;
@@ -66,17 +67,19 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
             let volume_file = file?.path();
             let ssz_snappy_bytes = fs::read(&volume_file)
                 .with_context(|| format!("Failed to read file: {:?}", &volume_file))?;
-            let data: AddressIndexVolume = decode_and_decompress(ssz_snappy_bytes)?;
-            let tree_hash_root = data.tree_hash_root();
+            let data: AddressIndexVolumeChapter = decode_and_decompress(ssz_snappy_bytes)?;
+            let hash_tree_root = data.tree_hash_root();
             let identifier = VolumeIdentifier {
                 oldest_block: data.identifier.oldest_block,
             };
             if data.identifier.oldest_block > most_recent_volume {
                 most_recent_volume = data.identifier.oldest_block
             }
-            let volume = ManifestVolume {
+            let ipfs_cid = <_>::from("TODO".as_bytes().to_vec());
+            let volume = ManifestVolumeChapter {
                 identifier,
-                tree_hash_root,
+                ipfs_cid,
+                hash_tree_root,
             };
             volume_metadata.push(volume);
         }
@@ -103,16 +106,16 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
         version: IndexSpecificationVersion {
             major: SPEC_VER_MAJOR,
             minor: SPEC_VER_MINOR,
-            patch: SPEC_VER_PATCH
+            patch: SPEC_VER_PATCH,
         },
-        publish_as_topic:  IndexPublishingIdentifier {
+        publish_as_topic: IndexPublishingIdentifier {
             topic: {
                 let topic_string = format!("{}{}", PUBLISHING_PREFIX, network.name());
                 <_>::from(topic_string.as_bytes().to_vec())
-            }
+            },
         },
         schemas: IndexSpecificationSchemas {
-            resource: <_>::from(SPEC_RESOURCE_LOCATION.as_bytes().to_vec())
+            resource: <_>::from(SPEC_RESOURCE_LOCATION.as_bytes().to_vec()),
         },
         network: NetworkName {
             name: <_>::from(network.name().as_bytes().to_vec()),
@@ -155,7 +158,8 @@ pub fn read(path: &AddressIndexPath, network: &Network) -> Result<IndexManifest,
     let filename = path.manifest_file(network)?;
     let json_format =
         fs::read(&filename).with_context(|| format!("Failed to read file: {:?}", &filename))?;
-    let manifest: IndexManifest = serde_json::from_slice(&json_format)?;
+    let manifest: IndexManifest = serde_json::from_slice(&json_format)
+        .context("Tried to parse the manifest json as IndexManifest struct.")?;
     if manifest.version.major != SPEC_VER_MAJOR {
         return Err(anyhow!(
             "The manifest major version (v{}.x.x) is different from the spec version
@@ -215,7 +219,7 @@ pub fn completeness_audit(
     network: &Network,
 ) -> Result<IndexCompleteness, anyhow::Error> {
     let manifest = read(index_path, network)?;
-    let volumes_per_chapter = manifest.latest_volume_identifier.oldest_block / BLOCK_RANGE_WIDTH;
+    let volumes_per_chapter = manifest.latest_volume_identifier.oldest_block / BLOCKS_PER_VOLUME;
     let mut audit = IndexCompleteness {
         complete_chapters: vec![],
         incomplete_chapters: vec![],
@@ -281,9 +285,9 @@ pub fn get_chapter_completeness(
 
         match fs::read(volume_path) {
             Ok(file) => {
-                let data: AddressIndexVolume = decode_and_decompress(file)?;
+                let data: AddressIndexVolumeChapter = decode_and_decompress(file)?;
                 let hash = data.tree_hash_root();
-                if hash != volume.tree_hash_root {
+                if hash != volume.hash_tree_root {
                     // Incorrect hash.
                     c.bad_hash.push(volume.identifier)
                 } else {

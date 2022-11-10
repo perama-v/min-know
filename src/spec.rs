@@ -1,17 +1,21 @@
 //! Types defined in the address-appearance-index [specification][1].
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use ssz;
 use ssz_derive::{Decode, Encode};
-use ssz_types::{
-    typenum::{U1, U1073741824, U20, U256, U32, U65536, U1024, U64},
-    FixedVector, VariableList,
-};
+use ssz_types::{FixedVector, VariableList};
 use tree_hash::Hash256;
 use tree_hash_derive::TreeHash;
 
-use crate::unchained::structure::{AddressData, TransactionId};
+use crate::{
+    constants::{
+        ADDRESS_CHARS_SIMILARITY_DEPTH, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME,
+        MAX_BYTES_PER_CID, MAX_NETWORK_NAME_BYTES, MAX_PUBLISH_ID_BYTES,
+        MAX_SCHEMAS_RESOURCE_BYTES, MAX_TXS_PER_VOLUME, MAX_VOLUMES, NUM_CHAPTERS,
+    },
+    unchained::structure::{AddressData, TransactionId},
+};
 
 /// Content of an entry in the Appearances (transactions) table.
 ///
@@ -55,17 +59,9 @@ impl AppearanceTx {
 #[derive(Debug, Default, PartialEq, Clone, Encode, Decode, TreeHash)]
 pub struct AddressAppearances {
     /// The address that appeared in a transaction.
-    ///
-    /// The maximum length of the list is derived as follows:
-    ///
-    /// `DEFAULT_BYTES_PER_ADDRESS = 20`.
-    pub address: FixedVector<u8, U20>,
+    pub address: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The transactions where the address appeared.
-    ///
-    /// Note that the maximum value for the VariableList is as follows.
-    ///
-    /// `MAX_TXS_PER_BLOCK_RANGE = 2**30 = U1073741824`.
-    pub appearances: VariableList<AppearanceTx, U1073741824>,
+    pub appearances: VariableList<AppearanceTx, MAX_TXS_PER_VOLUME>,
 }
 
 impl AddressAppearances {
@@ -97,23 +93,15 @@ impl AddressAppearances {
 ///
 /// This type is defined in the [specification][1].
 ///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolume
+/// [1]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
 #[derive(PartialEq, Debug, Encode, Decode, Clone, TreeHash)]
-pub struct AddressIndexVolume {
+pub struct AddressIndexVolumeChapter {
     /// Prefix common to all addresses that this data covers.
-    ///
-    /// The maximum length of the list is derived as follows:
-    ///
-    /// `DEFAULT_BYTES_PER_ADDRESS = 20`.
-    pub address_prefix: FixedVector<u8, U20>,
+    pub address_prefix: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The blocks that this chunk data covers.
     pub identifier: VolumeIdentifier,
     /// The addresses that appeared in this range and the relevant transactions.
-    ///
-    /// The maximum length of the list is derived as follows:
-    ///
-    /// `MAX_ADDRESSES_PER_BLOCK_RANGE = 2**30 = U1073741824`.
-    pub addresses: VariableList<AddressAppearances, U1073741824>,
+    pub addresses: VariableList<AddressAppearances, MAX_ADDRESSES_PER_VOLUME>,
 }
 
 /// Refers to a particular volume of the index by using the oldest possible block
@@ -127,17 +115,18 @@ pub struct VolumeIdentifier {
     pub oldest_block: u32,
 }
 
-/// Represents a store for the hash of a volume.
+/// Represents a store for the hash of a specific volume chapter.
 ///
 /// Used for constructing the index manifest.
 ///
 /// This type is defined in the [specification][1].
 ///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#manifestvolume
+/// [1]: https://github.com/perama-v/address-appearance-index-specs#manifestvolumechapter
 #[derive(Debug, Decode, Encode, Clone, Serialize, Deserialize)]
-pub struct ManifestVolume {
+pub struct ManifestVolumeChapter {
     pub identifier: VolumeIdentifier,
-    pub tree_hash_root: Hash256,
+    pub ipfs_cid: FixedVector<u8, MAX_BYTES_PER_CID>,
+    pub hash_tree_root: Hash256,
 }
 
 /// Refers to a particular index chapter and defines which address are part of that
@@ -149,9 +138,7 @@ pub struct ManifestVolume {
 #[derive(Clone, Debug, Decode, Default, Encode, Serialize, Deserialize)]
 pub struct ChapterIdentifier {
     /// The byte representation of hex characters that similar addresses share.
-    ///
-    /// The number of characters are defined by `ADDRESS_CHARS_SIMILARITY_DEPTH`, and the bytes needed to represent these characters are defined as `NUM_COMMON_BYTES`.
-    pub address_common_bytes: FixedVector<u8, U1>,
+    pub address_common_bytes: FixedVector<u8, ADDRESS_CHARS_SIMILARITY_DEPTH>,
 }
 
 impl ChapterIdentifier {
@@ -171,11 +158,7 @@ pub struct ManifestChapter {
     /// Used to refer to the given chapter.
     pub identifier: ChapterIdentifier,
     /// Represents the metadata of volumes within a single chapter.
-    ///
-    /// The maximum list length is defined as follows:
-    ///
-    /// `MAX_RANGES = 2**16 = U65536`.
-    pub volume_metadata: VariableList<ManifestVolume, U65536>,
+    pub volume_metadata: VariableList<ManifestVolumeChapter, MAX_VOLUMES>,
 }
 
 /// An SSZ list of the bytes that represent a network name string.
@@ -189,11 +172,7 @@ pub struct ManifestChapter {
 #[derive(Debug, Decode, Encode, Serialize, Deserialize)]
 pub struct NetworkName {
     /// The network name as ASCII-encoded bytes.
-    ///
-    /// The maximum length of the list is defined as:
-    ///
-    /// `MAX_NETWORK_NAME_BYTES = 2**5 = U32`.
-    pub name: VariableList<u8, U32>,
+    pub name: VariableList<u8, MAX_NETWORK_NAME_BYTES>,
 }
 
 /// Holds the semantic version of the address-appearance-index specification.
@@ -202,10 +181,10 @@ pub struct NetworkName {
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#indexspecificationversion
 #[derive(Debug, Decode, Encode, Serialize, Deserialize)]
-pub struct IndexSpecificationVersion{
+pub struct IndexSpecificationVersion {
     pub major: u32,
     pub minor: u32,
-    pub patch: u32
+    pub patch: u32,
 }
 
 /// Represents a link to the address-appearance-index specification.
@@ -213,9 +192,8 @@ pub struct IndexSpecificationVersion{
 /// For example: A url string or an IPFS CID string encoded in 128 bytes.
 #[derive(Debug, Decode, Encode, Serialize, Deserialize)]
 pub struct IndexSpecificationSchemas {
-    pub resource: VariableList<u8, U1024>
+    pub resource: VariableList<u8, MAX_SCHEMAS_RESOURCE_BYTES>,
 }
-
 
 /// Represents an identifier that can be used to publish the index manifest under.
 ///
@@ -227,9 +205,8 @@ pub struct IndexSpecificationSchemas {
 /// E.g., "address-appearance-index-mainnet".
 #[derive(Debug, Decode, Encode, Serialize, Deserialize)]
 pub struct IndexPublishingIdentifier {
-    pub topic: VariableList<u8, U64>
+    pub topic: VariableList<u8, MAX_PUBLISH_ID_BYTES>,
 }
-
 
 /// Represents a file containing metadata about the index.
 ///
@@ -244,11 +221,7 @@ pub struct IndexManifest {
     pub network: NetworkName,
     pub latest_volume_identifier: VolumeIdentifier,
     /// Contains the hashes of the volumes in the chapter.
-    ///
-    /// The length of the vector is defined as:
-    ///
-    /// `NUM_CHAPTERS = 16**ADDRESS_CHARS_SIMILARITY_DEPTH = 256`
-    pub chapter_metadata: FixedVector<ManifestChapter, U256>,
+    pub chapter_metadata: FixedVector<ManifestChapter, NUM_CHAPTERS>,
 }
 
 impl IndexManifest {

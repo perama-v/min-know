@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use regex::Regex;
 
 use crate::{
-    constants::{ADDRESS_CHARS_SIMILARITY_DEPTH, BLOCK_RANGE_WIDTH, SPEC_VER_MAJOR},
+    constants::{ADDRESS_CHARS_SIMILARITY_DEPTH, BLOCKS_PER_VOLUME, SPEC_VER_MAJOR},
     unchained::types::BlockRange,
 };
 
@@ -13,7 +13,7 @@ use crate::{
 /// Contains .ssz_snappy files that represent [address index volumes][2].
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#addresschapter
-/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolume
+/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
 pub fn chapter_dir_name(chapter: &str) -> String {
     let chapter_name = format!("chapter_0x{}", chapter);
     chapter_name
@@ -34,7 +34,7 @@ pub fn chapter_dir_to_id(chapter_dir: &str) -> Result<Vec<u8>, anyhow::Error> {
 /// Contains .ssz_snappy files that represent [address index volumes][2].
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#addresschapter
-/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolume
+/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
 pub fn volume_file_name(chapter: &str, first_block: u32) -> Result<String, anyhow::Error> {
     let volume = num_to_name(first_block);
     let chapter_name = format!("chapter_0x{}_volume_{:0<9}.ssz_snappy", chapter, volume);
@@ -108,7 +108,7 @@ pub fn address_to_chapter(address: &str) -> Result<String, anyhow::Error> {
 /// # Ok::<(), anyhow::Error>(())
 /// ```
 pub fn volume_id_to_block_range(oldest_block: u32) -> Result<BlockRange, anyhow::Error> {
-    let newest_block = oldest_block + BLOCK_RANGE_WIDTH - 1;
+    let newest_block = oldest_block + BLOCKS_PER_VOLUME - 1;
     let range = BlockRange::new(oldest_block, newest_block)?;
     Ok(range)
 }

@@ -1,10 +1,10 @@
 use std::env;
 
+use anyhow::anyhow;
 use min_know::{
     types::{AddressIndexPath, Network},
     IndexConfig,
 };
-use anyhow::anyhow;
 use web3::types::H256;
 
 /// Uses index data and a theoretical local Ethereum portal node to

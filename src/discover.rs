@@ -14,7 +14,7 @@ use anyhow::Context;
 
 use crate::constants;
 use crate::encoding;
-use crate::spec::{AddressIndexVolume, AppearanceTx};
+use crate::spec::{AddressIndexVolumeChapter, AppearanceTx};
 use crate::types::{AddressIndexPath, Network};
 use crate::utils;
 use crate::utils::hex_string_to_bytes;
@@ -76,7 +76,8 @@ pub fn single_address(
         let ssz_snappy_data =
             fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
         // Decode and decompress.
-        let volume_data: AddressIndexVolume = encoding::decode_and_decompress(ssz_snappy_data)?;
+        let volume_data: AddressIndexVolumeChapter =
+            encoding::decode_and_decompress(ssz_snappy_data)?;
         // Find address and get transactions.
         let txs = volume_data
             .addresses
@@ -92,7 +93,7 @@ pub fn single_address(
 
 /// Retrieves and decodes a single [index volume][0] .ssz_snappy file.
 ///
-/// [0]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolume
+/// [0]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
 ///
 /// # Example
 /// Gets the path for file: "chapter_0x4e_014_100_000.ssz_snappy"
@@ -111,7 +112,7 @@ pub fn single_address(
 ///
 /// # Ok::<(), anyhow::Error>(())
 /// ```
-pub fn single_volume(path: PathBuf) -> Result<AddressIndexVolume, anyhow::Error> {
+pub fn single_volume(path: PathBuf) -> Result<AddressIndexVolumeChapter, anyhow::Error> {
     let ssz_snappy_data =
         fs::read(&path).with_context(|| format!("Failed to read files from {:?}", &path))?;
     // Decode and decompress

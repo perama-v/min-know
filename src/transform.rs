@@ -7,9 +7,9 @@ use std::fs;
 
 use crate::constants::NUM_CHAPTERS;
 use crate::{
-    constants::BLOCK_RANGE_WIDTH,
+    constants::BLOCKS_PER_VOLUME,
     encoding,
-    spec::{AddressAppearances, AddressIndexVolume, AppearanceTx, VolumeIdentifier},
+    spec::{AddressAppearances, AddressIndexVolumeChapter, AppearanceTx, VolumeIdentifier},
     types::{AddressIndexPath, Network, UnchainedPath},
     unchained::{
         structure::TransactionId,
@@ -25,7 +25,7 @@ use crate::{
 /// according to the [string naming conventions][3].
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#addresschapter
-/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolume
+/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
 /// [3]: https://github.com/perama-v/address-appearance-index-specs#string-naming-conventions
 ///
 /// # Example
@@ -94,11 +94,8 @@ fn create_specific_volume_files(
         for volume_info in chapter_info.volumes {
             // One file for each range-defined volume.
             let relevant_files: Vec<&ChunkFile> = chunk_files.for_range(&volume_info)?;
-            let volume: AddressIndexVolume = get_relevant_appearances(
-                relevant_files,
-                volume_info,
-                &chapter_info.leading_chars,
-            )?;
+            let volume: AddressIndexVolumeChapter =
+                get_relevant_appearances(relevant_files, volume_info, &chapter_info.leading_chars)?;
 
             let txs_total = volume
                 .addresses
@@ -132,7 +129,7 @@ pub fn get_relevant_appearances(
     chunk_file_paths: Vec<&ChunkFile>,
     desired: BlockRange,
     leading_char: &str,
-) -> Result<AddressIndexVolume, anyhow::Error> {
+) -> Result<AddressIndexVolumeChapter, anyhow::Error> {
     let mut relevant_appearances: HashMap<Vec<u8>, Vec<TransactionId>> = HashMap::new();
     for chunk in chunk_file_paths {
         let path = chunk.path.to_owned();
@@ -176,7 +173,7 @@ pub fn get_relevant_appearances(
     addresses.sort_by(|a, b| a.address.cmp(&b.address));
 
     let address_as_hex = hex::decode(leading_char)?;
-    let res = AddressIndexVolume {
+    let res = AddressIndexVolumeChapter {
         address_prefix: <_>::from(address_as_hex),
         identifier: VolumeIdentifier {
             oldest_block: desired.old,
@@ -191,7 +188,7 @@ pub fn get_relevant_appearances(
 /// Used for creating file systems according to the [string naming conventions][3].
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#addresschapter
-/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolume
+/// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
 /// [3]: https://github.com/perama-v/address-appearance-index-specs#string-naming-conventions
 pub struct ChapterDirectoryIdentifier {
     /// Common two hex characters at start of address in format. E.g., "1a".
@@ -272,7 +269,7 @@ pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32, anyhow::Error> 
 /// ```
 /// # use min_know::{
 /// #     transform::complete_block_ranges,
-/// #     constants::BLOCK_RANGE_WIDTH
+/// #     constants::BLOCKS_PER_VOLUME
 /// # };
 ///
 /// let mut block_ranges = complete_block_ranges(100_000, 15_467_800)?;
@@ -286,7 +283,7 @@ pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32, anyhow::Error> 
 /// # use anyhow::anyhow;
 /// # use min_know::{
 /// #     transform::complete_block_ranges,
-/// #     constants::BLOCK_RANGE_WIDTH
+/// #     constants::BLOCKS_PER_VOLUME
 /// # };
 ///
 /// let mut block_ranges = complete_block_ranges(200_000, 15_467_800)?;
@@ -301,13 +298,13 @@ pub fn complete_block_ranges(
     oldest_desired_volume: u32,
     latest_height: u32,
 ) -> Result<Vec<BlockRange>, anyhow::Error> {
-    if oldest_desired_volume % BLOCK_RANGE_WIDTH != 0 {
+    if oldest_desired_volume % BLOCKS_PER_VOLUME != 0 {
         return Err(anyhow!("Must pass the first block in a volume."));
     }
-    let n_groups = (latest_height + 1) / BLOCK_RANGE_WIDTH;
+    let n_groups = (latest_height + 1) / BLOCKS_PER_VOLUME;
     let mut ranges: Vec<BlockRange> = vec![];
     for i in 0..n_groups {
-        let old_block = i * BLOCK_RANGE_WIDTH;
+        let old_block = i * BLOCKS_PER_VOLUME;
         // Skip ranges that are outside the target range.
         let range_ok = old_block >= oldest_desired_volume;
         if !range_ok {
@@ -334,7 +331,7 @@ pub fn transform_missing_chunks(
 
     // Pass the identifier of the oldest missing volume.
     // E.g., if volume 14_400_000 is present, use volume 14_500_000.
-    let first_missing_volume = destination.latest_volume(network)?.oldest_block + BLOCK_RANGE_WIDTH;
+    let first_missing_volume = destination.latest_volume(network)?.oldest_block + BLOCKS_PER_VOLUME;
 
     let chapter_dirs = get_chapter_volumes(first_missing_volume, latest_mainnet)?;
 

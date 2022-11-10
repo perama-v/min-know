@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
-use min_know::{
-    types::{Network, UnchainedPath},
-    unchained::types::{BlockRange, UnchainedFile},
-};
 use cid::{
     multihash::{Code, MultihashDigest},
     Cid,
+};
+use min_know::{
+    types::{Network, UnchainedPath},
+    unchained::types::{BlockRange, UnchainedFile},
 };
 
 mod common;

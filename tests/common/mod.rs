@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use min_know::{spec::IndexManifest, types::*, *};
 use anyhow::Context;
+use min_know::{spec::IndexManifest, types::*, *};
 
 pub fn dir_and_network() -> (AddressIndexPath, UnchainedPath, Network) {
     (

@@ -143,7 +143,7 @@ pub mod types;
 pub mod unchained;
 pub mod utils;
 
-use constants::BLOCK_RANGE_WIDTH;
+use constants::BLOCKS_PER_VOLUME;
 use spec::{AppearanceTx, IndexManifest};
 use types::{AddressIndexPath, IndexCompleteness, Network, UnchainedPath};
 
@@ -194,7 +194,7 @@ impl IndexConfig {
         } else {
             println!(
                 "No changes made to index (new chunks did not cross the {} block threshold).",
-                BLOCK_RANGE_WIDTH
+                BLOCKS_PER_VOLUME
             )
         }
         Ok(())

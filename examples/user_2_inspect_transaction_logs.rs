@@ -1,11 +1,11 @@
 use std::env;
 
+use anyhow::anyhow;
 use min_know::{
     contract_utils::metadata::ipfs_cid_from_runtime_bytecode,
     types::{AddressIndexPath, Network},
     IndexConfig,
 };
-use anyhow::anyhow;
 use web3::types::BlockNumber;
 
 /// Uses index data and a theoretical local Ethereum portal node to
