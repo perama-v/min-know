@@ -60,7 +60,7 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
         })
         .enumerate();
     for (index, chapter) in chapters {
-        let mut volume_metadata: Vec<ManifestVolumeChapter> = vec![];
+        let mut volume_chapter_metadata: Vec<ManifestVolumeChapter> = vec![];
         println!("Generating hash for chapter {} of n", index);
         let files = fs::read_dir(chapter.path())
             .with_context(|| format!("Failed to read dir: {:?}", &chapter.path()))?;
@@ -72,7 +72,7 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
             let data: AddressIndexVolumeChapter = decode_and_decompress(ssz_snappy_bytes)?;
             let hash_tree_root = data.tree_hash_root();
             let identifier = VolumeIdentifier {
-                oldest_block: data.identifier.oldest_block,
+            oldest_block: data.identifier.oldest_block,
             };
             if data.identifier.oldest_block > most_recent_volume {
                 most_recent_volume = data.identifier.oldest_block
@@ -82,19 +82,19 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
                 ipfs_cid: <_>::from(cid.to_vec()),
                 hash_tree_root,
             };
-            volume_metadata.push(volume);
+            volume_chapter_metadata.push(volume);
         }
         let chap_name = &chapter.file_name();
         let chap_name = chap_name
             .to_str()
             .ok_or_else(|| anyhow!("div name {:?} not valid UTF-8", &chap_name))?;
         let chap_id = <_>::from(utils::chapter_dir_to_id(chap_name)?);
-        volume_metadata.sort_by_key(|x| x.identifier.oldest_block);
+        volume_chapter_metadata.sort_by_key(|x| x.identifier.oldest_block);
         let chapter = ManifestChapter {
             identifier: ChapterIdentifier {
                 address_common_bytes: chap_id,
             },
-            volume_metadata: <_>::from(volume_metadata),
+            volume_chapter_metadata: <_>::from(volume_chapter_metadata),
         };
         chapter_metadata.push(chapter)
     }
@@ -279,7 +279,7 @@ pub fn get_chapter_completeness(
         bad_hash: vec![],
     };
 
-    for volume in div.volume_metadata.iter() {
+    for volume in div.volume_chapter_metadata.iter() {
         volume.identifier.oldest_block;
         let volume_path =
             index_path.volume_file(network, chap_str, volume.identifier.oldest_block)?;
