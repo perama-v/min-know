@@ -25,7 +25,7 @@ Min-know administers the address-appearance-index, which is a derivative
 of the Unchained Index ([spec pdf](https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf)).
 
 Distribution and coordination may be achieved by using
-[ERC-generalised-attributable-manifest-broadcaster](https://github.com/perama-v/GAMB)
+[ERC-generic-attributable-manifest-broadcaster](https://github.com/perama-v/GAMB)
 compliant contracts.
 
 The address-appearance-index has an
@@ -91,7 +91,7 @@ IPFS CID at contract deployed at:
 ```
 0x0c316b7042b419d07d343f2f4f5bd54ff731183d
 ```
-This is an [ERC-generalised-attributable-manifest-broadcaster](https://github.com/perama-v/GAMB).
+This is an [ERC-generic-attributable-manifest-broadcaster](https://github.com/perama-v/GAMB).
 The topic "address-appearance-index-mainnet" is to be used for mainnet broadcasts.
 
 ## Examples

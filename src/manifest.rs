@@ -9,6 +9,7 @@
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
 use anyhow::{anyhow, Context};
+use cid::{multihash::{Code, MultihashDigest}, Cid};
 use ssz_types::FixedVector;
 use std::{
     fs::{self, ReadDir},
@@ -29,7 +30,7 @@ use crate::{
         ManifestVolumeChapter, NetworkName, VolumeIdentifier,
     },
     types::{AddressIndexPath, ChapterCompleteness, IndexCompleteness, Network},
-    utils::{self},
+    utils::{self}, ipfs::cid_v1_from_bytes,
 };
 
 /// Creates a new manifest file.
@@ -67,6 +68,7 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
             let volume_file = file?.path();
             let ssz_snappy_bytes = fs::read(&volume_file)
                 .with_context(|| format!("Failed to read file: {:?}", &volume_file))?;
+            let cid = cid_v1_from_bytes(&ssz_snappy_bytes)?;
             let data: AddressIndexVolumeChapter = decode_and_decompress(ssz_snappy_bytes)?;
             let hash_tree_root = data.tree_hash_root();
             let identifier = VolumeIdentifier {
@@ -75,10 +77,9 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
             if data.identifier.oldest_block > most_recent_volume {
                 most_recent_volume = data.identifier.oldest_block
             }
-            let ipfs_cid = <_>::from("TODO".as_bytes().to_vec());
             let volume = ManifestVolumeChapter {
                 identifier,
-                ipfs_cid,
+                ipfs_cid: <_>::from(cid.to_vec()),
                 hash_tree_root,
             };
             volume_metadata.push(volume);

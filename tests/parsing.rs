@@ -27,6 +27,12 @@ fn uc_files_present() {
     unchained_samples_present(&data_dir, &network).unwrap();
 }
 
+
+#[test]
+fn sample_manifest_readable() {
+    common::manifest();
+}
+
 #[test]
 fn skips_incomplete_volumes() {
     let manifest = common::manifest();

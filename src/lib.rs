@@ -136,6 +136,7 @@ pub mod contract_utils;
 pub mod discover;
 pub mod encoding;
 pub mod fetch;
+pub mod ipfs;
 pub mod manifest;
 pub mod spec;
 pub mod transform;

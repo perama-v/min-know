@@ -61,8 +61,6 @@ pub const SPEC_RESOURCE_LOCATION: &str =
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#indexpublishingidentifier
 pub const PUBLISHING_PREFIX: &str = "address_appearance_index_";
 
-/// Number of bytes in an Interplanetary File System (IPFS)
-/// Content Identifier (
 /// This type is defined in the [specification][1].
 ///
 /// # Typed Number
@@ -72,7 +70,6 @@ pub const PUBLISHING_PREFIX: &str = "address_appearance_index_";
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
 pub type MAX_BYTES_PER_CID = U128;
 
-/// Maximum number of volumes that a manifest can cont
 /// This type is defined in the [specification][1].
 ///
 /// # Typed Number
