@@ -1,18 +1,21 @@
 //! Types defined in the address-appearance-index [specification][1].
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs
-use serde::{Deserialize, Serialize};
+use std::str::from_utf8;
+
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ssz;
 use ssz_derive::{Decode, Encode};
 use ssz_types::{FixedVector, VariableList};
 use tree_hash::Hash256;
 use tree_hash_derive::TreeHash;
+use web3::types::U256;
 
 use crate::{
     constants::{
-        DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME,
-        MAX_BYTES_PER_CID, MAX_NETWORK_NAME_BYTES, MAX_PUBLISH_ID_BYTES,
-        MAX_SCHEMAS_RESOURCE_BYTES, MAX_TXS_PER_VOLUME, MAX_VOLUMES, NUM_CHAPTERS, NUM_COMMON_BYTES
+        DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_BYTES_PER_CID,
+        MAX_NETWORK_NAME_BYTES, MAX_PUBLISH_ID_BYTES, MAX_SCHEMAS_RESOURCE_BYTES,
+        MAX_TXS_PER_VOLUME, MAX_VOLUMES, NUM_CHAPTERS, NUM_COMMON_BYTES,
     },
     unchained::structure::{AddressData, TransactionId},
 };

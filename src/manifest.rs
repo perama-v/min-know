@@ -9,7 +9,10 @@
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
 use anyhow::{anyhow, Context};
-use cid::{multihash::{Code, MultihashDigest}, Cid};
+use cid::{
+    multihash::{Code, MultihashDigest},
+    Cid,
+};
 use ssz_types::FixedVector;
 use std::{
     fs::{self, ReadDir},
@@ -17,6 +20,10 @@ use std::{
     vec,
 };
 use tree_hash::TreeHash;
+use web3::{
+    ethabi::ethereum_types,
+    types::{H256, U256},
+};
 
 use crate::{
     constants::{
@@ -24,13 +31,14 @@ use crate::{
         SPEC_RESOURCE_LOCATION, SPEC_VER_MAJOR, SPEC_VER_MINOR, SPEC_VER_PATCH,
     },
     encoding::decode_and_decompress,
+    ipfs::cid_v0_from_bytes,
     spec::{
         AddressIndexVolumeChapter, ChapterIdentifier, IndexManifest, IndexPublishingIdentifier,
         IndexSpecificationSchemas, IndexSpecificationVersion, ManifestChapter,
         ManifestVolumeChapter, NetworkName, VolumeIdentifier,
     },
     types::{AddressIndexPath, ChapterCompleteness, IndexCompleteness, Network},
-    utils::{self}, ipfs::cid_v1_from_bytes,
+    utils::{self},
 };
 
 /// Creates a new manifest file.
@@ -68,11 +76,12 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
             let volume_file = file?.path();
             let ssz_snappy_bytes = fs::read(&volume_file)
                 .with_context(|| format!("Failed to read file: {:?}", &volume_file))?;
-            let cid = cid_v1_from_bytes(&ssz_snappy_bytes)?;
+            let cid = cid_v0_from_bytes(&ssz_snappy_bytes)?;
             let data: AddressIndexVolumeChapter = decode_and_decompress(ssz_snappy_bytes)?;
             let hash_tree_root = data.tree_hash_root();
+
             let identifier = VolumeIdentifier {
-            oldest_block: data.identifier.oldest_block,
+                oldest_block: data.identifier.oldest_block,
             };
             if data.identifier.oldest_block > most_recent_volume {
                 most_recent_volume = data.identifier.oldest_block
@@ -129,7 +138,8 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
     let manifest_name = manifest.file_name_no_encoding()?;
 
     // Make JSON manifest file.
-    let json_manifest = serde_json::to_string_pretty(&manifest)?;
+    //let json_manifest = serde_json::to_string_pretty(&manifest)?;
+    let json_manifest = serde_json::to_string(&manifest)?;
     let mut json_filename = path.index_dir(network)?.join(PathBuf::from(&manifest_name));
     json_filename.set_extension("json");
     fs::write(&json_filename, json_manifest)
