@@ -28,4 +28,4 @@ sha3 = "0.10.6"
 web3 = "0.18.0"
 
 [dev-dependencies]
-eip55 = { git = "https://github.com/perama-v/eip55-rs" }
+eip55 = { version = "0.3.0" }
