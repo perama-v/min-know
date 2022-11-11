@@ -51,11 +51,11 @@ use crate::{
 ///
 /// See algorithm in the [spec][1] under "Procedures -> Maintenance: create index"
 /// Algorithm:
-/// - For each address volume (x256) create new database.
-///     - For each 100_000 block range (x~150-200) define a new file.
+/// - For each address chapter (0x00, 0x01, ... 0xff) (x256) create new directory.
+///     - For each volume (100_000 block range) (x~150-200) define a new file.
 ///         - Get all unchained index chunk files relevant for that range (x~10-20).
 ///             - For each chunk file find transactions that match the address volume and
-///             block range.
+///             chapter.
 ///         - Hold these transactions in memory (x~100_000-300_000 txs) in a struct
 ///         and ssz serialize when done.
 ///         - Save the ssz_root_hash in a manifest
