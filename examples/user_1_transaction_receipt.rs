@@ -15,6 +15,7 @@ async fn main() -> Result<(), anyhow::Error> {
     env::set_var("RUST_BACKTRACE", "full");
 
     let address = "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae";
+    let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
     let data_dir = AddressIndexPath::Sample;
     let network = Network::default();
     let index = IndexConfig::new(&data_dir, &network);

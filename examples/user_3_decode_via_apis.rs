@@ -8,7 +8,7 @@ use serde_json::Value;
 use web3::types::{BlockNumber, H160, H256};
 
 use min_know::{
-    contract_utils::metadata::ipfs_cid_from_runtime_bytecode,
+    contract_utils::metadata::cid_from_runtime_bytecode,
     types::{AddressIndexPath, Network},
     IndexConfig,
 };
@@ -105,14 +105,14 @@ async fn main() -> Result<(), anyhow::Error> {
             .await?
             .0;
 
-        let Ok(maybe_cid) = ipfs_cid_from_runtime_bytecode(code.as_ref())
+        let Ok(maybe_cid) = cid_from_runtime_bytecode(code.as_ref())
             else {return Err(anyhow!("Trouble getting cid from bytecode."))};
 
         // Later can instead fetch ABI from IPFS.
         match maybe_cid {
             Some(cid) => {
                 println!(
-                    "\tAn IPFS CID for contract metadata was in bytecode metadata: {:#?}",
+                    "\tA CID for contract metadata was in bytecode metadata: {:#?}",
                     cid
                 );
             }
@@ -227,7 +227,7 @@ fn h160_to_string(address: &H160) -> String {
 }
 
 /// Converts String to H160.
-fn _string_to_h160(address: &str) -> Result<H160, anyhow::Error> {
+fn string_to_h160(address: &str) -> Result<H160, anyhow::Error> {
     let vector = hex::decode(address.trim_start_matches("0x"))?;
     let tried: Result<[u8; 20], _> = vector.try_into();
     let array = match tried {

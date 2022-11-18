@@ -2,7 +2,7 @@ use std::env;
 
 use anyhow::anyhow;
 use min_know::{
-    contract_utils::metadata::ipfs_cid_from_runtime_bytecode,
+    contract_utils::metadata::cid_from_runtime_bytecode,
     types::{AddressIndexPath, Network},
     IndexConfig,
 };
@@ -80,10 +80,10 @@ async fn main() -> Result<(), anyhow::Error> {
             .await?
             .0;
 
-        match ipfs_cid_from_runtime_bytecode(code.as_ref()) {
+        match cid_from_runtime_bytecode(code.as_ref()) {
             Ok(None) => {}
             Ok(cid) => {
-                println!("\tIPFS metadata CID: {:?}", cid.unwrap());
+                println!("\tMetadata CID: {:?}", cid.unwrap());
             }
             Err(e) => return Err(e),
         };

@@ -25,7 +25,7 @@ cargo run --example user_0_find_transactions
 If you run a local node, you can use that (pretend it is a Portal node)
 for the following examples:
 ```sh
-cargo run --example user_1_check_completeness
+cargo run --example user_1_transaction_receipt
 cargo run --example user_2_inspect_transaction_logs
 ```
 This example showcases the end goal, but invovles calls to external APIs.
