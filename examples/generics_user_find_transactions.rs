@@ -28,7 +28,7 @@ fn main() -> Result<(), anyhow::Error> {
     // let appearances = db.find_transactions(address)?;
     // Find transactions becomes db.read_qurey(address)
     let appearances = db.read_query(address);
-    let address_found = hex::encode(appearances.address.as_ssz_bytes());
+    let address_found = hex::encode(appearances.query.as_ssz_bytes());
     assert_eq!(address_found, address);
     Ok(())
 }

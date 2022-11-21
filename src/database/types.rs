@@ -81,6 +81,6 @@ impl<T: DataSpec> Todd<T> {
     pub fn save_unit(&self, u: Unit<T>) {}
     pub fn read_query(&self, raw_query: &str) -> T::AssociatedElement {
         let query = T::raw_key_as_query(raw_query);
-        todo!()
+        todo!("Use query to find appropriate Unit & Element.")
     }
 }
