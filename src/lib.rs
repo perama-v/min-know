@@ -131,6 +131,14 @@
 //! [2]: https://github.com/ethereum/trin
 //! [3]: https://github.com/status-im/nimbus-eth1/tree/master/fluffy
 //! [4]: https://github.com/ethereumjs/ultralight
+pub mod common;
+pub mod config;
+pub mod database;
+pub mod extraction;
+pub mod samples;
+pub mod specs;
+
+
 pub mod constants;
 pub mod contract_utils;
 pub mod discover;
