@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use ssz_derive::{Encode, Decode};
+use ssz_types::{FixedVector, typenum::{U1073741824, U20}, VariableList};
+use tree_hash_derive::TreeHash;
 
 use super::types::*;
 
@@ -88,6 +91,27 @@ impl ChapterIdMethods for ChapId {}
 pub struct BaseUnit {}
 impl UnitMethods for BaseUnit {}
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct Element {}
+
+pub type DefaultBytesPerAddress = U20;
+pub type MaxTxsPerVolume = U1073741824;
+
+/// Equivalent to AddressAppearances. Consists of a single address and some
+/// number of transaction identfiers (appearances).
+//#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Element {
+    /// The address that appeared in a transaction.
+    pub address: FixedVector<u8, DefaultBytesPerAddress>,
+    /// The transactions where the address appeared.
+    pub appearances: VariableList<AppearanceTx, MaxTxsPerVolume>,
+}
 impl ElementMethods for Element {}
+
+//#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct AppearanceTx {
+    /// The Ethereum execution block number.
+    pub block: u32,
+    /// The index of the transaction in a block.
+    pub index: u32,
+}

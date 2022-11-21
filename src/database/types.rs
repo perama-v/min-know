@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::specs::types::DataSpec;
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Todd<T: DataSpec> {
     pub units: Vec<Unit<T>>,
 }
@@ -13,7 +13,7 @@ pub struct Todd<T: DataSpec> {
 /// The distributable part of the database that is obtained from peers.
 ///
 /// Internally consists of smaller useful pieces of data called Elements.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct Unit<T: DataSpec> {
     pub chapter_id: T::AssociatedChapterId,
     pub volume_id: T::AssociatedVolumeId,
@@ -77,7 +77,10 @@ impl<T: DataSpec> Todd<T> {
         todo!()
     }
     pub fn save_unit(&self, u: Unit<T>) {}
-    pub fn read_query(&self, query: T::AssociatedQuery) -> T::AssociatedElement {
+    pub fn read_query<U>(&self, raw_query: U) -> T::AssociatedElement {
+
+        let query = T::raw_key_as_query(raw_query);
+
         todo!()
     }
 }

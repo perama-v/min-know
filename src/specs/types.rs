@@ -26,6 +26,15 @@ impl<'a, T> UsefulTraits<'a> for T where
 {
 }
 
+pub trait UsefulTraitsSszFriendly<'a>:
+    Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a>
+{
+}
+impl<'a, T> UsefulTraitsSszFriendly<'a> for T where
+    T: Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a>
+{
+}
+
 /// A trait for specifying a new type of data.
 ///
 /// Any data source that will be transformed by min-know must implement this trait.
@@ -55,7 +64,7 @@ pub trait DataSpec {
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedUnit: UnitMethods + for<'a> UsefulTraits<'a>;
     type AssociatedQuery: QueryMethods + for<'a> UsefulTraits<'a>;
-    type AssociatedElement: ElementMethods + for<'a> UsefulTraits<'a>;
+    type AssociatedElement: ElementMethods + for<'a> UsefulTraitsSszFriendly<'a>;
 
     fn spec_name() -> SpecId;
     fn num_chapters() -> usize {

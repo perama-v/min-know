@@ -26,8 +26,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     // let appearances = db.find_transactions(address)?;
     // Find transactions becomes db.read_qurey(address)
-    let query = Query::new(address);
-    let appearances = db.read_query(query);
-
+    let appearances = db.read_query(address);
+    assert
     Ok(())
 }
