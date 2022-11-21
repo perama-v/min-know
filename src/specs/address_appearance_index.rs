@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use ssz_derive::{Encode, Decode};
 use ssz_types::{FixedVector, typenum::{U1073741824, U20}, VariableList};
@@ -66,17 +67,23 @@ impl DataSpec for AdApInSpec {
     ) -> bool {
         todo!()
     }
-
-    fn raw_key_as_query<T>(raw_data_key: T) -> Self::AssociatedQuery {
-        todo!()
+    // Key is a hex string. Converts it to an ssz vector.
+    fn raw_key_as_query(key: &str) -> Result<Self::AssociatedQuery, anyhow::Error>
+      {
+        let raw_bytes = hex::decode(key)?;
+        match Query::new(raw_bytes) {
+            Ok(q) => Ok(q),
+            Err(e) => Err(anyhow!("could not turn query bytes into ssz vector {:?}", e))
+        }
     }
 
     fn raw_value_as_element<T>(raw_data_value: T) -> Self::AssociatedElement {
         todo!()
     }
 }
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct Query {}
+//#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
+//pub struct Query {}
+pub type Query = FixedVector<u8, DefaultBytesPerAddress>;
 impl QueryMethods for Query {}
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
@@ -101,9 +108,9 @@ pub type MaxTxsPerVolume = U1073741824;
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Element {
     /// The address that appeared in a transaction.
-    pub address: FixedVector<u8, DefaultBytesPerAddress>,
+    pub query: Query,
     /// The transactions where the address appeared.
-    pub appearances: VariableList<AppearanceTx, MaxTxsPerVolume>,
+    pub value: VariableList<AppearanceTx, MaxTxsPerVolume>,
 }
 impl ElementMethods for Element {}
 

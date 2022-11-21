@@ -1,3 +1,4 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -63,7 +64,8 @@ pub trait DataSpec {
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedUnit: UnitMethods + for<'a> UsefulTraits<'a>;
-    type AssociatedQuery: QueryMethods + for<'a> UsefulTraits<'a>;
+
+    type AssociatedQuery: QueryMethods;
     type AssociatedElement: ElementMethods + for<'a> UsefulTraitsSszFriendly<'a>;
 
     fn spec_name() -> SpecId;
@@ -82,7 +84,8 @@ pub trait DataSpec {
         vol: &Self::AssociatedVolumeId,
         chapter: &Self::AssociatedChapterId,
     ) -> bool;
-    fn raw_key_as_query<T>(raw_data_key: T) -> Self::AssociatedQuery;
+    /// Coerces query into the type required for the spec.
+    fn raw_key_as_query(key: &str) -> Result<Self::AssociatedQuery>;
     /// Some unformatted data that needs to be converted to an element
     /// to then be appended to a Unit.elements vector.
     fn raw_value_as_element<T>(raw_data_value: T) -> Self::AssociatedElement;

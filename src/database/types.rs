@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::{collections::BTreeMap, fmt::Debug};
 
 use serde::{Deserialize, Serialize};
@@ -36,15 +37,16 @@ impl<T: DataSpec> Todd<T> {
         Self { units: vec![] }
     }
     // Creates new and complete todd.
-    pub fn full_transform<U, V>(&mut self) {
+    pub fn full_transform<V>(&mut self) -> Result<()> {
         let chapts = T::get_all_chapter_ids();
         let vols = T::get_all_volume_ids();
         for chapter in &chapts {
             for vol in &vols {
-                let unit = self.get_one_unit::<U, V>(vol, chapter);
+                let unit = self.get_one_unit::<V>(vol, chapter)?;
                 self.save_unit(unit);
             }
         }
+        Ok(())
     }
     pub fn spec_name(&self) -> &str {
         T::DATABASE_INTERFACE_ID
@@ -53,15 +55,15 @@ impl<T: DataSpec> Todd<T> {
         T::chapter_interface_id(chapter)
     }
     /// Prepares the mininum distributable Unit
-    pub fn get_one_unit<U, V>(
+    pub fn get_one_unit<V>(
         &self,
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
-    ) -> Unit<T> {
+    ) -> Result<Unit<T>> {
         let mut elems: Vec<T::AssociatedElement> = vec![];
-        let source_data: Vec<(U, V)> = self.raw_pairs();
+        let source_data: Vec<(&str, V)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
-            let query = T::raw_key_as_query(raw_key);
+            let query = T::raw_key_as_query(raw_key)?;
             if T::query_matches_unit(&query, vol, chapter) {
                 let element = T::raw_value_as_element(raw_val);
                 elems.push(element)
@@ -69,7 +71,7 @@ impl<T: DataSpec> Todd<T> {
         }
         let mut unit = Unit::new(vol.clone(), chapter.clone());
         unit.elems = elems;
-        unit
+        Ok(unit)
     }
     pub fn raw_pairs<U, V>(&self) -> Vec<(U, V)> {
         // A vector of generic key-value pairs.
@@ -77,10 +79,8 @@ impl<T: DataSpec> Todd<T> {
         todo!()
     }
     pub fn save_unit(&self, u: Unit<T>) {}
-    pub fn read_query<U>(&self, raw_query: U) -> T::AssociatedElement {
-
+    pub fn read_query(&self, raw_query: &str) -> T::AssociatedElement {
         let query = T::raw_key_as_query(raw_query);
-
         todo!()
     }
 }
