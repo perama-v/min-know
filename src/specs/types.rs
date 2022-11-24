@@ -49,13 +49,13 @@ impl<'a, T> UsefulTraitsSszFriendly<'a> for T where
 /// }
 /// ```
 /// # Terms
-/// - Unit (holds query/element pairs). One unit per Vol/Chapter pair.
-/// - Query: Something a user has/knows (address) and uses to get more information
-/// - Element: The data that is the result of a query (appearance transactions).
-/// - raw_pair: a raw_key-raw_value pair where key can be turned into a query
-/// and value becomes an element.
-/// - raw_key (unformatted query)
-/// - raw_value (unformatted element)
+/// - Unit (holds record_key/record_value pairs). One unit per Vol/Chapter pair.
+/// - RecordKey: Something a user has/knows (address) and uses to get more information
+/// - RecordValue: The data that is the result of a record_key (appearance transactions).
+/// - raw_pair: a raw_key-raw_value pair where key can be turned into a record_key
+/// and value becomes an record_value.
+/// - raw_key (unformatted record_key)
+/// - raw_value (unformatted record_value)
 pub trait DataSpec {
     const DATABASE_INTERFACE_ID: &'static str;
     const NUM_CHAPTERS: usize;
@@ -65,8 +65,8 @@ pub trait DataSpec {
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedUnit: UnitMethods + for<'a> UsefulTraits<'a>;
 
-    type AssociatedQuery: QueryMethods;
-    type AssociatedElement: ElementMethods + for<'a> UsefulTraitsSszFriendly<'a>;
+    type AssociatedRecordKey: RecordKeyMethods;
+    type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraitsSszFriendly<'a>;
 
     fn spec_name() -> SpecId;
     fn num_chapters() -> usize {
@@ -76,19 +76,19 @@ pub trait DataSpec {
     fn chapter_interface_id<T>(chapter: T) -> String;
     fn get_all_chapter_ids() -> Vec<Self::AssociatedChapterId>;
     fn get_all_volume_ids() -> Vec<Self::AssociatedVolumeId>;
-    fn query_to_volume_id(query: Self::AssociatedQuery) -> Self::AssociatedVolumeId;
-    fn query_to_chapter_id(query: Self::AssociatedQuery) -> Self::AssociatedChapterId;
+    fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
+    fn record_key_to_chapter_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedChapterId;
     /// Used to check the key for a piece of raw data when creating new database.
-    fn query_matches_unit(
-        query: &Self::AssociatedQuery,
+    fn record_key_matches_unit(
+        record_key: &Self::AssociatedRecordKey,
         vol: &Self::AssociatedVolumeId,
         chapter: &Self::AssociatedChapterId,
     ) -> bool;
-    /// Coerces query into the type required for the spec.
-    fn raw_key_as_query(key: &str) -> Result<Self::AssociatedQuery>;
-    /// Some unformatted data that needs to be converted to an element
-    /// to then be appended to a Unit.elements vector.
-    fn raw_value_as_element<T>(raw_data_value: T) -> Self::AssociatedElement;
+    /// Coerces record_key into the type required for the spec.
+    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>;
+    /// Some unformatted data that needs to be converted to an record_value
+    /// to then be appended to a Unit.record_values vector.
+    fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
 }
 
 pub enum SpecId {
@@ -128,8 +128,8 @@ pub trait ChapterIdMethods {
     // fn to_string() -> String;
 }
 /// Marker trait.
-pub trait QueryMethods {}
-pub trait ElementMethods {}
+pub trait RecordKeyMethods {}
+pub trait RecordValueMethods {}
 
 /// Methods for the smallest distributable unit in the database.
 ///
@@ -149,10 +149,10 @@ pub trait UnitMethods {
     // some information that they want to look up in the database.
     //
     // # Examples
-    // For an address apeparance database, the query is an address.
+    // For an address apeparance database, the record_key is an address.
     //
-    // For an ABI database, the query is a contract identifier.
-    fn query<T>(_value: T) {}
+    // For an ABI database, the record_key is a contract identifier.
+    fn record_key<T>(_value: T) {}
     // Get the volume identifier for the unit.
     //
     // E.g., Some block number or an counter.

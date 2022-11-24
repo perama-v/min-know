@@ -130,7 +130,7 @@ async fn main() -> Result<(), anyhow::Error> {
     }
     println!("Filter out unused function names.");
     // Now that that works, one could try to retrieve portions of the 4byte and Sourcify
-    // databases then query them locally.
+    // databases then record_key them locally.
     Ok(())
 }
 
@@ -150,7 +150,7 @@ pub async fn method_from_fourbyte_api(topic: &H256) -> Result<Option<String>, an
     let client = reqwest::Client::new();
     let response: FourBytePage = client
         .get(url)
-        .query(&[("hex_signature", hex_sig)])
+        .record_key(&[("hex_signature", hex_sig)])
         .header(CONTENT_TYPE, "application/json")
         .send()
         .await?
@@ -246,7 +246,7 @@ fn address_conversions() {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-/// Response for a match query on event signatures at 4byte.directory.
+/// Response for a match record_key on event signatures at 4byte.directory.
 pub struct FourBytePage {
     next: Option<String>,
     previous: Option<u32>,

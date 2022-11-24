@@ -13,12 +13,12 @@ pub struct Todd<T: DataSpec> {
 
 /// The distributable part of the database that is obtained from peers.
 ///
-/// Internally consists of smaller useful pieces of data called Elements.
+/// Internally consists of smaller useful pieces of data called RecordValues.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct Unit<T: DataSpec> {
     pub chapter_id: T::AssociatedChapterId,
     pub volume_id: T::AssociatedVolumeId,
-    pub elems: Vec<T::AssociatedElement>,
+    pub elems: Vec<T::AssociatedRecordValue>,
 }
 
 impl<T: DataSpec> Unit<T> {
@@ -37,12 +37,12 @@ impl<T: DataSpec> Todd<T> {
         Self { units: vec![] }
     }
     // Creates new and complete todd.
-    pub fn full_transform<V>(&mut self) -> Result<()> {
+    pub fn full_transform<U>(&mut self) -> Result<()> {
         let chapts = T::get_all_chapter_ids();
         let vols = T::get_all_volume_ids();
         for chapter in &chapts {
             for vol in &vols {
-                let unit = self.get_one_unit::<V>(vol, chapter)?;
+                let unit = self.get_one_unit::<U>(vol, chapter)?;
                 self.save_unit(unit);
             }
         }
@@ -55,32 +55,35 @@ impl<T: DataSpec> Todd<T> {
         T::chapter_interface_id(chapter)
     }
     /// Prepares the mininum distributable Unit
-    pub fn get_one_unit<V>(
+    pub fn get_one_unit<U>(
         &self,
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
     ) -> Result<Unit<T>> {
-        let mut elems: Vec<T::AssociatedElement> = vec![];
-        let source_data: Vec<(&str, V)> = self.raw_pairs();
+        let mut elems: Vec<T::AssociatedRecordValue> = vec![];
+        let source_data: Vec<(&str, U)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
-            let query = T::raw_key_as_query(raw_key)?;
-            if T::query_matches_unit(&query, vol, chapter) {
-                let element = T::raw_value_as_element(raw_val);
-                elems.push(element)
+            let record_key = T::raw_key_as_record_key(raw_key)?;
+            if T::record_key_matches_unit(&record_key, vol, chapter) {
+                let record_value = T::raw_value_as_record_value(raw_val);
+                elems.push(record_value)
             }
         }
         let mut unit = Unit::new(vol.clone(), chapter.clone());
         unit.elems = elems;
         Ok(unit)
     }
-    pub fn raw_pairs<U, V>(&self) -> Vec<(U, V)> {
+    pub fn raw_pairs<V>(&self) -> Vec<(&str, V)> {
         // A vector of generic key-value pairs.
         // E.g., (address, appearances) or (address, ABIs)
         todo!()
     }
     pub fn save_unit(&self, u: Unit<T>) {}
-    pub fn read_query(&self, raw_query: &str) -> T::AssociatedElement {
-        let query = T::raw_key_as_query(raw_query);
-        todo!("Use query to find appropriate Unit & Element.")
+    /// Obtains the values that match a particular key
+    ///
+    ///
+    pub fn read_record_key(&self, raw_record_key: &str) -> T::AssociatedRecordValue {
+        let record_key = T::raw_key_as_record_key(raw_record_key);
+        todo!("Use record_key to find appropriate Unit & RecordValue.")
     }
 }

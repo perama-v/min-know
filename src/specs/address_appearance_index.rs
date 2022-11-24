@@ -23,9 +23,9 @@ impl DataSpec for AdApInSpec {
 
     type AssociatedUnit = BaseUnit;
 
-    type AssociatedQuery = Query;
+    type AssociatedRecordKey = RecordKey;
 
-    type AssociatedElement = Element;
+    type AssociatedRecordValue = RecordValue;
 
     fn spec_name() -> SpecId {
         todo!()
@@ -52,39 +52,39 @@ impl DataSpec for AdApInSpec {
         todo!()
     }
 
-    fn query_to_volume_id(query: Self::AssociatedQuery) -> Self::AssociatedVolumeId {
+    fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId {
         todo!()
     }
 
-    fn query_to_chapter_id(query: Self::AssociatedQuery) -> Self::AssociatedChapterId {
+    fn record_key_to_chapter_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedChapterId {
         todo!()
     }
 
-    fn query_matches_unit(
-        query: &Self::AssociatedQuery,
+    fn record_key_matches_unit(
+        record_key: &Self::AssociatedRecordKey,
         vol: &Self::AssociatedVolumeId,
         chapter: &Self::AssociatedChapterId,
     ) -> bool {
         todo!()
     }
     // Key is a hex string. Converts it to an ssz vector.
-    fn raw_key_as_query(key: &str) -> Result<Self::AssociatedQuery, anyhow::Error>
+    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey, anyhow::Error>
       {
         let raw_bytes = hex::decode(key)?;
-        match Query::new(raw_bytes) {
+        match RecordKey::new(raw_bytes) {
             Ok(q) => Ok(q),
-            Err(e) => Err(anyhow!("could not turn query bytes into ssz vector {:?}", e))
+            Err(e) => Err(anyhow!("could not turn record_key bytes into ssz vector {:?}", e))
         }
     }
 
-    fn raw_value_as_element<T>(raw_data_value: T) -> Self::AssociatedElement {
+    fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue {
         todo!()
     }
 }
 //#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-//pub struct Query {}
-pub type Query = FixedVector<u8, DefaultBytesPerAddress>;
-impl QueryMethods for Query {}
+//pub struct RecordKey {}
+pub type RecordKey = FixedVector<u8, DefaultBytesPerAddress>;
+impl RecordKeyMethods for RecordKey {}
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct VolId {}
@@ -106,13 +106,13 @@ pub type MaxTxsPerVolume = U1073741824;
 /// number of transaction identfiers (appearances).
 //#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct Element {
+pub struct RecordValue {
     /// The address that appeared in a transaction.
-    pub query: Query,
+    pub record_key: RecordKey,
     /// The transactions where the address appeared.
     pub value: VariableList<AppearanceTx, MaxTxsPerVolume>,
 }
-impl ElementMethods for Element {}
+impl RecordValueMethods for RecordValue {}
 
 //#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
