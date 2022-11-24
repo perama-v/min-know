@@ -21,7 +21,7 @@ impl DataSpec for AdApInSpec {
 
     type AssociatedChapterId = ChapId;
 
-    type AssociatedUnit = BaseUnit;
+    type AssociatedChapter = Chapter;
 
     type AssociatedRecordKey = RecordKey;
 
@@ -60,7 +60,7 @@ impl DataSpec for AdApInSpec {
         todo!()
     }
 
-    fn record_key_matches_unit(
+    fn record_key_matches_chapter(
         record_key: &Self::AssociatedRecordKey,
         vol: &Self::AssociatedVolumeId,
         chapter: &Self::AssociatedChapterId,
@@ -95,8 +95,8 @@ pub struct ChapId {}
 impl ChapterIdMethods for ChapId {}
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct BaseUnit {}
-impl UnitMethods for BaseUnit {}
+pub struct Chapter {}
+impl ChapterMethods for Chapter {}
 
 
 pub type DefaultBytesPerAddress = U20;

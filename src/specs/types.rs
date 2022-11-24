@@ -49,7 +49,7 @@ impl<'a, T> UsefulTraitsSszFriendly<'a> for T where
 /// }
 /// ```
 /// # Terms
-/// - Unit (holds record_key/record_value pairs). One unit per Vol/Chapter pair.
+/// - Chapter (holds record_key/record_value pairs). One chapter per Vol/Chapter pair.
 /// - RecordKey: Something a user has/knows (address) and uses to get more information
 /// - RecordValue: The data that is the result of a record_key (appearance transactions).
 /// - raw_pair: a raw_key-raw_value pair where key can be turned into a record_key
@@ -63,7 +63,7 @@ pub trait DataSpec {
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits<'a>;
-    type AssociatedUnit: UnitMethods + for<'a> UsefulTraits<'a>;
+    type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits<'a>;
 
     type AssociatedRecordKey: RecordKeyMethods;
     type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraitsSszFriendly<'a>;
@@ -79,7 +79,7 @@ pub trait DataSpec {
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
     fn record_key_to_chapter_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedChapterId;
     /// Used to check the key for a piece of raw data when creating new database.
-    fn record_key_matches_unit(
+    fn record_key_matches_chapter(
         record_key: &Self::AssociatedRecordKey,
         vol: &Self::AssociatedVolumeId,
         chapter: &Self::AssociatedChapterId,
@@ -87,7 +87,7 @@ pub trait DataSpec {
     /// Coerces record_key into the type required for the spec.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>;
     /// Some unformatted data that needs to be converted to an record_value
-    /// to then be appended to a Unit.record_values vector.
+    /// to then be appended to a Chapter.record_values vector.
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
 }
 
@@ -131,7 +131,7 @@ pub trait ChapterIdMethods {
 pub trait RecordKeyMethods {}
 pub trait RecordValueMethods {}
 
-/// Methods for the smallest distributable unit in the database.
+/// Methods for the smallest distributable chapter in the database.
 ///
 /// This refers to the pieces that can be looked up in the manifest
 /// and shared over a network. It can be thought of as a "volume
@@ -142,7 +142,7 @@ pub trait RecordValueMethods {}
 /// for a specific volume and chapter.
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
-pub trait UnitMethods {
+pub trait ChapterMethods {
     // An input that a user can provide to retrieve useful information.
     //
     // Each database is designed around the premise that a user has
@@ -153,11 +153,11 @@ pub trait UnitMethods {
     //
     // For an ABI database, the record_key is a contract identifier.
     fn record_key<T>(_value: T) {}
-    // Get the volume identifier for the unit.
+    // Get the volume identifier for the chapter.
     //
     // E.g., Some block number or an counter.
     //fn volume_interface_id() -> String;
-    // Get the chapter identifier for the unit if applicable.
+    // Get the chapter identifier for the chapter if applicable.
     //
     // E.g., Some "0xf6", or "contract_0xacbd..." or None.
     //fn chapter_interface_id() -> Option<String>;

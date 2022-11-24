@@ -19,10 +19,10 @@ fn main() -> Result<(), anyhow::Error> {
     let db = Todd::<AdApInSpec>::new();
 
     println!(
-        "DB is {:#?}, with name {} and num units {}",
+        "DB is {:#?}, with name {} and num chapters {}",
         db,
         db.spec_name(),
-        db.units.len()
+        db.chapters.len()
     );
 
     // let appearances = db.find_transactions(address)?;
