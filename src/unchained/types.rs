@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -62,7 +62,7 @@ pub struct UnchainedFile {
 
 impl UnchainedFile {
     /// Obtains metadata and prepares Unchained Index file for reading.
-    pub fn new(path: PathBuf, desired: BlockRange) -> Result<Self, anyhow::Error> {
+    pub fn new(path: PathBuf, desired: BlockRange) -> Result<Self> {
         let file = File::open(&path)?;
         let mut reader: BufReader<File> = BufReader::new(file);
         let header = Header::from_reader(reader.by_ref(), &path)?;
@@ -108,7 +108,7 @@ impl UnchainedFile {
     /// 7. Save to transactions to database, adding to existing AddressData for that address.
     /// 8. Update address byte index for the next entry
     /// 9. Jump back to address table, go to 2.
-    pub fn with_parsed(&mut self, address_leading_char: &str) -> Result<(), anyhow::Error> {
+    pub fn with_parsed(&mut self, address_leading_char: &str) -> Result<()> {
         let address_starting_bytes = hex::decode(address_leading_char)?;
         let mut txs: Vec<AddressData> = vec![];
         let mut addresses_parsed = 0;
@@ -159,7 +159,7 @@ impl UnchainedFile {
     fn parse_appearances(
         &mut self,
         address_entry: &AddressEntry,
-    ) -> anyhow::Result<Option<Vec<TransactionId>>, anyhow::Error> {
+    ) -> anyhow::Result<Option<Vec<TransactionId>>> {
         let mut appearances_parsed = 0;
         let mut entries: Vec<TransactionId> = Vec::new();
         while appearances_parsed < address_entry.count {
@@ -199,7 +199,7 @@ pub struct BlockRange {
 
 impl BlockRange {
     /// New range of blocks.
-    pub fn new(old_block_number: u32, new_block_number: u32) -> Result<Self, anyhow::Error> {
+    pub fn new(old_block_number: u32, new_block_number: u32) -> Result<Self> {
         if old_block_number >= new_block_number {
             return Err(anyhow!(
                 "Older block {} must be less than newer block {}.",

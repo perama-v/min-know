@@ -1,6 +1,6 @@
 //! Contains the structure of the Unchained Index as defined in
 //! the Unchained Index specification.
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{io::Read, path::PathBuf};
 
@@ -18,7 +18,7 @@ impl Header {
     pub fn from_reader(
         mut rdr: impl Read,
         path: &PathBuf,
-    ) -> anyhow::Result<Header, anyhow::Error> {
+    ) -> anyhow::Result<Header> {
         let mut magic: [u8; VAL] = [0; VAL];
         rdr.read_exact(&mut magic)?;
         if magic != MAGIC {

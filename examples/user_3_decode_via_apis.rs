@@ -1,6 +1,6 @@
 use std::{env, str::FromStr};
 
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Result};
 use eip55::checksum;
 use reqwest::{header::CONTENT_TYPE, StatusCode, Url};
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,7 @@ const SOURCIFY_PARTIAL: &str = "https://repo.sourcify.dev/contracts/partial_matc
 /// be downloaded and pinned more readily, without CIDs changing. This
 /// might improve data availability on IPFS by allowing more participants.
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+async fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 
@@ -143,14 +143,14 @@ async fn main() -> Result<(), anyhow::Error> {
 /// ## Hash collisions
 /// Each decoded candidate response is hashed and compared to the full 32 byte signature
 /// (present in the transaction log).
-pub async fn method_from_fourbyte_api(topic: &H256) -> Result<Option<String>, anyhow::Error> {
+pub async fn method_from_fourbyte_api(topic: &H256) -> Result<Option<String>> {
     let sig = &topic.0[0..4];
     let hex_sig = format!("0x{}", hex::encode(sig));
     let url = Url::from_str(FOURBYTE)?;
     let client = reqwest::Client::new();
     let response: FourBytePage = client
         .get(url)
-        .record_key(&[("hex_signature", hex_sig)])
+        .query(&[("hex_signature", hex_sig)])
         .header(CONTENT_TYPE, "application/json")
         .send()
         .await?
@@ -168,7 +168,7 @@ pub async fn method_from_fourbyte_api(topic: &H256) -> Result<Option<String>, an
 }
 
 /// Returns the sourcify url target for a given contract address.
-pub async fn abi_from_sourcify_api(address: &H160) -> Result<Option<String>, anyhow::Error> {
+pub async fn abi_from_sourcify_api(address: &H160) -> Result<Option<String>> {
     let client = reqwest::Client::new();
     let a = format!("{}/{}", as_checksummed(address), "metadata.json");
 
@@ -227,7 +227,7 @@ fn h160_to_string(address: &H160) -> String {
 }
 
 /// Converts String to H160.
-fn string_to_h160(address: &str) -> Result<H160, anyhow::Error> {
+fn string_to_h160(address: &str) -> Result<H160> {
     let vector = hex::decode(address.trim_start_matches("0x"))?;
     let tried: Result<[u8; 20], _> = vector.try_into();
     let array = match tried {
@@ -246,7 +246,7 @@ fn address_conversions() {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-/// Response for a match record_key on event signatures at 4byte.directory.
+/// Response for a match query on event signatures at 4byte.directory.
 pub struct FourBytePage {
     next: Option<String>,
     previous: Option<u32>,
@@ -278,7 +278,7 @@ fn parse_metadata() {
 ///
 /// Parses a JSON string representing contract metadata and returns name of contract and
 /// information about functions as a printable string.
-fn summary_of_abi_from_json(metadata: Value) -> Result<String, anyhow::Error> {
+fn summary_of_abi_from_json(metadata: Value) -> Result<String> {
     let contract_name = &metadata["settings"]["compilationTarget"];
     let mut summary = format!("Contract: {}", contract_name);
     let n_funcs = match &metadata["output"]["abi"] {

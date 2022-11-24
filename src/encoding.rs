@@ -1,10 +1,10 @@
 //! Responsible for SSZ encoding and Snappy compression.
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use ssz::{Decode, Encode};
 use std::io::Read;
 
 /// Perfoms ssz encoding and snappy compression.
-pub fn encode_and_compress<T>(structured: T) -> Result<Vec<u8>, anyhow::Error>
+pub fn encode_and_compress<T>(structured: T) -> Result<Vec<u8>>
 where
     T: Encode,
 {
@@ -14,7 +14,7 @@ where
 }
 
 /// Performs snappy decompression and ssz decoding.
-pub fn decode_and_decompress<T>(ssz_snappy_data: Vec<u8>) -> Result<T, anyhow::Error>
+pub fn decode_and_decompress<T>(ssz_snappy_data: Vec<u8>) -> Result<T>
 where
     T: Decode,
 {
@@ -24,7 +24,7 @@ where
 }
 
 /// Perfoms ssz encoding of struct into bytes.
-pub fn encode<T>(structured: T) -> Result<Vec<u8>, anyhow::Error>
+pub fn encode<T>(structured: T) -> Result<Vec<u8>>
 where
     T: Encode,
 {
@@ -33,7 +33,7 @@ where
 }
 
 /// Performs ssz decoding of bytes into struct.
-pub fn decode<T>(ssz_bytes: Vec<u8>) -> Result<T, anyhow::Error>
+pub fn decode<T>(ssz_bytes: Vec<u8>) -> Result<T>
 where
     T: Decode,
 {
@@ -52,7 +52,7 @@ where
 /// Performs snappy compression on bytes.
 ///
 /// Takes ssz bytes, returns ssz_snappy bytes.
-pub fn compress(ssz_bytes: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+pub fn compress(ssz_bytes: Vec<u8>) -> Result<Vec<u8>> {
     /*
     Raw encoder (no frames):
     let mut snap_encoder = snap::raw::Encoder::new();
@@ -66,7 +66,7 @@ pub fn compress(ssz_bytes: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
 /// Performs decompression on snappy bytes.
 ///
 /// Takes ssz_snappy bytes, returns ssz bytes.
-pub fn decompress(ssz_snappy_bytes: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+pub fn decompress(ssz_snappy_bytes: Vec<u8>) -> Result<Vec<u8>> {
     /*
     Raw decoder (no frames):
     let mut snap_decoder = snap::raw::Decoder::new();
@@ -78,7 +78,7 @@ pub fn decompress(ssz_snappy_bytes: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
 }
 
 #[test]
-fn encode_decode() -> Result<(), anyhow::Error> {
+fn encode_decode() -> Result<()> {
     use crate::spec::{
         AddressAppearances, AddressIndexVolumeChapter, AppearanceTx, VolumeIdentifier,
     };

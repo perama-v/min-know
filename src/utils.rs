@@ -1,5 +1,5 @@
 //! Utility functions including string manipulation.
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use regex::Regex;
 
 use crate::{
@@ -22,7 +22,7 @@ pub fn chapter_dir_name(chapter: &str) -> String {
 /// Extracts a chapter identifier from a chapter directory name.
 ///
 /// E.g., a name: "chapter_0x4e" returns "4e" as byte vector.
-pub fn chapter_dir_to_id(chapter_dir: &str) -> Result<Vec<u8>, anyhow::Error> {
+pub fn chapter_dir_to_id(chapter_dir: &str) -> Result<Vec<u8>> {
     let hex = chapter_dir.trim_start_matches("chapter_0x");
     let bytes = hex::decode(hex)?;
     Ok(bytes)
@@ -35,7 +35,7 @@ pub fn chapter_dir_to_id(chapter_dir: &str) -> Result<Vec<u8>, anyhow::Error> {
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#addresschapter
 /// [2]: https://github.com/perama-v/address-appearance-index-specs#addressindexvolumechapter
-pub fn volume_file_name(chapter: &str, first_block: u32) -> Result<String, anyhow::Error> {
+pub fn volume_file_name(chapter: &str, first_block: u32) -> Result<String> {
     let volume = num_to_name(first_block);
     let chapter_name = format!("chapter_0x{}_volume_{:0<9}.ssz_snappy", chapter, volume);
     Ok(chapter_name)
@@ -55,7 +55,7 @@ pub fn num_to_name(block_number: u32) -> String {
 /// Converts a custom filename into a block number.
 ///
 /// E.g., file "chapter_0x4e_volume_014_500_000" becomes 14500000.
-pub fn name_to_num(filename: &str) -> Result<u32, anyhow::Error> {
+pub fn name_to_num(filename: &str) -> Result<u32> {
     let parts = Regex::new(
         r"(?x)
     (?P<first>\d{3})  # the first three.
@@ -78,7 +78,7 @@ pub fn name_to_num(filename: &str) -> Result<u32, anyhow::Error> {
 }
 
 /// Returns the first hex characters of an address to a DEPTH.
-pub fn address_to_chapter(address: &str) -> Result<String, anyhow::Error> {
+pub fn address_to_chapter(address: &str) -> Result<String> {
     let address = address.to_lowercase();
     let chapter = address
         .trim_start_matches("0x")
@@ -107,7 +107,7 @@ pub fn address_to_chapter(address: &str) -> Result<String, anyhow::Error> {
 /// assert_eq!(range.new, 15_499_999);
 /// # Ok::<(), anyhow::Error>(())
 /// ```
-pub fn volume_id_to_block_range(oldest_block: u32) -> Result<BlockRange, anyhow::Error> {
+pub fn volume_id_to_block_range(oldest_block: u32) -> Result<BlockRange> {
     let newest_block = oldest_block + BLOCKS_PER_VOLUME - 1;
     let range = BlockRange::new(oldest_block, newest_block)?;
     Ok(range)
@@ -116,7 +116,7 @@ pub fn volume_id_to_block_range(oldest_block: u32) -> Result<BlockRange, anyhow:
 /// Converts a hex string to byte vector
 ///
 /// Left pads with a zero if there are an odd number of characters.
-pub fn hex_string_to_bytes(input: &str) -> Result<Vec<u8>, anyhow::Error> {
+pub fn hex_string_to_bytes(input: &str) -> Result<Vec<u8>> {
     let mut hex_input = String::from("");
     let trimmed = input.trim_start_matches("0x");
     if trimmed.len() % 2 != 0 {
@@ -128,7 +128,7 @@ pub fn hex_string_to_bytes(input: &str) -> Result<Vec<u8>, anyhow::Error> {
 }
 
 #[test]
-fn odd_hex_length() -> Result<(), anyhow::Error> {
+fn odd_hex_length() -> Result<()> {
     let input = "0x30e";
     let bytes = hex_string_to_bytes(input)?;
     let output = hex::encode(bytes);
@@ -165,7 +165,7 @@ fn odd_hex_length() -> Result<(), anyhow::Error> {
 /// the data was encoded with these features, it is still compatible.
 /// - data PATCH != lib PATCH
 ///
-pub fn manifest_version_ok(filename: &str) -> Result<(), anyhow::Error> {
+pub fn manifest_version_ok(filename: &str) -> Result<()> {
     let parts = Regex::new(
         r"(?x)
     (?P<major>\d{2})  # the first two.

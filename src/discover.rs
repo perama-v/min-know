@@ -9,7 +9,7 @@
 
 use std::{fs, path::PathBuf};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use anyhow::Context;
 
 use crate::constants;
@@ -54,7 +54,7 @@ pub fn single_address(
     address: &str,
     source: &AddressIndexPath,
     network: &Network,
-) -> Result<Vec<AppearanceTx>, anyhow::Error> {
+) -> Result<Vec<AppearanceTx>> {
     let address = address.trim_start_matches("0x");
     let chapter = utils::address_to_chapter(address)?;
     let chap_dir = source.chapter_dir(&network, &chapter)?;
@@ -112,7 +112,7 @@ pub fn single_address(
 ///
 /// # Ok::<(), anyhow::Error>(())
 /// ```
-pub fn single_volume(path: PathBuf) -> Result<AddressIndexVolumeChapter, anyhow::Error> {
+pub fn single_volume(path: PathBuf) -> Result<AddressIndexVolumeChapter> {
     let ssz_snappy_data =
         fs::read(&path).with_context(|| format!("Failed to read files from {:?}", &path))?;
     // Decode and decompress

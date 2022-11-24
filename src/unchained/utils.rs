@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 use regex::Regex;
 use std::{fs, path::PathBuf};
 
@@ -20,7 +20,7 @@ impl ChunksDir {
     /// # Example
     /// If the chunk files are in "xyz/trueblocks/unchained/mainnet/finalized",
     /// then this is the path passed in.
-    pub fn new(dir_path: &PathBuf) -> Result<Self, anyhow::Error> {
+    pub fn new(dir_path: &PathBuf) -> Result<Self> {
         let files = fs::read_dir(dir_path)
             .with_context(|| format!("Failed to read dir from {:?}", dir_path))?;
         let mut paths: Vec<ChunkFile> = vec![];
@@ -40,7 +40,7 @@ impl ChunksDir {
     /// Obtains the details of chunk files relevant for a given block range.
     ///
     /// Chunks are relevant if they intersect the desired range.
-    pub fn for_range(&self, desired_range: &BlockRange) -> Result<Vec<&ChunkFile>, anyhow::Error> {
+    pub fn for_range(&self, desired_range: &BlockRange) -> Result<Vec<&ChunkFile>> {
         let mut relevant: Vec<&ChunkFile> = vec![];
         for chunk in &self.paths {
             if chunk.range.intersection_exists(desired_range) {
@@ -76,7 +76,7 @@ pub fn file_structure(h: &Header) -> Body {
 }
 
 /// Get first and last block that an index chunk covers.
-pub fn get_range(path: &PathBuf) -> anyhow::Result<BlockRange, anyhow::Error> {
+pub fn get_range(path: &PathBuf) -> anyhow::Result<BlockRange> {
     // Two 9 digit values .../123456789-123456789.bin
     let path_string = path
         .to_str()
@@ -100,7 +100,7 @@ pub fn get_range(path: &PathBuf) -> anyhow::Result<BlockRange, anyhow::Error> {
 pub fn no_unexpected_appearances(
     appearance: &TransactionId,
     uf: &UnchainedFile,
-) -> anyhow::Result<(), anyhow::Error> {
+) -> anyhow::Result<()> {
     if appearance.block < uf.present.old || appearance.block > uf.present.new {
         return Err(anyhow!(
             "file {:?} has appearance out of expected range ({}-{}). {:?}",

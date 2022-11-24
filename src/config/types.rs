@@ -9,11 +9,6 @@ pub trait DataName {
 }
 
 /// The starting point for setting up a new database.
-///
-/// # Example
-/// ```
-/// impl Config for AddressAppearanceIndex
-/// ```
 pub trait DatabaseConfig {
     type Name: DataName;
     type Source: SourceDataPath;

@@ -1,11 +1,13 @@
 use std::env;
 
+use anyhow::Result;
+
 use min_know::{
     types::{AddressIndexPath, Network},
     IndexConfig,
 };
 /// Uses a table of hashes to check if local index data matches that which is expected by the user.
-fn main() -> Result<(), anyhow::Error> {
+fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 

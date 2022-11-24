@@ -1,6 +1,6 @@
 use std::env;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use min_know::{
     contract_utils::metadata::cid_from_runtime_bytecode,
     types::{AddressIndexPath, Network},
@@ -17,7 +17,7 @@ use web3::types::BlockNumber;
 /// Additionally, the contract code can be inspected and the metadata
 /// extracted, which may contain a link to the contract ABI.
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+async fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 

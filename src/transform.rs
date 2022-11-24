@@ -1,7 +1,7 @@
 //! For creating a derivative index using the Unchained Index.
 //!
 //! Used to transform the Unchained Index into the address-appearance-index.
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 use std::collections::{hash_map::Entry, HashMap};
 use std::fs;
 
@@ -67,7 +67,7 @@ pub fn full_transform(
     source: &UnchainedPath,
     destination: &AddressIndexPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     let chunks_path = source.chunks_dir(network)?;
     let chunk_files: ChunksDir = ChunksDir::new(&chunks_path)?;
     let latest_mainnet = latest_block_in_chunks(&chunk_files)?;
@@ -82,7 +82,7 @@ fn create_specific_volume_files(
     network: &Network,
     chapter_dirs: Vec<ChapterDirectoryIdentifier>,
     chunk_files: ChunksDir,
-) -> Result<bool, anyhow::Error> {
+) -> Result<bool> {
     let mut modified_index = false;
     let destination_path = destination.index_dir(network)?;
     for chapter_info in chapter_dirs {
@@ -129,7 +129,7 @@ pub fn get_relevant_appearances(
     chunk_file_paths: Vec<&ChunkFile>,
     desired: BlockRange,
     leading_char: &str,
-) -> Result<AddressIndexVolumeChapter, anyhow::Error> {
+) -> Result<AddressIndexVolumeChapter> {
     let mut relevant_appearances: HashMap<Vec<u8>, Vec<TransactionId>> = HashMap::new();
     for chunk in chunk_file_paths {
         let path = chunk.path.to_owned();
@@ -203,7 +203,7 @@ pub struct ChapterDirectoryIdentifier {
 pub fn get_chapter_volumes(
     lowest_block_of_interest: u32,
     highest_block_in_chunks: u32,
-) -> Result<Vec<ChapterDirectoryIdentifier>, anyhow::Error> {
+) -> Result<Vec<ChapterDirectoryIdentifier>> {
     let mut target_files: Vec<ChapterDirectoryIdentifier> = vec![];
     let char_combinations = NUM_CHAPTERS;
     let volume_ids = complete_block_ranges(lowest_block_of_interest, highest_block_in_chunks)?;
@@ -222,7 +222,7 @@ pub fn get_chapter_volumes(
 ///
 /// If the chunks directory contains the latest chunk: "015433333-015455555.bin"
 /// the value 15_455_555 will be returned.
-pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32, anyhow::Error> {
+pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32> {
     let latest = chunks
         .paths
         .last()
@@ -248,7 +248,7 @@ pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32, anyhow::Error> 
 /// ## Exclude latest
 /// ```
 /// # use min_know::transform::complete_block_ranges;
-/// # use anyhow::anyhow;
+/// # use anyhow::{anyhow, Result};
 ///
 /// let mut block_ranges = complete_block_ranges(0, 15_467_800)?;
 /// assert_eq!(block_ranges.len(), 154);
@@ -280,7 +280,7 @@ pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32, anyhow::Error> 
 /// In the example below, the oldest `200_000` (from ranges `[0, 99_999] and [100_000, 199_999]`)
 /// and newest `67_801` (from range `[15_400_000, 15_499_999]`) blocks are excluded.
 /// ```
-/// # use anyhow::anyhow;
+/// # use anyhow::{anyhow, Result};
 /// # use min_know::{
 /// #     transform::complete_block_ranges,
 /// #     constants::BLOCKS_PER_VOLUME
@@ -297,7 +297,7 @@ pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32, anyhow::Error> 
 pub fn complete_block_ranges(
     oldest_desired_volume: u32,
     latest_height: u32,
-) -> Result<Vec<BlockRange>, anyhow::Error> {
+) -> Result<Vec<BlockRange>> {
     if oldest_desired_volume % BLOCKS_PER_VOLUME != 0 {
         return Err(anyhow!("Must pass the first block in a volume."));
     }
@@ -324,7 +324,7 @@ pub fn transform_missing_chunks(
     source: &UnchainedPath,
     destination: &AddressIndexPath,
     network: &Network,
-) -> Result<bool, anyhow::Error> {
+) -> Result<bool> {
     let chunks_path = source.chunks_dir(network)?;
     let chunk_files: ChunksDir = ChunksDir::new(&chunks_path)?;
     let latest_mainnet = latest_block_in_chunks(&chunk_files)?;

@@ -10,7 +10,7 @@
 //! See the address-appearance-index [spec][1] for the required types.
 //!
 //! [1]: [specification](https://github.com/perama-v/address-appearance-index-specs).
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 use directories;
 
 use std::{fs, path::PathBuf};
@@ -137,7 +137,7 @@ impl UnchainedPath {
     /// returns the chunks directory as follows:
     ///
     /// CUSTOM_PATH/samples/unchained_index_NETWORK
-    pub fn chunks_dir(&self, network: &Network) -> Result<PathBuf, anyhow::Error> {
+    pub fn chunks_dir(&self, network: &Network) -> Result<PathBuf> {
         match self {
             UnchainedPath::Custom(p) => {
                 // append samples/unchained_index_NETWORK
@@ -230,7 +230,7 @@ impl AddressIndexPath {
     ///     - {FOLDERID_RoamingAppData}/address-appearance-index/data/address_appearance_index_mainnet
     /// - macOS: Standard Directories guidelines.
     ///     - $HOME/Library/Application Support/address-appearance-index/address_appearance_index_mainnet
-    pub fn index_dir(&self, network: &Network) -> Result<PathBuf, anyhow::Error> {
+    pub fn index_dir(&self, network: &Network) -> Result<PathBuf> {
         let index_dir_name = format!("address_appearance_index_{}", network.name());
         match directories::ProjectDirs::from("", "", "address-appearance-index") {
             Some(p) => match self {
@@ -250,13 +250,13 @@ impl AddressIndexPath {
     /// # Example
     /// For `mainnet` and chapter "0x4e", returns
     /// "xyz/address_appearance_index_mainnet/chapter_0x4e"
-    pub fn chapter_dir(&self, network: &Network, chapter: &str) -> Result<PathBuf, anyhow::Error> {
+    pub fn chapter_dir(&self, network: &Network, chapter: &str) -> Result<PathBuf> {
         let index_dir = self.index_dir(network);
         let chap_name = chapter_dir_name(chapter);
         Ok(index_dir?.join(chap_name))
     }
     /// Returns the path of a given manifest file.
-    pub fn manifest_file(&self, network: &Network) -> Result<PathBuf, anyhow::Error> {
+    pub fn manifest_file(&self, network: &Network) -> Result<PathBuf> {
         // Use first file starting with "manifest".
         let index_dir = self.index_dir(network)?;
         let manifest = fs::read_dir(&index_dir)
@@ -276,7 +276,7 @@ impl AddressIndexPath {
         network: &Network,
         chapter: &str,
         first_block: u32,
-    ) -> Result<PathBuf, anyhow::Error> {
+    ) -> Result<PathBuf> {
         let chap_dir = self.chapter_dir(network, chapter)?;
         let filename = volume_file_name(chapter, first_block)?;
         Ok(chap_dir.join(filename))
@@ -284,7 +284,7 @@ impl AddressIndexPath {
     /// Returns the latest volume file id present in the index.
     ///
     /// Just checks chapter 0x00 to see what the block height is up to.
-    pub fn latest_volume(&self, network: &Network) -> Result<VolumeIdentifier, anyhow::Error> {
+    pub fn latest_volume(&self, network: &Network) -> Result<VolumeIdentifier> {
         let mut highest: u32 = 0;
         for file in fs::read_dir(self.chapter_dir(network, "00")?)? {
             let name = file?.file_name();
@@ -345,7 +345,7 @@ impl Default for Network {
 
 impl Network {
     /// Creates a new network config. Checks parameters.
-    pub fn new(bytes_per_address: u32, network_name: String) -> Result<Self, anyhow::Error> {
+    pub fn new(bytes_per_address: u32, network_name: String) -> Result<Self> {
         if network_name.as_bytes().len() as u32 > MAX_NETWORK_NAME_BYTES || !network_name.is_ascii()
         {
             return Err(anyhow!(

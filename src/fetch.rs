@@ -1,5 +1,5 @@
 //! This module can be used to obtain index-related data of different kinds.
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use futures_util::stream::StreamExt;
 use reqwest::Url;
 use std::{fs, path::PathBuf};
@@ -43,7 +43,7 @@ pub async fn samples(
     index_path: &AddressIndexPath,
     unchained_path: &UnchainedPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     // Need both the address-appearance-index and the Unchained Index samples.
     get_unchained_samples(unchained_path, network).await?;
     get_address_appearance_index_samples(unchained_path, index_path, network)?;
@@ -54,7 +54,7 @@ pub async fn samples(
 async fn get_unchained_samples(
     path: &UnchainedPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     // Are the samples in the right place?
     match unchained_samples_present(&path, network) {
         Ok(true) => {
@@ -85,7 +85,7 @@ async fn get_unchained_samples(
 async fn download_unchained_samples(
     path: &UnchainedPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     // Download from lib repo.
     let client = reqwest::Client::new();
     let chunks_dir = path.chunks_dir(&network)?;
@@ -115,7 +115,7 @@ fn get_address_appearance_index_samples(
     unchained_path: &UnchainedPath,
     desired_path: &AddressIndexPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     // Check if appearance index files are in right location.
     match appearance_index_samples_present(&desired_path, network) {
         Ok(true) => {
@@ -151,7 +151,7 @@ fn get_address_appearance_index_samples(
 pub fn appearance_index_samples_present(
     path: &AddressIndexPath,
     network: &Network,
-) -> Result<bool, anyhow::Error> {
+) -> Result<bool> {
     let the_manifest = path.manifest_file(network)?;
     fs::read(the_manifest.as_path())?;
     let a_volume = path
@@ -165,7 +165,7 @@ pub fn appearance_index_samples_present(
 pub fn unchained_samples_present(
     path: &UnchainedPath,
     network: &Network,
-) -> Result<bool, anyhow::Error> {
+) -> Result<bool> {
     let file_path = path.chunks_dir(network)?.join(SAMPLE_CHUNKS[0]);
     fs::read(&file_path)?;
     Ok(true)
@@ -178,7 +178,7 @@ fn move_unchained_samples(
     local: &UnchainedPath,
     desired: &UnchainedPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     let local_chunks_path = local.chunks_dir(network)?;
     let desired_chunks_path = desired.chunks_dir(network)?;
     for chunk in SAMPLE_CHUNKS {
@@ -203,7 +203,7 @@ fn move_address_appearance_index_samples(
     local: &AddressIndexPath,
     desired: &AddressIndexPath,
     network: &Network,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     let local_index_path = local.index_dir(network)?;
     let desired_index_path = desired.index_dir(network)?;
 

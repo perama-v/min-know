@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use bs58;
 use cbor::{Decoder, Cbor};
 
@@ -15,7 +15,7 @@ use cbor::{Decoder, Cbor};
 /// the swarm hash (not currently fetched).
 pub fn cid_from_runtime_bytecode(
     runtime_bytecode: &[u8],
-) -> Result<Option<MetadataSource>, anyhow::Error> {
+) -> Result<Option<MetadataSource>> {
     let metadata = read_metadata(runtime_bytecode)?;
     cid_from_metadata(metadata)
 }
@@ -31,7 +31,7 @@ pub enum MetadataSource {
 ///
 /// The runtime bytecode must first have the contract code and metadata-length bytes
 /// removed prior to being passed here.
-fn cid_from_metadata(metadata: &[u8]) -> Result<Option<MetadataSource>, anyhow::Error> {
+fn cid_from_metadata(metadata: &[u8]) -> Result<Option<MetadataSource>> {
     let mut d = Decoder::from_bytes(metadata);
     let cbor = d
         .items()
@@ -47,7 +47,7 @@ fn cid_from_metadata(metadata: &[u8]) -> Result<Option<MetadataSource>, anyhow::
 /// Looks for known sources (Swarm, IFPS) in the CBOR hashmap.
 ///
 /// Known keys have the following form: "ipfs" or "bzzr0" or "bzzr1".
-fn determine_source(m: HashMap<String, Cbor>) -> Result<Option<MetadataSource>, anyhow::Error> {
+fn determine_source(m: HashMap<String, Cbor>) -> Result<Option<MetadataSource>> {
     for key in m.keys() {
         let Some(source) = m.get(key) else { continue };
         // Key exists
@@ -105,7 +105,7 @@ fn cid_extraction_2() {
 /// input: <runtime bytecode><metadata><metadata length>
 ///
 /// output: <metadata>
-fn read_metadata(code: &[u8]) -> Result<&[u8], anyhow::Error> {
+fn read_metadata(code: &[u8]) -> Result<&[u8]> {
     let suffix_len = 2;
     let code_len = code.len();
     let metadata_len_bytes = &code[(code_len - suffix_len)..(code_len)];

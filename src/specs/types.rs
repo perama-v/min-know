@@ -106,17 +106,20 @@ pub enum SpecId {
 ///
 /// A volume defined using an SSZ fixed vector.
 /// ```
+/// # use ssz_types::{FixedVector, typenum::U2};
+/// # use min_know::specs::types::VolumeIdMethods;
 /// struct VolumeId1 {
-///     val: FixedVector<u8, 2>
+///     val: FixedVector<u8, U2>
 /// }
-/// impl VolumeIdMarker for VolumeId1 {}
+/// impl VolumeIdMethods for VolumeId1 {}
 /// ```
 /// A volume defined using an integer.
 /// ```
+/// # use min_know::specs::types::VolumeIdMethods;
 /// struct VolumeId2 {
 ///     detail: u32
 /// }
-/// impl VolumeIdMarker for VolumeId2 {}
+/// impl VolumeIdMethods for VolumeId2 {}
 /// ```
 /// ## Rationale
 /// The generic functions in database/types.rs use a set of

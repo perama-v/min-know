@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use ssz_derive::{Encode, Decode};
 use ssz_types::{FixedVector, typenum::{U1073741824, U20}, VariableList};
@@ -68,7 +68,7 @@ impl DataSpec for AdApInSpec {
         todo!()
     }
     // Key is a hex string. Converts it to an ssz vector.
-    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey, anyhow::Error>
+    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>
       {
         let raw_bytes = hex::decode(key)?;
         match RecordKey::new(raw_bytes) {

@@ -3,6 +3,8 @@
 //! [1]: https://github.com/perama-v/address-appearance-index-specs
 use std::str::from_utf8;
 
+
+use anyhow::Result;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ssz;
 use ssz_derive::{Decode, Encode};
@@ -229,14 +231,14 @@ pub struct IndexManifest {
 
 impl IndexManifest {
     /// Gets the network name in String form.
-    pub fn network_name(&self) -> Result<String, anyhow::Error> {
+    pub fn network_name(&self) -> Result<String> {
         Ok(String::from_utf8(self.network.name.to_vec())?)
     }
     /// Gets the file name of the manifest, without the file suffix.
     ///
     /// # Example
     /// "manifest_v_00_01_00" (no trailing ".ssz" or ".ssz_snappy").
-    pub fn file_name_no_encoding(&self) -> Result<String, anyhow::Error> {
+    pub fn file_name_no_encoding(&self) -> Result<String> {
         Ok(format!(
             "manifest_v_{:02}_{:02}_{:02}",
             self.version.major, self.version.minor, self.version.patch

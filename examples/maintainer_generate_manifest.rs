@@ -1,11 +1,15 @@
+use std::env;
+
+use anyhow::Result;
+
 use min_know::{
     types::{AddressIndexPath, Network, UnchainedPath},
     IndexConfig,
 };
-use std::env;
+
 
 /// Creates the index manifest.
-fn main() -> Result<(), anyhow::Error> {
+fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 

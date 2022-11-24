@@ -8,7 +8,7 @@
 //! Furhter details can be read about in the [spec][1].
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Result};
 use cid::{
     multihash::{Code, MultihashDigest},
     Cid,
@@ -52,7 +52,7 @@ use crate::{
 /// data is serialized and compressed and written to a file called
 /// "manifest.ssz_snappy" under the main data directory, alongside
 /// the divisin folders.
-pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow::Error> {
+pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<()> {
     let chapters = get_chapter_dirs(path, network)?;
     let mut chapter_metadata: Vec<ManifestChapter> = vec![];
     let mut most_recent_volume: u32 = 0;
@@ -165,7 +165,7 @@ pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<(), anyhow
 /// The index directory will be searched for the manifest file and the spec
 /// version extracted from the file name. Will `Error` in the event of a major
 /// incompatibility with the spec version in the library.
-pub fn read(path: &AddressIndexPath, network: &Network) -> Result<IndexManifest, anyhow::Error> {
+pub fn read(path: &AddressIndexPath, network: &Network) -> Result<IndexManifest> {
     let filename = path.manifest_file(network)?;
     let json_format =
         fs::read(&filename).with_context(|| format!("Failed to read file: {:?}", &filename))?;
@@ -196,7 +196,7 @@ pub fn read(path: &AddressIndexPath, network: &Network) -> Result<IndexManifest,
 /// ## Errors
 /// Only used on complete index data (for generating a manifest).
 /// Errors if not using sample data and there are missing chapter directories.
-fn get_chapter_dirs(path: &AddressIndexPath, network: &Network) -> Result<ReadDir, anyhow::Error> {
+fn get_chapter_dirs(path: &AddressIndexPath, network: &Network) -> Result<ReadDir> {
     let index = path.index_dir(network)?;
     match path {
         AddressIndexPath::Sample => {}
@@ -228,7 +228,7 @@ fn get_chapter_dirs(path: &AddressIndexPath, network: &Network) -> Result<ReadDi
 pub fn completeness_audit(
     index_path: &AddressIndexPath,
     network: &Network,
-) -> Result<IndexCompleteness, anyhow::Error> {
+) -> Result<IndexCompleteness> {
     let manifest = read(index_path, network)?;
     let volumes_per_chapter = manifest.latest_volume_identifier.oldest_block / BLOCKS_PER_VOLUME;
     let mut audit = IndexCompleteness {
@@ -281,7 +281,7 @@ pub fn get_chapter_completeness(
     network: &Network,
     div: &ManifestChapter,
     chap_str: &str,
-) -> Result<ChapterCompleteness, anyhow::Error> {
+) -> Result<ChapterCompleteness> {
     let mut c = ChapterCompleteness {
         id: div.identifier.clone(),
         ok: vec![],

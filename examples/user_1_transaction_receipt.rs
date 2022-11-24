@@ -1,6 +1,6 @@
 use std::env;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use min_know::{
     types::{AddressIndexPath, Network},
     IndexConfig,
@@ -10,7 +10,7 @@ use web3::types::H256;
 /// Uses index data and a theoretical local Ethereum portal node to
 /// decode information for a user.
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+async fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 

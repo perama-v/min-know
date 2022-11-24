@@ -23,7 +23,7 @@
 //!     discover::single_address,
 //!     IndexConfig,
 //!     types::{AddressIndexPath, Network}};
-//! use anyhow::anyhow;
+//! use anyhow::{anyhow, Result};
 //!
 //! let data_dir = AddressIndexPath::Sample;
 //! let network = Network::default();
@@ -152,6 +152,8 @@ pub mod types;
 pub mod unchained;
 pub mod utils;
 
+use anyhow::Result;
+
 use constants::BLOCKS_PER_VOLUME;
 use spec::{AppearanceTx, IndexManifest};
 use types::{AddressIndexPath, IndexCompleteness, Network, UnchainedPath};
@@ -189,14 +191,14 @@ impl IndexConfig {
     }
     /// Creates the full address-appearance-index using the Unchained Index.
     /// Creates a new manifest file.
-    pub fn maintainer_create_index(&self, source: &UnchainedPath) -> Result<(), anyhow::Error> {
+    pub fn maintainer_create_index(&self, source: &UnchainedPath) -> Result<()> {
         transform::full_transform(source, &self.path, &self.network)?;
         manifest::generate(&self.path, &self.network)?;
         Ok(())
     }
     /// Updates an existing address-appearance-index using additional Unchained Index chunks.
     /// Generates a new manifest if updates are made.
-    pub fn maintainer_extend_index(&self, source: &UnchainedPath) -> Result<(), anyhow::Error> {
+    pub fn maintainer_extend_index(&self, source: &UnchainedPath) -> Result<()> {
         let made_changes = transform::transform_missing_chunks(source, &self.path, &self.network)?;
         if made_changes {
             manifest::generate(&self.path, &self.network)?;
@@ -209,31 +211,31 @@ impl IndexConfig {
         Ok(())
     }
     /// Creates a new manifest file.
-    pub fn maintainer_generate_manifest(&self) -> Result<(), anyhow::Error> {
+    pub fn maintainer_generate_manifest(&self) -> Result<()> {
         manifest::generate(&self.path, &self.network)?;
         Ok(())
     }
-    pub fn read_manifest(&self) -> Result<IndexManifest, anyhow::Error> {
+    pub fn read_manifest(&self) -> Result<IndexManifest> {
         manifest::read(&self.path, &self.network)
     }
     /// Retrieves all transaction identifiers for all transactions in which the given address appears.
-    pub fn find_transactions(&self, address: &str) -> Result<Vec<AppearanceTx>, anyhow::Error> {
+    pub fn find_transactions(&self, address: &str) -> Result<Vec<AppearanceTx>> {
         discover::single_address(address, &self.path, &self.network)
     }
     /// Checks local data against the contents of the manifest.
-    pub fn check_completeness(&self) -> Result<IndexCompleteness, anyhow::Error> {
+    pub fn check_completeness(&self) -> Result<IndexCompleteness> {
         manifest::completeness_audit(&self.path, &self.network)
     }
     /// TODO
     pub fn maintainer_audit_correctness(
         &self,
         compare_with: &UnchainedPath,
-    ) -> Result<(), anyhow::Error> {
+    ) -> Result<()> {
         todo!("Index audit against Unchained Index data not yet implemented.");
         Ok(())
     }
     /// Fetches the sample data and places it in the project data directory.
-    pub async fn get_sample_data(&self, unchained: &UnchainedPath) -> Result<(), anyhow::Error> {
+    pub async fn get_sample_data(&self, unchained: &UnchainedPath) -> Result<()> {
         fetch::samples(&self.path, unchained, &self.network).await?;
         manifest::generate(&self.path, &self.network)?;
         Ok(())
