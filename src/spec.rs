@@ -3,7 +3,6 @@
 //! [1]: https://github.com/perama-v/address-appearance-index-specs
 use std::str::from_utf8;
 
-
 use anyhow::Result;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ssz;

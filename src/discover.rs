@@ -9,8 +9,8 @@
 
 use std::{fs, path::PathBuf};
 
-use anyhow::{anyhow, Result};
 use anyhow::Context;
+use anyhow::{anyhow, Result};
 
 use crate::constants;
 use crate::encoding;

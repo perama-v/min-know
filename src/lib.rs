@@ -138,7 +138,6 @@ pub mod extraction;
 pub mod samples;
 pub mod specs;
 
-
 pub mod constants;
 pub mod contract_utils;
 pub mod discover;
@@ -227,10 +226,7 @@ impl IndexConfig {
         manifest::completeness_audit(&self.path, &self.network)
     }
     /// TODO
-    pub fn maintainer_audit_correctness(
-        &self,
-        compare_with: &UnchainedPath,
-    ) -> Result<()> {
+    pub fn maintainer_audit_correctness(&self, compare_with: &UnchainedPath) -> Result<()> {
         todo!("Index audit against Unchained Index data not yet implemented.");
         Ok(())
     }

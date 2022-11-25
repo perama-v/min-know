@@ -62,7 +62,7 @@ pub trait DataSpec {
     const MAX_VOLUMES: usize;
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
-    type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits<'a>;
+    type AssociatedChapterId; // : ChapterIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits<'a>;
 
     type AssociatedRecordKey: RecordKeyMethods;
@@ -77,7 +77,9 @@ pub trait DataSpec {
     fn get_all_chapter_ids() -> Vec<Self::AssociatedChapterId>;
     fn get_all_volume_ids() -> Vec<Self::AssociatedVolumeId>;
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
-    fn record_key_to_chapter_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedChapterId;
+    fn record_key_to_chapter_id(
+        record_key: Self::AssociatedRecordKey,
+    ) -> Result<Self::AssociatedChapterId>;
     /// Used to check the key for a piece of raw data when creating new database.
     fn record_key_matches_chapter(
         record_key: &Self::AssociatedRecordKey,

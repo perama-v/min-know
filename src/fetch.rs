@@ -51,10 +51,7 @@ pub async fn samples(
 }
 
 /// Obtains the Unchained Index sample files.
-async fn get_unchained_samples(
-    path: &UnchainedPath,
-    network: &Network,
-) -> Result<()> {
+async fn get_unchained_samples(path: &UnchainedPath, network: &Network) -> Result<()> {
     // Are the samples in the right place?
     match unchained_samples_present(&path, network) {
         Ok(true) => {
@@ -82,10 +79,7 @@ async fn get_unchained_samples(
 /// Downloads the sample Unchained Index chunk files from IPFS.
 ///
 /// Saves five 25MB files locally in the sample directory.
-async fn download_unchained_samples(
-    path: &UnchainedPath,
-    network: &Network,
-) -> Result<()> {
+async fn download_unchained_samples(path: &UnchainedPath, network: &Network) -> Result<()> {
     // Download from lib repo.
     let client = reqwest::Client::new();
     let chunks_dir = path.chunks_dir(&network)?;
@@ -162,10 +156,7 @@ pub fn appearance_index_samples_present(
 }
 
 /// Tests if the Unchained Index sample chunk files are present.
-pub fn unchained_samples_present(
-    path: &UnchainedPath,
-    network: &Network,
-) -> Result<bool> {
+pub fn unchained_samples_present(path: &UnchainedPath, network: &Network) -> Result<bool> {
     let file_path = path.chunks_dir(network)?.join(SAMPLE_CHUNKS[0]);
     fs::read(&file_path)?;
     Ok(true)

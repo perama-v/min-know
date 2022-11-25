@@ -7,7 +7,6 @@ use min_know::{
     IndexConfig,
 };
 
-
 /// Creates the index manifest.
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.

@@ -1,7 +1,10 @@
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use ssz_derive::{Encode, Decode};
-use ssz_types::{FixedVector, typenum::{U1073741824, U20}, VariableList};
+use ssz_derive::{Decode, Encode};
+use ssz_types::{
+    typenum::{U1073741824, U2, U20},
+    FixedVector, VariableList,
+};
 use tree_hash_derive::TreeHash;
 
 use super::types::*;
@@ -19,7 +22,7 @@ impl DataSpec for AdApInSpec {
 
     type AssociatedVolumeId = VolId;
 
-    type AssociatedChapterId = ChapId;
+    type AssociatedChapterId = ChapterId;
 
     type AssociatedChapter = Chapter;
 
@@ -28,7 +31,7 @@ impl DataSpec for AdApInSpec {
     type AssociatedRecordValue = RecordValue;
 
     fn spec_name() -> SpecId {
-        todo!()
+        SpecId::AddressAppearanceIndex
     }
 
     fn num_chapters() -> usize {
@@ -55,9 +58,14 @@ impl DataSpec for AdApInSpec {
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId {
         todo!()
     }
-
-    fn record_key_to_chapter_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedChapterId {
-        todo!()
+    /// Gets the ChapterIds relevant for a key.
+    fn record_key_to_chapter_id(
+        record_key: Self::AssociatedRecordKey,
+    ) -> Result<Self::AssociatedChapterId> {
+        let bytes = record_key[0..2].to_vec();
+        Ok(ChapterId {
+            val: <_>::from(bytes),
+        })
     }
 
     fn record_key_matches_chapter(
@@ -68,12 +76,14 @@ impl DataSpec for AdApInSpec {
         todo!()
     }
     // Key is a hex string. Converts it to an ssz vector.
-    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>
-      {
-        let raw_bytes = hex::decode(key)?;
+    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
+        let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
         match RecordKey::new(raw_bytes) {
             Ok(q) => Ok(q),
-            Err(e) => Err(anyhow!("could not turn record_key bytes into ssz vector {:?}", e))
+            Err(e) => Err(anyhow!(
+                "could not turn record_key bytes into ssz vector {:?}",
+                e
+            )),
         }
     }
 
@@ -90,14 +100,15 @@ impl RecordKeyMethods for RecordKey {}
 pub struct VolId {}
 impl VolumeIdMethods for VolId {}
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct ChapId {}
-impl ChapterIdMethods for ChapId {}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct ChapterId {
+    val: FixedVector<u8, U2>,
+}
+impl ChapterIdMethods for ChapterId {}
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Chapter {}
 impl ChapterMethods for Chapter {}
-
 
 pub type DefaultBytesPerAddress = U20;
 pub type MaxTxsPerVolume = U1073741824;
