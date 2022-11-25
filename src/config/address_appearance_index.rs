@@ -58,8 +58,8 @@ impl DataName for Name {
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct AdApConfig {
-    source: Source,
-    destination: Destination,
+    pub source: Source,
+    pub destination: Destination,
 }
 
 impl AdApConfig {

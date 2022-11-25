@@ -79,7 +79,7 @@ impl<T: DataSpec> Todd<T> {
         // Get ChapterId
         let chapter_id = T::record_key_to_chapter_id(record_key)?;
         // Get Chapter Files
-
+        let dir = self.config.source_root();
         // Read each file and collect matching Values
         todo!()
     }

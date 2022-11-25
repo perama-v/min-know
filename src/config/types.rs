@@ -71,5 +71,14 @@ where
 #[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize)]
 pub enum ConfigsAvailable {
     AdApInConfig(AdApConfig),
-    SourcifyConfig(AdApConfig),
+    SourcifyConfig(),
+}
+
+impl ConfigsAvailable {
+    pub fn source_root(&self) -> Result<PathBuf> {
+        match self {
+            ConfigsAvailable::AdApInConfig(x) => x.source.root_dir(),
+            ConfigsAvailable::SourcifyConfig() => todo!(),
+        }
+    }
 }
