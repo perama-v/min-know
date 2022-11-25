@@ -1,11 +1,13 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, default};
 
 use anyhow::Result;
+use serde::Deserialize;
 
 use super::types::*;
-
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub enum Source {
     Sample,
+    #[default]
     Default,
     Custom(PathBuf),
 }
@@ -16,8 +18,10 @@ impl SourceDataPath for Source {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub enum Destination {
     Sample,
+    #[default]
     Default,
     Custom(PathBuf),
 }
@@ -52,6 +56,7 @@ impl DataName for Name {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct AdApConfig {
     source: Source,
     destination: Destination,

@@ -4,26 +4,26 @@ use std::{collections::BTreeMap, fmt::Debug};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::types::{DataConfigMethods, DestinationDataPath, DirLocation, SourceDataPath},
+    config::types::{DataConfigMethods, DestinationDataPath, DirLocation, SourceDataPath, ConfigsAvailable},
     specs::types::{DataSpec, SpecId},
 };
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
-pub struct Todd<T: DataSpec, U: DataConfigMethods> {
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+pub struct Todd<T: DataSpec> {
     pub chapters: Vec<Chapter<T>>,
-    pub config: U,
+    pub config: ConfigsAvailable,
 }
 
 /// Implement generic methods common to all databases.
-impl<T: DataSpec, U: DataConfigMethods> Todd<T, U> {
+impl<T: DataSpec> Todd<T> {
     pub fn new<V, W>(specification: SpecId, directories: DirLocation<V, W>) -> Result<Self>
     where
         V: SourceDataPath,
         W: DestinationDataPath,
     {
         // Use the spec to then get the DataConfig.
-        let config: U = directories.to_config(specification)?;
+        let config = directories.to_config(specification)?;
 
         Ok(Self {
             chapters: vec![],
@@ -58,7 +58,7 @@ impl<T: DataSpec, U: DataConfigMethods> Todd<T, U> {
         let source_data: Vec<(&str, V)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
             let record_key = T::raw_key_as_record_key(raw_key)?;
-            if T::record_key_matches_chapter(&record_key, vol, chapter) {
+            if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val);
                 elems.push(record_value)
             }

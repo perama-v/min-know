@@ -3,9 +3,9 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{address_appearance_index::Config, types::DirLocation},
+    config::{types::DirLocation},
     database::types::Todd,
-    specs::address_appearance_index::AdApInSpec,
+    specs::{address_appearance_index::AdApInSpec, types::SpecId},
 };
 use ssz::Encode;
 
@@ -17,7 +17,7 @@ fn main() -> Result<()> {
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
 
-    let db = Todd::new(SpecId::AddressAppearanceIndex, DirLocation::Sample);
+    let db = Todd::new(SpecId::AddressAppearanceIndex, DirLocation::Sample)?;
 
     println!(
         "DB is {:#?}, with name {} and num chapters {}",

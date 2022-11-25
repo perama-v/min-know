@@ -27,11 +27,11 @@ impl<'a, T> UsefulTraits<'a> for T where
 {
 }
 
-pub trait UsefulTraitsSszFriendly<'a>:
+pub trait UsefulTraits2<'a>:
     Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a>
 {
 }
-impl<'a, T> UsefulTraitsSszFriendly<'a> for T where
+impl<'a, T> UsefulTraits2<'a> for T where
     T: Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a>
 {
 }
@@ -62,11 +62,11 @@ pub trait DataSpec {
     const MAX_VOLUMES: usize;
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
-    type AssociatedChapterId; // : ChapterIdMethods + for<'a> UsefulTraits<'a>;
+    type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits<'a>;
 
     type AssociatedRecordKey: RecordKeyMethods;
-    type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraitsSszFriendly<'a>;
+    type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
 
     fn spec_name() -> SpecId;
     fn num_chapters() -> usize {

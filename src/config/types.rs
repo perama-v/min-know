@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use serde::Deserialize;
 
 use crate::{
     spec::VolumeIdentifier,
@@ -52,9 +53,7 @@ where
     U: DestinationDataPath,
 {
     /// Combines the SpecId and DirLocation enums to get specific dir paths and settings.
-    pub fn to_config<V>(&self, spec: SpecId) -> Result<ConfigsAvailable>
-    where
-        V: DataConfigMethods,
+    pub fn to_config(&self, spec: SpecId) -> Result<ConfigsAvailable>
     {
         let data_config: ConfigsAvailable = match spec {
             SpecId::AddressAppearanceIndex => {
@@ -69,6 +68,7 @@ where
     }
 }
 
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize)]
 pub enum ConfigsAvailable {
     AdApInConfig(AdApConfig),
     SourcifyConfig(AdApConfig),
