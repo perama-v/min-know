@@ -9,10 +9,7 @@
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
 use anyhow::{anyhow, Context, Result};
-use cid::{
-    multihash::{Code, MultihashDigest},
-    Cid,
-};
+
 use ssz_types::FixedVector;
 use std::{
     fs::{self, ReadDir},
@@ -20,10 +17,6 @@ use std::{
     vec,
 };
 use tree_hash::TreeHash;
-use web3::{
-    ethabi::ethereum_types,
-    types::{H256, U256},
-};
 
 use crate::{
     constants::{

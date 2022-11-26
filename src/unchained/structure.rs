@@ -15,7 +15,7 @@ pub struct Header {
 
 impl Header {
     /// Obtains values from file header and validates magic number.
-    pub fn from_reader(mut rdr: impl Read, path: &PathBuf) -> anyhow::Result<Header> {
+    pub fn from_reader(mut rdr: impl Read, path: &PathBuf) -> Result<Header> {
         let mut magic: [u8; VAL] = [0; VAL];
         rdr.read_exact(&mut magic)?;
         if magic != MAGIC {

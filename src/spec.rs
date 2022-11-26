@@ -1,16 +1,13 @@
 //! Types defined in the address-appearance-index [specification][1].
 //!
 //! [1]: https://github.com/perama-v/address-appearance-index-specs
-use std::str::from_utf8;
-
 use anyhow::Result;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use ssz;
 use ssz_derive::{Decode, Encode};
 use ssz_types::{FixedVector, VariableList};
 use tree_hash::Hash256;
 use tree_hash_derive::TreeHash;
-use web3::types::U256;
 
 use crate::{
     constants::{

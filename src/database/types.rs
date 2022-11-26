@@ -1,10 +1,11 @@
 use anyhow::Result;
-use std::{collections::BTreeMap, fmt::Debug};
+use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
-    specs::types::{DataSpec, SpecId}, config::dirs::{ConfigStruct, DirNature},
+    config::dirs::{ConfigStruct, DataKind, DirNature},
+    specs::types::DataSpec,
 };
 
 /// The definition for the entire new database.
@@ -16,7 +17,7 @@ pub struct Todd<T: DataSpec> {
 
 /// Implement generic methods common to all databases.
 impl<T: DataSpec> Todd<T> {
-    pub fn new(specification: SpecId, directories: DirNature) -> Result<Self> {
+    pub fn new(specification: DataKind, directories: DirNature) -> Result<Self> {
         // Use the spec to then get the DataConfig.
         let config = directories.to_config(specification);
 
@@ -71,12 +72,10 @@ impl<T: DataSpec> Todd<T> {
     /// Obtains the values that match a particular key
     pub fn read_record_key(&self, raw_record_key: &str) -> Result<T::AssociatedRecordValue> {
         let record_key = T::raw_key_as_record_key(raw_record_key)?;
-        // Get ChapterId
         let chapter_id = T::record_key_to_chapter_id(record_key)?;
-        // Get Chapter Files
         let dir = self.config.source_root_dir();
         // Read each file and collect matching Values
-        todo!()
+        todo!("Port discover::single_address()")
     }
 }
 

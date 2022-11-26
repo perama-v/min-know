@@ -1,11 +1,8 @@
 //! IPFS-related helpers like CID computation.
-use std::convert::TryFrom;
-use std::str::from_utf8;
-
 use anyhow::Result;
 
 use cid::multihash::{Code, MultihashDigest};
-use cid::{Cid, CidGeneric};
+use cid::Cid;
 
 /// Computes the CIDv1 for the given bytes.
 pub fn cid_v1_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {

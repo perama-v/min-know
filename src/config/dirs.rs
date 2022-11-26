@@ -1,12 +1,25 @@
 use std::path::PathBuf;
 
-use anyhow::{Result};
+use anyhow::Result;
 use serde::Deserialize;
 
-use crate::{
-    spec::VolumeIdentifier,
-    specs::types::{SpecId},
-};
+use crate::spec::VolumeIdentifier;
+
+use super::address_appearance_index::Network;
+
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize)]
+pub enum DataKind {
+    AddressAppearanceIndex(Network),
+    Sourcify,
+    FourByte,
+}
+
+impl Default for DataKind {
+    fn default() -> Self {
+        DataKind::AddressAppearanceIndex(Network::default())
+    }
+}
+
 pub struct PathPair {
     pub source: PathBuf,
     pub destination: PathBuf,
@@ -20,38 +33,38 @@ pub enum DirNature {
 
 impl DirNature {
     /// Combines the SpecId and DirNature enums to get specific dir paths and settings.
-    pub fn to_config(self, spec: SpecId) -> ConfigStruct {
-        match spec {
-            SpecId::AddressAppearanceIndex => match self {
+    pub fn to_config(self, data: DataKind) -> ConfigStruct {
+        match data {
+            DataKind::AddressAppearanceIndex(ref n) => match self {
                 DirNature::Sample => {
-                    ConfigStruct::new(spec, "./adapsamplesource", "./adapsampldest")
+                    ConfigStruct::new(data, "./adapsamplesource", "./adapsampldest")
                 }
                 DirNature::Default => {
-                    ConfigStruct::new(spec, "./adapdefaultsource", "./adadefaultdest")
+                    ConfigStruct::new(data, "./adapdefaultsource", "./adadefaultdest")
                 }
                 DirNature::Custom(x) => ConfigStruct {
-                    spec,
+                    data,
                     source: x.source,
                     destination: x.destination,
                 },
             },
-            SpecId::Sourcify => todo!(),
-            SpecId::FourByte => todo!(),
+            DataKind::Sourcify => todo!(),
+            DataKind::FourByte => todo!(),
         }
     }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct ConfigStruct {
-    spec: SpecId,
+    data: DataKind,
     source: PathBuf,
     destination: PathBuf,
 }
 
 impl ConfigStruct {
-    pub fn new(spec: SpecId, src: &str, dest: &str) -> Self {
+    pub fn new(data: DataKind, src: &str, dest: &str) -> Self {
         ConfigStruct {
-            spec,
+            data,
             source: PathBuf::from(src),
             destination: PathBuf::from(dest),
         }

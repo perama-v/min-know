@@ -1,11 +1,9 @@
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use ssz_derive::{Decode, Encode};
 use ssz_types::{
     typenum::{U1073741824, U2, U20},
     FixedVector, VariableList,
 };
-use tree_hash_derive::TreeHash;
 
 use super::types::*;
 
