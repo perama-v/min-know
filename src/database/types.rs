@@ -4,26 +4,21 @@ use std::{collections::BTreeMap, fmt::Debug};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::types::{DataConfigMethods, DestinationDataPath, DirLocation, SourceDataPath, ConfigsAvailable},
-    specs::types::{DataSpec, SpecId},
+    specs::types::{DataSpec, SpecId}, config::dirs::{ConfigStruct, DirNature},
 };
 
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Todd<T: DataSpec> {
     pub chapters: Vec<Chapter<T>>,
-    pub config: ConfigsAvailable,
+    pub config: ConfigStruct,
 }
 
 /// Implement generic methods common to all databases.
 impl<T: DataSpec> Todd<T> {
-    pub fn new<V, W>(specification: SpecId, directories: DirLocation<V, W>) -> Result<Self>
-    where
-        V: SourceDataPath,
-        W: DestinationDataPath,
-    {
+    pub fn new(specification: SpecId, directories: DirNature) -> Result<Self> {
         // Use the spec to then get the DataConfig.
-        let config = directories.to_config(specification)?;
+        let config = directories.to_config(specification);
 
         Ok(Self {
             chapters: vec![],
@@ -79,7 +74,7 @@ impl<T: DataSpec> Todd<T> {
         // Get ChapterId
         let chapter_id = T::record_key_to_chapter_id(record_key)?;
         // Get Chapter Files
-        let dir = self.config.source_root();
+        let dir = self.config.source_root_dir();
         // Read each file and collect matching Values
         todo!()
     }

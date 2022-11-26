@@ -93,7 +93,9 @@ pub trait DataSpec {
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
 }
 
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub enum SpecId {
+    #[default]
     AddressAppearanceIndex,
     Sourcify,
     FourByte,

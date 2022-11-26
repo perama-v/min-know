@@ -3,9 +3,9 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{types::DirLocation},
+    config::dirs::DirNature,
     database::types::Todd,
-    specs::{address_appearance_index::AdApInSpec, types::SpecId},
+    specs::{address_appearance_index::{AdApInSpec}, types::{SpecId, DataSpec}},
 };
 use ssz::Encode;
 
@@ -17,7 +17,7 @@ fn main() -> Result<()> {
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
 
-    let db = Todd::new(SpecId::AddressAppearanceIndex, DirLocation::Sample)?;
+    let db: Todd<AdApInSpec> = Todd::new(SpecId::AddressAppearanceIndex, DirNature::Sample)?;
 
     println!(
         "DB is {:#?}, with name {} and num chapters {}",
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
 
     // let appearances = db.find_transactions(address)?;
     // Find transactions becomes db.read_qurey(address)
-    let appearances = db.read_record_key(address)?;
+    let appearances: <AdApInSpec as DataSpec>::AssociatedRecordValue = db.read_record_key(address)?;
     let address_found = hex::encode(appearances.record_key.as_ssz_bytes());
     assert_eq!(address_found, address);
     Ok(())
