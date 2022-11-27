@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::fmt::Debug;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
@@ -50,17 +50,21 @@ impl<T: DataSpec> Todd<T> {
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
     ) -> Result<Chapter<T>> {
-        let mut elems: Vec<T::AssociatedRecordValue> = vec![];
+        // let mut elems: Vec<T::AssociatedRecordValue> = vec![];
+        let mut vals: Vec<Record<T>> = vec![];
         let source_data: Vec<(&str, V)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val);
-                elems.push(record_value)
+                todo!("Record value is collection of things.");
+                let rec = Record{ key: record_key, value: record_value };
+                vals.push(record_value)
             }
         }
         let mut chapter = Chapter::new(vol.clone(), chapter.clone());
-        chapter.elems = elems;
+
+        chapter.elems = todo!("Populate chapter");
         Ok(chapter)
     }
     pub fn raw_pairs<V>(&self) -> Vec<(&str, V)> {
@@ -69,8 +73,11 @@ impl<T: DataSpec> Todd<T> {
         todo!()
     }
     pub fn save_chapter(&self, c: Chapter<T>) {}
-    /// Obtains the values that match a particular key
-    pub fn read_record_key(&self, raw_record_key: &str) -> Result<T::AssociatedRecordValue> {
+    /// Obtains the RecordValues that match a particular RecordKey
+    ///
+    /// Each Chapter contains Records with key-value pairs. This function
+    /// aggregates values from all relevant Records (across different Chapters).
+    pub fn values_matching(&self, raw_record_key: &str) -> Result<Vec<T::AssociatedRecordValue>> {
         let record_key = T::raw_key_as_record_key(raw_record_key)?;
         let chapter_id = T::record_key_to_chapter_id(record_key)?;
         let dir = self.config.source_root_dir();
@@ -82,11 +89,11 @@ impl<T: DataSpec> Todd<T> {
 /// The distributable part of the database that is obtained from peers.
 ///
 /// Internally consists of smaller useful pieces of data called RecordValues.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Chapter<T: DataSpec> {
     pub chapter_id: T::AssociatedChapterId,
     pub volume_id: T::AssociatedVolumeId,
-    pub elems: Vec<T::AssociatedRecordValue>,
+    pub elems: Vec<Record<T>>,
 }
 
 impl<T: DataSpec> Chapter<T> {
@@ -97,4 +104,10 @@ impl<T: DataSpec> Chapter<T> {
             elems: todo!(),
         }
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Record<T: DataSpec> {
+    pub key: T::AssociatedRecordKey,
+    pub value: Vec<T::AssociatedRecordValue>,
 }

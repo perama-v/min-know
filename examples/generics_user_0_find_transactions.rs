@@ -30,12 +30,10 @@ fn main() -> Result<()> {
         db.spec_name(),
         db.chapters.len()
     );
-
-    // let appearances = db.find_transactions(address)?;
-    // Find transactions becomes db.read_qurey(address)
-    let appearances: <AdApInSpec as DataSpec>::AssociatedRecordValue =
+    let appearances: Vec<<AdApInSpec as DataSpec>::AssociatedRecordValue> =
         db.read_record_key(address)?;
-    let address_found = hex::encode(appearances.record_key.as_ssz_bytes());
-    assert_eq!(address_found, address);
+    for a in appearances {
+        println!("Appearance Tx ID: {:?}", a);
+    }
     Ok(())
 }

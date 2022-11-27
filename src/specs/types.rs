@@ -65,7 +65,7 @@ pub trait DataSpec {
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits<'a>;
 
-    type AssociatedRecordKey: RecordKeyMethods;
+    type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
 
     fn spec_name() -> SpecId;

@@ -60,7 +60,7 @@ impl DataSpec for AdApInSpec {
     fn record_key_to_chapter_id(
         record_key: Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId> {
-        let bytes = record_key[0..2].to_vec();
+        let bytes = record_key.key[0..2].to_vec();
         Ok(ChapterId {
             val: <_>::from(bytes),
         })
@@ -76,23 +76,13 @@ impl DataSpec for AdApInSpec {
     // Key is a hex string. Converts it to an ssz vector.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
-        match RecordKey::new(raw_bytes) {
-            Ok(q) => Ok(q),
-            Err(e) => Err(anyhow!(
-                "could not turn record_key bytes into ssz vector {:?}",
-                e
-            )),
-        }
+        Ok(RecordKey{ key: <_>::from(raw_bytes) })
     }
 
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue {
         todo!()
     }
 }
-//#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-//pub struct RecordKey {}
-pub type RecordKey = FixedVector<u8, DefaultBytesPerAddress>;
-impl RecordKeyMethods for RecordKey {}
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct VolId {}
@@ -110,6 +100,12 @@ impl ChapterMethods for Chapter {}
 
 pub type DefaultBytesPerAddress = U20;
 pub type MaxTxsPerVolume = U1073741824;
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct RecordKey {
+    pub key: FixedVector<u8, DefaultBytesPerAddress>
+}
+impl RecordKeyMethods for RecordKey {}
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
