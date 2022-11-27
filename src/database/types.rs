@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
-    specs::types::DataSpec,
+    specs::types::{DataSpec, RecordValueMethods},
 };
 
 /// The definition for the entire new database.
@@ -49,17 +49,16 @@ impl<T: DataSpec> Todd<T> {
         &self,
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
-    ) -> Result<Chapter<T>> {
-        // let mut elems: Vec<T::AssociatedRecordValue> = vec![];
+    ) -> Result<Chapter<T>>
+    {
         let mut vals: Vec<Record<T>> = vec![];
         let source_data: Vec<(&str, V)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
-                let record_value = T::raw_value_as_record_value(raw_val);
-                todo!("Record value is collection of things.");
+                let record_value = T::raw_value_as_record_value(raw_val).get();
                 let rec = Record{ key: record_key, value: record_value };
-                vals.push(record_value)
+                vals.push(rec)
             }
         }
         let mut chapter = Chapter::new(vol.clone(), chapter.clone());
@@ -77,7 +76,7 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// Each Chapter contains Records with key-value pairs. This function
     /// aggregates values from all relevant Records (across different Chapters).
-    pub fn values_matching(&self, raw_record_key: &str) -> Result<Vec<T::AssociatedRecordValue>> {
+    pub fn find(&self, raw_record_key: &str) -> Result<Vec<T::AssociatedRecordValue>> {
         let record_key = T::raw_key_as_record_key(raw_record_key)?;
         let chapter_id = T::record_key_to_chapter_id(record_key)?;
         let dir = self.config.source_root_dir();
@@ -109,5 +108,5 @@ impl<T: DataSpec> Chapter<T> {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Record<T: DataSpec> {
     pub key: T::AssociatedRecordKey,
-    pub value: Vec<T::AssociatedRecordValue>,
+    pub value: T::AssociatedRecordValue,
 }

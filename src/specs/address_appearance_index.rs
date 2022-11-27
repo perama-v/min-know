@@ -112,12 +112,15 @@ impl RecordKeyMethods for RecordKey {}
 //#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RecordValue {
-    /// The address that appeared in a transaction.
-    pub record_key: RecordKey,
     /// The transactions where the address appeared.
     pub value: VariableList<AppearanceTx, MaxTxsPerVolume>,
 }
-impl RecordValueMethods for RecordValue {}
+impl RecordValueMethods for RecordValue {
+
+    fn get(self) -> Self {
+        self
+    }
+}
 
 //#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]

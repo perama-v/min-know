@@ -136,7 +136,10 @@ pub trait ChapterIdMethods {
 }
 /// Marker trait.
 pub trait RecordKeyMethods {}
-pub trait RecordValueMethods {}
+pub trait RecordValueMethods {
+    /// Returns the struct that implements this method.
+    fn get(self) -> Self;
+}
 
 /// Methods for the smallest distributable chapter in the database.
 ///

@@ -31,7 +31,7 @@ fn main() -> Result<()> {
         db.chapters.len()
     );
     let appearances: Vec<<AdApInSpec as DataSpec>::AssociatedRecordValue> =
-        db.read_record_key(address)?;
+    db.find(address)?;
     for a in appearances {
         println!("Appearance Tx ID: {:?}", a);
     }
