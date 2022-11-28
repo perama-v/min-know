@@ -1,9 +1,13 @@
+use std::fmt::Display;
+
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use ssz_derive::{Decode, Encode};
 use ssz_types::{
     typenum::{U1073741824, U2, U20},
     FixedVector, VariableList,
 };
+use tree_hash_derive::TreeHash;
 
 use super::types::*;
 
@@ -76,7 +80,9 @@ impl DataSpec for AdApInSpec {
     // Key is a hex string. Converts it to an ssz vector.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
-        Ok(RecordKey{ key: <_>::from(raw_bytes) })
+        Ok(RecordKey {
+            key: <_>::from(raw_bytes),
+        })
     }
 
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue {
@@ -92,7 +98,14 @@ impl VolumeIdMethods for VolId {}
 pub struct ChapterId {
     val: FixedVector<u8, U2>,
 }
-impl ChapterIdMethods for ChapterId {}
+impl ChapterIdMethods for ChapterId {
+    fn interface_id(&self) -> String {
+        hex::encode(self.val.to_vec())
+    }
+    fn dir_name(&self) -> String {
+        format!("Chapter_0x{}", self.interface_id())
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Chapter {}
@@ -101,29 +114,39 @@ impl ChapterMethods for Chapter {}
 pub type DefaultBytesPerAddress = U20;
 pub type MaxTxsPerVolume = U1073741824;
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct RecordKey {
-    pub key: FixedVector<u8, DefaultBytesPerAddress>
+    pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
-impl RecordKeyMethods for RecordKey {}
-
-/// Equivalent to AddressAppearances. Consists of a single address and some
-/// number of transaction identfiers (appearances).
-//#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct RecordValue {
-    /// The transactions where the address appeared.
-    pub value: VariableList<AppearanceTx, MaxTxsPerVolume>,
-}
-impl RecordValueMethods for RecordValue {
-
+impl RecordKeyMethods for RecordKey {
     fn get(self) -> Self {
         self
     }
 }
 
-//#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+/// Equivalent to AddressAppearances. Consists of a single address and some
+/// number of transaction identfiers (appearances).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+pub struct RecordValue {
+    /// The transactions where the address appeared.
+    pub value: VariableList<AppearanceTx, MaxTxsPerVolume>,
+}
+impl RecordValueMethods for RecordValue {
+    fn get(self) -> Self {
+        self
+    }
+    /// Return a String representation of the contents of the RecordValue.
+    fn as_strings(self) -> Vec<String> {
+        let mut s: Vec<String> = vec![];
+        for v in self.value.to_vec() {
+            let v_str = format!("Tx in block: {}, index: {}", v.block, v.index);
+            s.push(v_str)
+        }
+        s
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct AppearanceTx {
     /// The Ethereum execution block number.
     pub block: u32,

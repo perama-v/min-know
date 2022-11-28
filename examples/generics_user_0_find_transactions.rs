@@ -30,8 +30,7 @@ fn main() -> Result<()> {
         db.spec_name(),
         db.chapters.len()
     );
-    let appearances: Vec<<AdApInSpec as DataSpec>::AssociatedRecordValue> =
-    db.find(address)?;
+    let appearances = db.find(address)?;
     for a in appearances {
         println!("Appearance Tx ID: {:?}", a);
     }

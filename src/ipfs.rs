@@ -25,7 +25,7 @@ pub fn cid_v0_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 #[test]
 fn str_to_cidv0() {
     use std::str::from_utf8;
-    
+
     let cid = cid_v0_from_bytes("beep boop".as_bytes()).unwrap();
     let string = from_utf8(&cid).unwrap();
     assert_eq!(string, "QmY6LjJ1HExi2TgHshc56ecPdVSNaWrzFbWq9sahHFrNoM");

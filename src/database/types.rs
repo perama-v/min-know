@@ -1,10 +1,13 @@
-use anyhow::Result;
-use std::fmt::Debug;
+use anyhow::{Context, Result};
+use ssz_derive::{Decode, Encode};
+use std::{fmt::Debug, fs};
+use tree_hash_derive::TreeHash;
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
+    encoding::decode_and_decompress,
     specs::types::{DataSpec, RecordValueMethods},
 };
 
@@ -19,8 +22,7 @@ pub struct Todd<T: DataSpec> {
 impl<T: DataSpec> Todd<T> {
     pub fn new(specification: DataKind, directories: DirNature) -> Result<Self> {
         // Use the spec to then get the DataConfig.
-        let config = directories.to_config(specification);
-
+        let config = directories.to_config(specification)?;
         Ok(Self {
             chapters: vec![],
             config,
@@ -49,15 +51,17 @@ impl<T: DataSpec> Todd<T> {
         &self,
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
-    ) -> Result<Chapter<T>>
-    {
+    ) -> Result<Chapter<T>> {
         let mut vals: Vec<Record<T>> = vec![];
         let source_data: Vec<(&str, V)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val).get();
-                let rec = Record{ key: record_key, value: record_value };
+                let rec = Record {
+                    key: record_key,
+                    value: record_value,
+                };
                 vals.push(rec)
             }
         }
@@ -76,11 +80,21 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// Each Chapter contains Records with key-value pairs. This function
     /// aggregates values from all relevant Records (across different Chapters).
-    pub fn find(&self, raw_record_key: &str) -> Result<Vec<T::AssociatedRecordValue>> {
+    pub fn find(&self, raw_record_key: &str) -> Result<Vec<String>> {
         let record_key = T::raw_key_as_record_key(raw_record_key)?;
         let chapter_id = T::record_key_to_chapter_id(record_key)?;
-        let dir = self.config.source_root_dir();
+        let chap_dir = self.config.chapter_path(chapter_id)?;
         // Read each file and collect matching Values
+        let files = fs::read_dir(&chap_dir)
+            .with_context(|| format!("Failed to read dir {:?}", chap_dir))?;
+        let mut matching: Vec<String> = vec![];
+        for filename in files {
+            let path = filename?.path();
+            let ssz_snappy_data =
+                fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
+            let one_chapter: Record<T> = decode_and_decompress(ssz_snappy_data)?;
+            matching.append(&mut one_chapter.value.as_strings());
+        }
         todo!("Port discover::single_address()")
     }
 }
@@ -105,7 +119,7 @@ impl<T: DataSpec> Chapter<T> {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct Record<T: DataSpec> {
     pub key: T::AssociatedRecordKey,
     pub value: T::AssociatedRecordValue,

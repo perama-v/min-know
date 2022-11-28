@@ -1,7 +1,9 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use ssz::{Decode, Encode};
 use std::fmt::Debug;
 use std::hash::Hash;
+use tree_hash::TreeHash;
 
 // Placeholder for the real trait.
 pub trait SszDecode {}
@@ -36,6 +38,9 @@ impl<'a, T> UsefulTraits2<'a> for T where
 {
 }
 
+pub trait SszTraits: Encode + Decode + TreeHash {}
+impl<T> SszTraits for T where T: Encode + Decode + TreeHash {}
+
 /// A trait for specifying a new type of data.
 ///
 /// Any data source that will be transformed by min-know must implement this trait.
@@ -65,8 +70,8 @@ pub trait DataSpec {
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits<'a>;
 
-    type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
-    type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedRecordKey: RecordKeyMethods + SszTraits + for<'a> UsefulTraits2<'a>;
+    type AssociatedRecordValue: RecordValueMethods + SszTraits + for<'a> UsefulTraits2<'a>;
 
     fn spec_name() -> SpecId;
     fn num_chapters() -> usize {
@@ -131,14 +136,21 @@ pub enum SpecId {
 pub trait VolumeIdMethods {}
 pub trait ChapterIdMethods {
     // TODO
-    // Returns the id for a given Chapter
-    // fn to_string() -> String;
+    /// Returns the id for the Chapter.
+    fn interface_id(&self) -> String;
+    /// Returns the directory name for the Chapter.
+    fn dir_name(&self) -> String;
 }
+
 /// Marker trait.
-pub trait RecordKeyMethods {}
-pub trait RecordValueMethods {
-    /// Returns the struct that implements this method.
+pub trait RecordKeyMethods {
+    /// Returns the key struct that implements this method.
     fn get(self) -> Self;
+}
+pub trait RecordValueMethods {
+    /// Returns the value struct that implements this method.
+    fn get(self) -> Self;
+    fn as_strings(self) -> Vec<String>;
 }
 
 /// Methods for the smallest distributable chapter in the database.
