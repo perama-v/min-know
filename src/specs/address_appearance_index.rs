@@ -224,7 +224,7 @@ impl RecordMethods<AAISpec> for AAIRecord {
     }
 
     fn values_as_strings(self) -> Vec<String> {
-        todo!()
+        self.value.as_strings()
     }
 }
 
