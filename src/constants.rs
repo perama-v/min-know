@@ -122,7 +122,7 @@ pub type ADDRESS_CHARS_SIMILARITY_DEPTH = U2;
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type DEFAULT_BYTES_PER_ADDRESS = U20;
+pub type DEFAULT_BYTES_PER_ADDRESS = U20; // TODO should be NUM_COMMON_BYTES
 
 /// This type is defined in the [specification][1].
 ///

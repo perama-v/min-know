@@ -66,10 +66,10 @@ pub trait DataSpec: Sized {
     const NUM_CHAPTERS: usize;
     const MAX_VOLUMES: usize;
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
-    type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
-    type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
 
     type AssociatedChapter: ChapterMethods<Self> + for<'a> UsefulTraits2<'a>;
+    type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
 
     type AssociatedRecord: RecordMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
@@ -85,7 +85,7 @@ pub trait DataSpec: Sized {
     fn get_all_volume_ids() -> Vec<Self::AssociatedVolumeId>;
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
     fn record_key_to_chapter_id(
-        record_key: Self::AssociatedRecordKey,
+        record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId>;
     /// Used to check the key for a piece of raw data when creating new database.
     fn record_key_matches_chapter(
@@ -98,7 +98,6 @@ pub trait DataSpec: Sized {
     /// Some unformatted data that needs to be converted to an record_value
     /// to then be appended to a Chapter.record_values vector.
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
-    //fn new_record(key: Self::AssociatedRecordKey, val: Self::AssociatedRecordValue) -> Self::AssociatedRecord;
     fn new_chapter() -> Self::AssociatedChapter;
 }
 
@@ -157,13 +156,14 @@ pub trait RecordValueMethods {
     fn as_strings(self) -> Vec<String>;
 }
 
-
-
 /// Marker trait.
 pub trait RecordMethods {
     /// Returns the key struct that implements this method.
-    fn get(self) -> Self;
-    fn new<T: DataSpec>(key: T::AssociatedRecordKey, val: T::AssociatedRecordValue) -> T::AssociatedRecord;
+    fn get(&self) -> &Self;
+    fn new<T: DataSpec>(
+        key: T::AssociatedRecordKey,
+        val: T::AssociatedRecordValue,
+    ) -> T::AssociatedRecord;
     fn key<T: DataSpec>(&self) -> T::AssociatedRecordKey;
     /// Values
     fn values_as_strings(self) -> Vec<String>;
@@ -202,5 +202,7 @@ pub trait ChapterMethods<T: DataSpec> {
     /// Chapter struct from byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
-    fn from_file(data: Vec<u8>) -> Result<Self> where Self: Sized;
+    fn from_file(data: Vec<u8>) -> Result<Self>
+    where
+        Self: Sized;
 }

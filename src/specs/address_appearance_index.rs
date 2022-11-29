@@ -4,12 +4,19 @@ use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use ssz_derive::{Decode, Encode};
 use ssz_types::{
+    length::Fixed,
     typenum::{U1073741824, U2, U20},
     FixedVector, VariableList,
 };
 use tree_hash_derive::TreeHash;
 
-use crate::{encoding::decode_and_decompress, spec::{ VolumeIdentifier},  parameters::address_appearance_index::{DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME}};
+use crate::{
+    encoding::decode_and_decompress,
+    parameters::address_appearance_index::{
+        DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME, NUM_COMMON_BYTES,
+    },
+    spec::VolumeIdentifier,
+};
 
 use super::types::*;
 
@@ -66,7 +73,7 @@ impl DataSpec for AdApInSpec {
     }
     /// Gets the ChapterIds relevant for a key.
     fn record_key_to_chapter_id(
-        record_key: Self::AssociatedRecordKey,
+        record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId> {
         let bytes = record_key.key[0..2].to_vec();
         Ok(ChapterId {
@@ -93,24 +100,32 @@ impl DataSpec for AdApInSpec {
         todo!()
     }
 
-
-
     fn new_chapter() -> Self::AssociatedChapter {
         todo!()
     }
-
 }
 
-
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    PartialOrd,
+    Hash,
+    Serialize,
+    Deserialize,
+    Encode,
+    Decode,
+    TreeHash,
+)]
 pub struct VolumeId {
-        oldest_block: u32
+    oldest_block: u32,
 }
 impl VolumeIdMethods for VolumeId {}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct ChapterId {
-    val: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
+    val: FixedVector<u8, NUM_COMMON_BYTES>,
 }
 impl ChapterIdMethods for ChapterId {
     fn interface_id(&self) -> String {
@@ -119,7 +134,6 @@ impl ChapterIdMethods for ChapterId {
     fn dir_name(&self) -> String {
         format!("chapter_0x{}", self.interface_id())
     }
-
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -129,10 +143,11 @@ pub struct Chapter {
     pub records: Vec<Record>,
 }
 impl<T> ChapterMethods<T> for Chapter
-    where T: DataSpec
-    {
+where
+    T: DataSpec,
+{
     fn get(self) -> Self {
-        todo!()
+        self
     }
 
     fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord {
@@ -148,7 +163,8 @@ impl<T> ChapterMethods<T> for Chapter
     }
 
     fn records(&self) -> Vec<T::AssociatedRecord> {
-        todo!()
+        todo!();
+        // self.records
     }
 
     fn as_serialized_bytes(&self) -> Vec<u8> {
@@ -158,40 +174,48 @@ impl<T> ChapterMethods<T> for Chapter
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
         let contents: RelicFileStructure = decode_and_decompress(data)?;
-        let volume_id = VolumeId { oldest_block: contents.identifier.oldest_block };
-        let chapter_id = ChapterId { val: contents.address_prefix };// contents.address_prefix;
+        let volume_id = VolumeId {
+            oldest_block: contents.identifier.oldest_block,
+        };
+        let chapter_id = contents.address_prefix.to_vec()[0..3].to_vec();
+        let chapter_id = ChapterId {
+            val: <_>::from(chapter_id),
+        }; // contents.address_prefix;
         let mut records = vec![];
         // TODO: Change stored file structure to avoid this conversion step.
         for a in contents.addresses.to_vec() {
             let key = RecordKey { key: a.address };
-            let value = RecordValue { value: a.appearances };
+            let value = RecordValue {
+                value: a.appearances,
+            };
             let record = Record { key, value };
             records.push(record);
         }
-        let c = Chapter {
+        Ok(Chapter {
             chapter_id,
             volume_id,
-            records };
-        Ok(c)
+            records,
+        })
     }
 }
 
 pub type DefaultBytesPerAddress = U20;
 pub type MaxTxsPerVolume = U1073741824;
 
-
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct Record {
     pub key: RecordKey,
-    pub value: RecordValue
+    pub value: RecordValue,
 }
 impl RecordMethods for Record {
-    fn get(self) -> Self {
-        todo!()
+    fn get(&self) -> &Self {
+        &self
     }
 
-    fn new<T: DataSpec>(key: T::AssociatedRecordKey, val: T::AssociatedRecordValue) -> T::AssociatedRecord {
+    fn new<T: DataSpec>(
+        key: T::AssociatedRecordKey,
+        val: T::AssociatedRecordValue,
+    ) -> T::AssociatedRecord {
         todo!()
     }
 
@@ -243,7 +267,6 @@ pub struct AppearanceTx {
     /// The index of the transaction in a block.
     pub index: u32,
 }
-
 
 //
 // Relic structures. The files are currently stored in this format, but this

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use ssz_derive::{Decode, Encode};
-use ssz_types::{FixedVector};
+use ssz_types::FixedVector;
 use std::{fmt::Debug, fs};
 use tree_hash_derive::TreeHash;
 
@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
     encoding::decode_and_decompress,
-    specs::types::{DataSpec, ChapterMethods, RecordMethods, RecordValueMethods},
+    specs::types::{ChapterMethods, DataSpec, RecordMethods, RecordValueMethods},
 };
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -58,7 +58,8 @@ impl<T: DataSpec> Todd<T> {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val).get();
-                let rec: T::AssociatedRecord = <T::AssociatedRecord>::new::<T>(record_key, record_value);
+                let rec: T::AssociatedRecord =
+                    <T::AssociatedRecord>::new::<T>(record_key, record_value);
                 vals.push(rec)
             }
         }
@@ -77,7 +78,7 @@ impl<T: DataSpec> Todd<T> {
     /// aggregates values from all relevant Records (across different Chapters).
     pub fn find(&self, raw_record_key: &str) -> Result<Vec<String>> {
         let target_record_key = T::raw_key_as_record_key(raw_record_key)?;
-        let chapter_id = T::record_key_to_chapter_id(target_record_key)?;
+        let chapter_id = T::record_key_to_chapter_id(&target_record_key)?;
         let chap_dir = self.config.similar_chapters_path(chapter_id)?;
         // Read each file and collect matching Values
         let files = fs::read_dir(&chap_dir)
@@ -90,39 +91,13 @@ impl<T: DataSpec> Todd<T> {
             let chapter: T::AssociatedChapter = <T::AssociatedChapter>::from_file(bytes)?;
             let records: Vec<T::AssociatedRecord> = chapter.records();
             for r in records {
-                if r.get().key::<T>() == target_record_key {
+                let rec = r.get();
+                let key: T::AssociatedRecordKey = rec.key::<T>();
+                if key == target_record_key {
                     matching.extend(r.values_as_strings())
                 }
             }
         }
-        todo!("Port discover::single_address()")
+        Ok(matching)
     }
 }
-
-/*
-/// The distributable part of the database that is obtained from peers.
-///
-/// Internally consists of smaller useful pieces of data called RecordValues.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct Chapter<T: DataSpec> {
-    pub chapter_id: T::AssociatedChapterId,
-    pub volume_id: T::AssociatedVolumeId,
-    pub records: Vec<Record<T>>,
-}
-
-impl<T: DataSpec> Chapter<T> {
-    pub fn new(vol: T::AssociatedVolumeId, chapter: T::AssociatedChapterId) -> Self {
-        Chapter {
-            chapter_id: todo!(),
-            volume_id: todo!(),
-            records: todo!(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct Record<T: DataSpec> {
-    pub key: T::AssociatedRecordKey,
-    pub value: T::AssociatedRecordValue,
-}
-*/
