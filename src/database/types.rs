@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use ssz_derive::{Decode, Encode};
+use ssz_types::{FixedVector};
 use std::{fmt::Debug, fs};
 use tree_hash_derive::TreeHash;
 
@@ -8,13 +9,12 @@ use serde::{Deserialize, Serialize};
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
     encoding::decode_and_decompress,
-    specs::types::{DataSpec, RecordValueMethods},
+    specs::types::{DataSpec, ChapterMethods, RecordMethods, RecordValueMethods},
 };
-
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Todd<T: DataSpec> {
-    pub chapters: Vec<Chapter<T>>,
+    pub chapters: Vec<T::AssociatedChapter>,
     pub config: ConfigStruct,
 }
 
@@ -51,23 +51,18 @@ impl<T: DataSpec> Todd<T> {
         &self,
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
-    ) -> Result<Chapter<T>> {
-        let mut vals: Vec<Record<T>> = vec![];
+    ) -> Result<T::AssociatedChapter> {
+        let mut vals: Vec<T::AssociatedRecord> = vec![];
         let source_data: Vec<(&str, V)> = self.raw_pairs();
         for (raw_key, raw_val) in source_data {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val).get();
-                let rec = Record {
-                    key: record_key,
-                    value: record_value,
-                };
+                let rec: T::AssociatedRecord = <T::AssociatedRecord>::new::<T>(record_key, record_value);
                 vals.push(rec)
             }
         }
-        let mut chapter = Chapter::new(vol.clone(), chapter.clone());
-
-        chapter.elems = todo!("Populate chapter");
+        let mut chapter = T::new_chapter();
         Ok(chapter)
     }
     pub fn raw_pairs<V>(&self) -> Vec<(&str, V)> {
@@ -75,30 +70,36 @@ impl<T: DataSpec> Todd<T> {
         // E.g., (address, appearances) or (address, ABIs)
         todo!()
     }
-    pub fn save_chapter(&self, c: Chapter<T>) {}
+    pub fn save_chapter(&self, c: T::AssociatedChapter) {}
     /// Obtains the RecordValues that match a particular RecordKey
     ///
     /// Each Chapter contains Records with key-value pairs. This function
     /// aggregates values from all relevant Records (across different Chapters).
     pub fn find(&self, raw_record_key: &str) -> Result<Vec<String>> {
-        let record_key = T::raw_key_as_record_key(raw_record_key)?;
-        let chapter_id = T::record_key_to_chapter_id(record_key)?;
-        let chap_dir = self.config.chapter_path(chapter_id)?;
+        let target_record_key = T::raw_key_as_record_key(raw_record_key)?;
+        let chapter_id = T::record_key_to_chapter_id(target_record_key)?;
+        let chap_dir = self.config.similar_chapters_path(chapter_id)?;
         // Read each file and collect matching Values
         let files = fs::read_dir(&chap_dir)
             .with_context(|| format!("Failed to read dir {:?}", chap_dir))?;
         let mut matching: Vec<String> = vec![];
         for filename in files {
             let path = filename?.path();
-            let ssz_snappy_data =
+            let bytes =
                 fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
-            let one_chapter: Record<T> = decode_and_decompress(ssz_snappy_data)?;
-            matching.append(&mut one_chapter.value.as_strings());
+            let chapter: T::AssociatedChapter = <T::AssociatedChapter>::from_file::<T>(bytes)?;
+            let records: Vec<T::AssociatedRecord> = chapter.records::<T>();
+            for r in records {
+                if r.get().key::<T>() == target_record_key {
+                    matching.extend(r.values_as_strings())
+                }
+            }
         }
         todo!("Port discover::single_address()")
     }
 }
 
+/*
 /// The distributable part of the database that is obtained from peers.
 ///
 /// Internally consists of smaller useful pieces of data called RecordValues.
@@ -106,7 +107,7 @@ impl<T: DataSpec> Todd<T> {
 pub struct Chapter<T: DataSpec> {
     pub chapter_id: T::AssociatedChapterId,
     pub volume_id: T::AssociatedVolumeId,
-    pub elems: Vec<Record<T>>,
+    pub records: Vec<Record<T>>,
 }
 
 impl<T: DataSpec> Chapter<T> {
@@ -114,7 +115,7 @@ impl<T: DataSpec> Chapter<T> {
         Chapter {
             chapter_id: todo!(),
             volume_id: todo!(),
-            elems: todo!(),
+            records: todo!(),
         }
     }
 }
@@ -124,3 +125,4 @@ pub struct Record<T: DataSpec> {
     pub key: T::AssociatedRecordKey,
     pub value: T::AssociatedRecordValue,
 }
+*/

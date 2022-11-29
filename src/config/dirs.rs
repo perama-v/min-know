@@ -70,18 +70,18 @@ impl DirNature {
             DataKind::AddressAppearanceIndex(ref network) => match self {
                 DirNature::Sample => ConfigStruct {
                     data,
-                    source: PathBuf::from("TODO source sample path"),
-                    destination: project.join("samples").join(dir_name),
+                    raw_source: PathBuf::from("TODO source sample path"),
+                    data_dir: project.join("samples").join(dir_name),
                 },
                 DirNature::Default => ConfigStruct {
                     data,
-                    source: PathBuf::from("TODO source default path"),
-                    destination: project.join(dir_name),
+                    raw_source: PathBuf::from("TODO source default path"),
+                    data_dir: project.join(dir_name),
                 },
                 DirNature::Custom(x) => ConfigStruct {
                     data,
-                    source: x.source.join(&dir_name),
-                    destination: x.destination.join(&dir_name),
+                    raw_source: x.source.join(&dir_name),
+                    data_dir: x.destination.join(&dir_name),
                 },
             },
             DataKind::Sourcify => todo!(),
@@ -93,35 +93,22 @@ impl DirNature {
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct ConfigStruct {
     data: DataKind,
-    /// The path to the unformatted raw source data. Used for populating
-    /// the database.
-    source: PathBuf,
+    /// The path to the unformatted raw source data. Used for populating the database.
+    raw_source: PathBuf,
     /// The path to the functional database.
-    destination: PathBuf,
+    data_dir: PathBuf,
 }
 
 impl ConfigStruct {
-    /// Gets the base directory for the source data.
-    pub fn source_root_dir(&self) -> Result<PathBuf> {
-        Ok(self.source.clone())
-    }
-    /// Gets the base directory for the database.
-    pub fn dest_root_dir(&self) -> Result<PathBuf> {
-        todo!()
-    }
-    /// Gets the directory that contains Chapter files.
-    pub fn chapters_dir(&self) -> Result<PathBuf> {
-        todo!()
-    }
     /// Gets the path of the manifest file.
     pub fn manifest_file(&self) -> Result<PathBuf> {
         todo!()
     }
-    /// Returns the path for a given Chapter.
-    pub fn chapter_path<T: ChapterIdMethods>(&self, chapter: T) -> Result<PathBuf> {
-        let c = chapter.dir_name();
-        let mut p = self.source_root_dir()?;
-        p.push(c);
+    /// Returns the path for the directory that holds all chapters that
+    /// match the given ChapterId.
+    pub fn similar_chapters_path<T: ChapterIdMethods>(&self, chapter: T) -> Result<PathBuf> {
+        let mut p = self.data_dir.to_path_buf();
+        p.push(chapter.dir_name());
         Ok(p)
     }
     /// Returns the VolumeId for the latest Chapter file present.

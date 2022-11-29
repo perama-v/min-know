@@ -68,10 +68,12 @@ pub trait DataSpec {
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
-    type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits<'a>;
 
-    type AssociatedRecordKey: RecordKeyMethods + SszTraits + for<'a> UsefulTraits2<'a>;
-    type AssociatedRecordValue: RecordValueMethods + SszTraits + for<'a> UsefulTraits2<'a>;
+    type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits2<'a>;
+
+    type AssociatedRecord: RecordMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
 
     fn spec_name() -> SpecId;
     fn num_chapters() -> usize {
@@ -96,6 +98,8 @@ pub trait DataSpec {
     /// Some unformatted data that needs to be converted to an record_value
     /// to then be appended to a Chapter.record_values vector.
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
+    //fn new_record(key: Self::AssociatedRecordKey, val: Self::AssociatedRecordValue) -> Self::AssociatedRecord;
+    fn new_chapter() -> Self::AssociatedChapter;
 }
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
@@ -153,6 +157,17 @@ pub trait RecordValueMethods {
     fn as_strings(self) -> Vec<String>;
 }
 
+
+
+/// Marker trait.
+pub trait RecordMethods {
+    /// Returns the key struct that implements this method.
+    fn get(self) -> Self;
+    fn new<T: DataSpec>(key: T::AssociatedRecordKey, val: T::AssociatedRecordValue) -> T::AssociatedRecord;
+    fn key<T: DataSpec>(&self) -> T::AssociatedRecordKey;
+    /// Values
+    fn values_as_strings(self) -> Vec<String>;
+}
 /// Methods for the smallest distributable chapter in the database.
 ///
 /// This refers to the pieces that can be looked up in the manifest
@@ -165,6 +180,8 @@ pub trait RecordValueMethods {
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
 pub trait ChapterMethods {
+    /// Returns the key struct that implements this method.
+    fn get(self) -> Self;
     // An input that a user can provide to retrieve useful information.
     //
     // Each database is designed around the premise that a user has
@@ -174,13 +191,16 @@ pub trait ChapterMethods {
     // For an address apeparance database, the record_key is an address.
     //
     // For an ABI database, the record_key is a contract identifier.
-    fn record_key<T>(_value: T) {}
-    // Get the volume identifier for the chapter.
-    //
-    // E.g., Some block number or an counter.
-    //fn volume_interface_id() -> String;
-    // Get the chapter identifier for the chapter if applicable.
-    //
-    // E.g., Some "0xf6", or "contract_0xacbd..." or None.
-    //fn chapter_interface_id() -> Option<String>;
+    fn find_record<T: DataSpec>(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord;
+    fn volume_id<T: DataSpec>(&self) -> T::AssociatedVolumeId;
+    fn chapter_id<T: DataSpec>(&self) -> T::AssociatedChapterId;
+    fn records<T: DataSpec>(&self) -> Vec<T::AssociatedRecord>;
+    /// Chapter struct as byte representation for storage.
+    ///
+    /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
+    fn as_serialized_bytes(&self) -> Vec<u8>;
+    /// Chapter struct from byte representation for storage.
+    ///
+    /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
+    fn from_file<T: DataSpec>(data: Vec<u8>) -> Result<T::AssociatedChapter>;
 }
