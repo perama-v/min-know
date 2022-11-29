@@ -71,7 +71,7 @@ pub trait DataSpec : Sized {
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
 
-    type AssociatedRecord: RecordMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedRecord: RecordMethods<Self> + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
 
@@ -157,15 +157,16 @@ pub trait RecordValueMethods {
 }
 
 /// Marker trait.
-pub trait RecordMethods {
+pub trait RecordMethods<T: DataSpec> {
     /// Returns the key struct that implements this method.
     fn get(&self) -> &Self;
-    fn new<T: DataSpec>(
+    fn new(
         key: T::AssociatedRecordKey,
         val: T::AssociatedRecordValue,
     ) -> T::AssociatedRecord;
-    fn key<T: DataSpec>(&self) -> T::AssociatedRecordKey;
-    /// Values
+    /// Get the RecordKey of the Record.
+    fn key(&self) -> &T::AssociatedRecordKey;
+    /// Get the RecordValues of the Record.
     fn values_as_strings(self) -> Vec<String>;
 }
 /// Methods for the smallest distributable chapter in the database.
@@ -180,7 +181,6 @@ pub trait RecordMethods {
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
 pub trait ChapterMethods<T: DataSpec> {
-    type RecordType: RecordMethods;
     /// Returns the key struct that implements this method.
     fn get(self) -> Self;
     // An input that a user can provide to retrieve useful information.
@@ -196,7 +196,7 @@ pub trait ChapterMethods<T: DataSpec> {
     fn volume_id(&self) -> T::AssociatedVolumeId;
     fn chapter_id(&self) -> T::AssociatedChapterId;
     /// Gets all the records present in the Chapter.
-    fn records(self) -> Vec<Self::RecordType>;
+    fn records(self) -> Vec<T::AssociatedRecord>;
     /// Chapter struct as byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)

@@ -142,29 +142,27 @@ pub struct Chapter {
     pub volume_id: VolumeId,
     pub records: Vec<Record>,
 }
-impl<T> ChapterMethods<T> for Chapter
-where
-    T: DataSpec,
+impl ChapterMethods<AdApInSpec> for Chapter
 {
-    type RecordType = Record;
+    //type RecordType<T> = Record<T>;
 
     fn get(self) -> Self {
         self
     }
 
-    fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord {
+    fn find_record(&self, key: RecordKey) -> Record {
         todo!()
     }
 
-    fn volume_id(&self) -> T::AssociatedVolumeId {
+    fn volume_id(&self) -> VolumeId {
         todo!()
     }
 
-    fn chapter_id(&self) -> T::AssociatedChapterId {
+    fn chapter_id(&self) -> ChapterId {
         todo!()
     }
 
-    fn records(self) -> Vec<Self::RecordType> {
+    fn records(self) -> Vec<Record> {
         self.records
     }
 
@@ -209,20 +207,20 @@ pub struct Record {
     pub key: RecordKey,
     pub value: RecordValue,
 }
-impl RecordMethods for Record {
+impl RecordMethods<AdApInSpec> for Record {
     fn get(&self) -> &Self {
         &self
     }
 
-    fn new<T: DataSpec>(
-        key: T::AssociatedRecordKey,
-        val: T::AssociatedRecordValue,
-    ) -> T::AssociatedRecord {
+    fn new(
+        key: RecordKey,
+        val: RecordValue,
+    ) -> Self {
         todo!()
     }
 
-    fn key<T: DataSpec>(&self) -> T::AssociatedRecordKey {
-        todo!()
+    fn key(&self) -> &RecordKey {
+        &self.key
     }
 
     fn values_as_strings(self) -> Vec<String> {

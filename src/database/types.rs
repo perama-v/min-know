@@ -59,7 +59,7 @@ impl<T: DataSpec> Todd<T> {
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val).get();
                 let rec: T::AssociatedRecord =
-                    <T::AssociatedRecord>::new::<T>(record_key, record_value);
+                    <T::AssociatedRecord>::new(record_key, record_value);
                 vals.push(rec)
             }
         }
@@ -88,12 +88,12 @@ impl<T: DataSpec> Todd<T> {
             let path = filename?.path();
             let bytes =
                 fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
-            let chapter: T::AssociatedChapter = <T::AssociatedChapter>::from_file(bytes)?;
-            let records/*: Vec<T::AssociatedRecord>*/ = chapter.records();
+            let chapter = <T::AssociatedChapter>::from_file(bytes)?;
+            let records = chapter.records();
             for r in records {
                 let rec = r.get();
-                let key: T::AssociatedRecordKey = rec.key::<T>();
-                if key == target_record_key {
+                let key = rec.key();
+                if key == &target_record_key {
                     matching.extend(r.values_as_strings())
                 }
             }
