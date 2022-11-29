@@ -87,8 +87,8 @@ impl<T: DataSpec> Todd<T> {
             let path = filename?.path();
             let bytes =
                 fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
-            let chapter: T::AssociatedChapter = <T::AssociatedChapter>::from_file::<T>(bytes)?;
-            let records: Vec<T::AssociatedRecord> = chapter.records::<T>();
+            let chapter: T::AssociatedChapter = <T::AssociatedChapter>::from_file(bytes)?;
+            let records: Vec<T::AssociatedRecord> = chapter.records();
             for r in records {
                 if r.get().key::<T>() == target_record_key {
                     matching.extend(r.values_as_strings())

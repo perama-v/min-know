@@ -61,7 +61,7 @@ impl<T> SszTraits for T where T: Encode + Decode + TreeHash {}
 /// and value becomes an record_value.
 /// - raw_key (unformatted record_key)
 /// - raw_value (unformatted record_value)
-pub trait DataSpec {
+pub trait DataSpec: Sized {
     const DATABASE_INTERFACE_ID: &'static str;
     const NUM_CHAPTERS: usize;
     const MAX_VOLUMES: usize;
@@ -69,7 +69,7 @@ pub trait DataSpec {
     type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
     type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
 
-    type AssociatedChapter: ChapterMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedChapter: ChapterMethods<Self> + for<'a> UsefulTraits2<'a>;
 
     type AssociatedRecord: RecordMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
@@ -179,7 +179,7 @@ pub trait RecordMethods {
 /// for a specific volume and chapter.
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
-pub trait ChapterMethods {
+pub trait ChapterMethods<T: DataSpec> {
     /// Returns the key struct that implements this method.
     fn get(self) -> Self;
     // An input that a user can provide to retrieve useful information.
@@ -191,10 +191,10 @@ pub trait ChapterMethods {
     // For an address apeparance database, the record_key is an address.
     //
     // For an ABI database, the record_key is a contract identifier.
-    fn find_record<T: DataSpec>(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord;
-    fn volume_id<T: DataSpec>(&self) -> T::AssociatedVolumeId;
-    fn chapter_id<T: DataSpec>(&self) -> T::AssociatedChapterId;
-    fn records<T: DataSpec>(&self) -> Vec<T::AssociatedRecord>;
+    fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord;
+    fn volume_id(&self) -> T::AssociatedVolumeId;
+    fn chapter_id(&self) -> T::AssociatedChapterId;
+    fn records(&self) -> Vec<T::AssociatedRecord>;
     /// Chapter struct as byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
@@ -202,5 +202,5 @@ pub trait ChapterMethods {
     /// Chapter struct from byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
-    fn from_file<T: DataSpec>(data: Vec<u8>) -> Result<T::AssociatedChapter>;
+    fn from_file(data: Vec<u8>) -> Result<Self> where Self: Sized;
 }

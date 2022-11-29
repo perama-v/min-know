@@ -28,7 +28,9 @@ impl DataSpec for AdApInSpec {
 
     type AssociatedChapterId = ChapterId;
 
-    // type AssociatedChapter = Chapter;
+    type AssociatedChapter = Chapter;
+
+    type AssociatedRecord = Record;
 
     type AssociatedRecordKey = RecordKey;
 
@@ -92,9 +94,6 @@ impl DataSpec for AdApInSpec {
     }
 
 
-    type AssociatedChapter = Chapter;
-
-    type AssociatedRecord = Record;
 
     fn new_chapter() -> Self::AssociatedChapter {
         todo!()
@@ -104,12 +103,14 @@ impl DataSpec for AdApInSpec {
 
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct VolumeId {}
+pub struct VolumeId {
+        oldest_block: u32
+}
 impl VolumeIdMethods for VolumeId {}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct ChapterId {
-    val: FixedVector<u8, U2>,
+    val: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
 }
 impl ChapterIdMethods for ChapterId {
     fn interface_id(&self) -> String {
@@ -127,24 +128,26 @@ pub struct Chapter {
     pub volume_id: VolumeId,
     pub records: Vec<Record>,
 }
-impl ChapterMethods for Chapter {
+impl<T> ChapterMethods<T> for Chapter
+    where T: DataSpec
+    {
     fn get(self) -> Self {
         todo!()
     }
 
-    fn find_record<T: DataSpec>(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord {
+    fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord {
         todo!()
     }
 
-    fn volume_id<T: DataSpec>(&self) -> T::AssociatedVolumeId {
+    fn volume_id(&self) -> T::AssociatedVolumeId {
         todo!()
     }
 
-    fn chapter_id<T: DataSpec>(&self) -> T::AssociatedChapterId {
+    fn chapter_id(&self) -> T::AssociatedChapterId {
         todo!()
     }
 
-    fn records<T: DataSpec>(&self) -> Vec<T::AssociatedRecord> {
+    fn records(&self) -> Vec<T::AssociatedRecord> {
         todo!()
     }
 
@@ -152,11 +155,11 @@ impl ChapterMethods for Chapter {
         todo!()
     }
 
-    fn from_file<T: DataSpec>(data: Vec<u8>) -> Result<T::AssociatedChapter> {
+    fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
         let contents: RelicFileStructure = decode_and_decompress(data)?;
-        let volume_id = contents.identifier;
-        let chapter_id = contents.address_prefix;
+        let volume_id = VolumeId { oldest_block: contents.identifier.oldest_block };
+        let chapter_id = ChapterId { val: contents.address_prefix };// contents.address_prefix;
         let mut records = vec![];
         // TODO: Change stored file structure to avoid this conversion step.
         for a in contents.addresses.to_vec() {
@@ -165,9 +168,9 @@ impl ChapterMethods for Chapter {
             let record = Record { key, value };
             records.push(record);
         }
-        let c: Chapter = Chapter {
-            chapter_id: todo!(),
-            volume_id: todo!(),
+        let c = Chapter {
+            chapter_id,
+            volume_id,
             records };
         Ok(c)
     }
@@ -251,7 +254,7 @@ pub struct RelicFileStructure {
     /// Prefix common to all addresses that this data covers.
     pub address_prefix: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The blocks that this chunk data covers.
-    pub identifier: VolumeIdentifier,
+    pub identifier: RelicVolumeIdentifier,
     /// The addresses that appeared in this range and the relevant transactions.
     pub addresses: VariableList<RelicAddressAppearances, MAX_ADDRESSES_PER_VOLUME>,
 }
@@ -262,4 +265,9 @@ pub struct RelicAddressAppearances {
     pub address: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The transactions where the address appeared.
     pub appearances: VariableList<AppearanceTx, MAX_TXS_PER_VOLUME>,
+}
+
+#[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, TreeHash, Serialize, Deserialize)]
+pub struct RelicVolumeIdentifier {
+    pub oldest_block: u32,
 }
