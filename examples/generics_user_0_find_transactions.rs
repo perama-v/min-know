@@ -9,7 +9,7 @@ use min_know::{
     },
     database::types::Todd,
     specs::{
-        address_appearance_index::AdApInSpec,
+        address_appearance_index::AAISpec,
         types::{DataSpec, SpecId},
     },
 };
@@ -22,7 +22,7 @@ fn main() -> Result<()> {
 
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
-    let db: Todd<AdApInSpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    let db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
 
     println!(
         "DB is {:#?}, with name {} and num chapters {}",

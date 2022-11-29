@@ -1,11 +1,11 @@
+//! Address Appearance Index (AAI)
 use std::fmt::Display;
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use ssz_derive::{Decode, Encode};
 use ssz_types::{
-    length::Fixed,
-    typenum::{U1073741824, U2, U20},
+    typenum::{U1073741824, U20},
     FixedVector, VariableList,
 };
 use tree_hash_derive::TreeHash;
@@ -22,26 +22,26 @@ use super::types::*;
 
 /// Spec for the Address Appearance Index database.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct AdApInSpec {}
+pub struct AAISpec {}
 
-impl DataSpec for AdApInSpec {
+impl DataSpec for AAISpec {
     const DATABASE_INTERFACE_ID: &'static str = "address_appearance_index";
 
     const NUM_CHAPTERS: usize = 256;
 
     const MAX_VOLUMES: usize = 1_000_000_000;
 
-    type AssociatedVolumeId = VolumeId;
+    type AssociatedVolumeId = AAIVolumeId;
 
-    type AssociatedChapterId = ChapterId;
+    type AssociatedChapterId = AAIChapterId;
 
-    type AssociatedChapter = Chapter;
+    type AssociatedChapter = AAIChapter;
 
-    type AssociatedRecord = Record;
+    type AssociatedRecord = AAIRecord;
 
-    type AssociatedRecordKey = RecordKey;
+    type AssociatedRecordKey = AAIRecordKey;
 
-    type AssociatedRecordValue = RecordValue;
+    type AssociatedRecordValue = AAIRecordValue;
 
     fn spec_name() -> SpecId {
         SpecId::AddressAppearanceIndex
@@ -76,7 +76,7 @@ impl DataSpec for AdApInSpec {
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId> {
         let bytes = record_key.key[0..2].to_vec();
-        Ok(ChapterId {
+        Ok(AAIChapterId {
             val: <_>::from(bytes),
         })
     }
@@ -91,7 +91,7 @@ impl DataSpec for AdApInSpec {
     // Key is a hex string. Converts it to an ssz vector.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
-        Ok(RecordKey {
+        Ok(AAIRecordKey {
             key: <_>::from(raw_bytes),
         })
     }
@@ -118,16 +118,16 @@ impl DataSpec for AdApInSpec {
     Decode,
     TreeHash,
 )]
-pub struct VolumeId {
+pub struct AAIVolumeId {
     oldest_block: u32,
 }
-impl VolumeIdMethods for VolumeId {}
+impl VolumeIdMethods for AAIVolumeId {}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct ChapterId {
+pub struct AAIChapterId {
     val: FixedVector<u8, NUM_COMMON_BYTES>,
 }
-impl ChapterIdMethods for ChapterId {
+impl ChapterIdMethods for AAIChapterId {
     fn interface_id(&self) -> String {
         hex::encode(self.val.to_vec())
     }
@@ -137,12 +137,12 @@ impl ChapterIdMethods for ChapterId {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct Chapter {
-    pub chapter_id: ChapterId,
-    pub volume_id: VolumeId,
-    pub records: Vec<Record>,
+pub struct AAIChapter {
+    pub chapter_id: AAIChapterId,
+    pub volume_id: AAIVolumeId,
+    pub records: Vec<AAIRecord>,
 }
-impl ChapterMethods<AdApInSpec> for Chapter
+impl ChapterMethods<AAISpec> for AAIChapter
 {
     //type RecordType<T> = Record<T>;
 
@@ -150,19 +150,19 @@ impl ChapterMethods<AdApInSpec> for Chapter
         self
     }
 
-    fn find_record(&self, key: RecordKey) -> Record {
+    fn find_record(&self, key: AAIRecordKey) -> AAIRecord {
         todo!()
     }
 
-    fn volume_id(&self) -> VolumeId {
+    fn volume_id(&self) -> AAIVolumeId {
         todo!()
     }
 
-    fn chapter_id(&self) -> ChapterId {
+    fn chapter_id(&self) -> AAIChapterId {
         todo!()
     }
 
-    fn records(self) -> Vec<Record> {
+    fn records(self) -> Vec<AAIRecord> {
         self.records
     }
 
@@ -173,24 +173,24 @@ impl ChapterMethods<AdApInSpec> for Chapter
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
         let contents: RelicFileStructure = decode_and_decompress(data)?;
-        let volume_id = VolumeId {
+        let volume_id = AAIVolumeId {
             oldest_block: contents.identifier.oldest_block,
         };
         let chapter_id = contents.address_prefix.to_vec()[0..3].to_vec();
-        let chapter_id = ChapterId {
+        let chapter_id = AAIChapterId {
             val: <_>::from(chapter_id),
         }; // contents.address_prefix;
         let mut records = vec![];
         // TODO: Change stored file structure to avoid this conversion step.
         for a in contents.addresses.to_vec() {
-            let key = RecordKey { key: a.address };
-            let value = RecordValue {
+            let key = AAIRecordKey { key: a.address };
+            let value = AAIRecordValue {
                 value: a.appearances,
             };
-            let record = Record { key, value };
+            let record = AAIRecord { key, value };
             records.push(record);
         }
-        Ok(Chapter {
+        Ok(AAIChapter {
             chapter_id,
             volume_id,
             records,
@@ -203,23 +203,23 @@ pub type DefaultBytesPerAddress = U20;
 pub type MaxTxsPerVolume = U1073741824;
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct Record {
-    pub key: RecordKey,
-    pub value: RecordValue,
+pub struct AAIRecord {
+    pub key: AAIRecordKey,
+    pub value: AAIRecordValue,
 }
-impl RecordMethods<AdApInSpec> for Record {
+impl RecordMethods<AAISpec> for AAIRecord {
     fn get(&self) -> &Self {
         &self
     }
 
     fn new(
-        key: RecordKey,
-        val: RecordValue,
+        key: AAIRecordKey,
+        val: AAIRecordValue,
     ) -> Self {
         todo!()
     }
 
-    fn key(&self) -> &RecordKey {
+    fn key(&self) -> &AAIRecordKey {
         &self.key
     }
 
@@ -229,10 +229,10 @@ impl RecordMethods<AdApInSpec> for Record {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct RecordKey {
+pub struct AAIRecordKey {
     pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
-impl RecordKeyMethods for RecordKey {
+impl RecordKeyMethods for AAIRecordKey {
     fn get(self) -> Self {
         self
     }
@@ -241,11 +241,11 @@ impl RecordKeyMethods for RecordKey {
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct RecordValue {
+pub struct AAIRecordValue {
     /// The transactions where the address appeared.
-    pub value: VariableList<AppearanceTx, MaxTxsPerVolume>,
+    pub value: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
 }
-impl RecordValueMethods for RecordValue {
+impl RecordValueMethods for AAIRecordValue {
     fn get(self) -> Self {
         self
     }
@@ -261,7 +261,7 @@ impl RecordValueMethods for RecordValue {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
-pub struct AppearanceTx {
+pub struct AAIAppearanceTx {
     /// The Ethereum execution block number.
     pub block: u32,
     /// The index of the transaction in a block.
@@ -287,7 +287,7 @@ pub struct RelicAddressAppearances {
     /// The address that appeared in a transaction.
     pub address: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The transactions where the address appeared.
-    pub appearances: VariableList<AppearanceTx, MAX_TXS_PER_VOLUME>,
+    pub appearances: VariableList<AAIAppearanceTx, MAX_TXS_PER_VOLUME>,
 }
 
 #[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, TreeHash, Serialize, Deserialize)]
