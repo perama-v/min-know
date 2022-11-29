@@ -89,7 +89,7 @@ impl<T: DataSpec> Todd<T> {
             let bytes =
                 fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
             let chapter: T::AssociatedChapter = <T::AssociatedChapter>::from_file(bytes)?;
-            let records: Vec<T::AssociatedRecord> = chapter.records();
+            let records/*: Vec<T::AssociatedRecord>*/ = chapter.records();
             for r in records {
                 let rec = r.get();
                 let key: T::AssociatedRecordKey = rec.key::<T>();

@@ -146,6 +146,8 @@ impl<T> ChapterMethods<T> for Chapter
 where
     T: DataSpec,
 {
+    type RecordType = Record;
+
     fn get(self) -> Self {
         self
     }
@@ -162,9 +164,8 @@ where
         todo!()
     }
 
-    fn records(&self) -> Vec<T::AssociatedRecord> {
-        todo!();
-        // self.records
+    fn records(self) -> Vec<Self::RecordType> {
+        self.records
     }
 
     fn as_serialized_bytes(&self) -> Vec<u8> {
@@ -197,6 +198,7 @@ where
             records,
         })
     }
+
 }
 
 pub type DefaultBytesPerAddress = U20;

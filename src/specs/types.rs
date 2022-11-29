@@ -61,7 +61,7 @@ impl<T> SszTraits for T where T: Encode + Decode + TreeHash {}
 /// and value becomes an record_value.
 /// - raw_key (unformatted record_key)
 /// - raw_value (unformatted record_value)
-pub trait DataSpec: Sized {
+pub trait DataSpec : Sized {
     const DATABASE_INTERFACE_ID: &'static str;
     const NUM_CHAPTERS: usize;
     const MAX_VOLUMES: usize;
@@ -180,6 +180,7 @@ pub trait RecordMethods {
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
 pub trait ChapterMethods<T: DataSpec> {
+    type RecordType: RecordMethods;
     /// Returns the key struct that implements this method.
     fn get(self) -> Self;
     // An input that a user can provide to retrieve useful information.
@@ -194,7 +195,8 @@ pub trait ChapterMethods<T: DataSpec> {
     fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord;
     fn volume_id(&self) -> T::AssociatedVolumeId;
     fn chapter_id(&self) -> T::AssociatedChapterId;
-    fn records(&self) -> Vec<T::AssociatedRecord>;
+    /// Gets all the records present in the Chapter.
+    fn records(self) -> Vec<Self::RecordType>;
     /// Chapter struct as byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
