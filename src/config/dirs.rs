@@ -7,7 +7,7 @@ use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use serde::Deserialize;
 
-use crate::specs::types::{ChapterIdMethods, DataSpec, VolumeIdMethods};
+use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
 
 use super::address_appearance_index::Network;
 
@@ -15,7 +15,7 @@ use super::address_appearance_index::Network;
 pub enum DataKind {
     AddressAppearanceIndex(Network),
     Sourcify,
-    FourByte,
+    FourByte
 }
 
 impl Default for DataKind {
@@ -25,13 +25,22 @@ impl Default for DataKind {
 }
 
 impl DataKind {
-    fn interface_id(&self) -> String {
+    fn as_string(&self) -> &str {
+        match self {
+            DataKind::AddressAppearanceIndex(_) => "address_appearance_index",
+            DataKind::Sourcify => "sourcify",
+            DataKind::FourByte => "four_byte"
+        }
+    }
+    /// The interface ID is the database kind in string form by default.
+    /// Some databases may add additional parameters.
+    fn interface_id(&self) -> &str {
+        let db_name = self.as_string();
         match self {
             DataKind::AddressAppearanceIndex(network) => {
-                format!("address_appearance_index_{}", network.name())
+                format!("{}_{}", db_name, network.name()).as_str()
             }
-            DataKind::Sourcify => format!("sourcify"),
-            DataKind::FourByte => format!("four_byte"),
+            _ => db_name,
         }
     }
     /// Returns the directory for the index for the given network.
@@ -39,23 +48,25 @@ impl DataKind {
     /// This directory will contain the index directory (which contains chapter directories).
     /// Conforms to the `ProjectDirs.data_dir()` schema in the Directories crate.
     fn platform_directory(&self) -> Result<PathBuf> {
-        let proj_string = match self {
-            DataKind::AddressAppearanceIndex(_) => "address-appearance-index",
-            DataKind::Sourcify => "sourcify",
-            DataKind::FourByte => "four_byte",
-        };
-        let proj = ProjectDirs::from("", "", proj_string)
+        let proj_string = self.as_string();
+        let proj = format!("todd_{}", proj_string);
+        let proj = ProjectDirs::from("", "", &proj)
             .ok_or_else(|| anyhow!("Could not access env var (e.g., $HOME) to set up project."))?;
         Ok(proj.data_dir().to_path_buf())
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct PathPair {
-    pub source: PathBuf,
-    pub destination: PathBuf,
+    /// Path for unprocessed data.
+    pub raw_source: PathBuf,
+    /// Path for processed, formatted, data.
+    pub processed_data_dir: PathBuf,
 }
 /// Helper for setting up a config.
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub enum DirNature {
+    #[default]
     Sample,
     Default,
     Custom(PathPair),
@@ -63,26 +74,33 @@ pub enum DirNature {
 
 impl DirNature {
     /// Combines the SpecId and DirNature enums to get specific dir paths and settings.
-    pub fn to_config(self, data: DataKind) -> Result<ConfigStruct> {
-        let dir_name = data.interface_id();
-        let project = data.platform_directory()?;
-        Ok(match data {
+    pub fn to_config(self, data_kind: DataKind) -> Result<ConfigStruct> {
+        let dir_name = data_kind.interface_id();
+        let project = data_kind.platform_directory()?;
+        Ok(match data_kind {
             DataKind::AddressAppearanceIndex(ref network) => match self {
                 DirNature::Sample => ConfigStruct {
-                    data,
+                    dir_nature: self,
+                    data_kind,
                     raw_source: PathBuf::from("TODO source sample path"),
                     data_dir: project.join("samples").join(dir_name),
                 },
                 DirNature::Default => ConfigStruct {
-                    data,
+                    dir_nature: self,
+                    data_kind,
                     raw_source: PathBuf::from("TODO source default path"),
                     data_dir: project.join(dir_name),
                 },
-                DirNature::Custom(x) => ConfigStruct {
-                    data,
-                    raw_source: x.source.join(&dir_name),
-                    data_dir: x.destination.join(&dir_name),
-                },
+                DirNature::Custom(ref x) => {
+                    let raw_source = x.raw_source.join(&dir_name);
+                    let data_dir = x.processed_data_dir.join(&dir_name);
+                    ConfigStruct {
+                        dir_nature: self,
+                        data_kind,
+                        raw_source,
+                        data_dir,
+                    }
+                }
             },
             DataKind::Sourcify => todo!(),
             DataKind::FourByte => todo!(),
@@ -92,11 +110,14 @@ impl DirNature {
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
 pub struct ConfigStruct {
-    data: DataKind,
+    /// Which directory type is being configured. E.g., Real vs sample data.
+    pub dir_nature: DirNature,
+    /// Which database is being configured.
+    pub data_kind: DataKind,
     /// The path to the unformatted raw source data. Used for populating the database.
-    raw_source: PathBuf,
+    pub raw_source: PathBuf,
     /// The path to the functional database.
-    data_dir: PathBuf,
+    pub data_dir: PathBuf,
 }
 
 impl ConfigStruct {
