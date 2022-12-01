@@ -1,7 +1,5 @@
 //! Address Appearance Index (AAI)
-use std::fmt::Display;
-
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use ssz_derive::{Decode, Encode};
 use ssz_types::{
@@ -15,10 +13,10 @@ use crate::{
     parameters::address_appearance_index::{
         DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME, NUM_COMMON_BYTES,
     },
-    spec::VolumeIdentifier,
+    samples::address_appearance_index::AAISampleObtainer,
 };
 
-use super::types::*;
+use super::traits::*;
 
 /// Spec for the Address Appearance Index database.
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
@@ -42,6 +40,8 @@ impl DataSpec for AAISpec {
     type AssociatedRecordKey = AAIRecordKey;
 
     type AssociatedRecordValue = AAIRecordValue;
+
+    type AssociatedSampleObtainer = AAISampleObtainer;
 
     fn spec_name() -> SpecId {
         SpecId::AddressAppearanceIndex
@@ -142,8 +142,7 @@ pub struct AAIChapter {
     pub volume_id: AAIVolumeId,
     pub records: Vec<AAIRecord>,
 }
-impl ChapterMethods<AAISpec> for AAIChapter
-{
+impl ChapterMethods<AAISpec> for AAIChapter {
     //type RecordType<T> = Record<T>;
 
     fn get(self) -> Self {
@@ -196,7 +195,6 @@ impl ChapterMethods<AAISpec> for AAIChapter
             records,
         })
     }
-
 }
 
 pub type DefaultBytesPerAddress = U20;
@@ -212,10 +210,7 @@ impl RecordMethods<AAISpec> for AAIRecord {
         &self
     }
 
-    fn new(
-        key: AAIRecordKey,
-        val: AAIRecordValue,
-    ) -> Self {
+    fn new(key: AAIRecordKey, val: AAIRecordValue) -> Self {
         todo!()
     }
 
