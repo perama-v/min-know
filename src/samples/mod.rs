@@ -1,3 +1,6 @@
-//! This module can be used to obtain index-related data of different kinds.
+//! This module contains somple-obtaining methods that are unique to each database.
+//!
+//! The generic database manager can obtain samples, but requires that
+//! each specification implement the necessary non-generic methods.
 pub mod address_appearance_index;
-pub mod types;
+pub mod traits;

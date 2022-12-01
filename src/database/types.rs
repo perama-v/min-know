@@ -1,16 +1,14 @@
-use anyhow::{Context, Result};
-use ssz_derive::{Decode, Encode};
-use ssz_types::FixedVector;
+use anyhow::{anyhow, Context, Result};
 use std::{fmt::Debug, fs};
-use tree_hash_derive::TreeHash;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
-    encoding::decode_and_decompress,
-    specs::types::{ChapterMethods, DataSpec, RecordMethods, RecordValueMethods},
+    samples::traits::SampleObtainer,
+    specs::traits::{ChapterMethods, DataSpec, RecordMethods, RecordValueMethods},
 };
+
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Todd<T: DataSpec> {
@@ -58,8 +56,7 @@ impl<T: DataSpec> Todd<T> {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val).get();
-                let rec: T::AssociatedRecord =
-                    <T::AssociatedRecord>::new(record_key, record_value);
+                let rec: T::AssociatedRecord = <T::AssociatedRecord>::new(record_key, record_value);
                 vals.push(rec)
             }
         }
@@ -99,5 +96,44 @@ impl<T: DataSpec> Todd<T> {
             }
         }
         Ok(matching)
+    }
+    /// Obtains the sample data for the database.
+    ///
+    /// Samples may be in the cross-platform path (Directories crate),
+    /// the local folder (if repo is cloned from GH) or may need
+    /// to be obtained from a custom source.
+    pub fn get_sample_data(&self) -> Result<()> {
+        if let DirNature::Sample = self.config.dir_nature {
+        } else {
+            return Err(anyhow!("try to configure the db with DirNature::Sample"));
+        }
+        if T::AssociatedSampleObtainer::raw_samples_present(self.config.raw_source) {
+            println!(
+                "The sample files are already present in {:?}",
+                self.config.raw_source
+            );
+        } else {
+            let repo_dir = self.config.raw_source.as_local_repo();
+            if T::AssociatedSampleObtainer::raw_samples_present(repo_dir) {
+                copy_raw_samples_from_repo(repo_dir)
+            } else {
+                T::AssociatedSampleObtainer::get_raw_samples()
+            }
+        }
+
+        if T::AssociatedSampleObtainer::processed_samples_present(self.config.processed_data_dir) {
+            println!(
+                "The sample files are already present in {:?}",
+                self.config.processed_data_dir
+            );
+        } else {
+            let repo_dir = self.config.processed_data_dir.as_local_repo();
+            if T::AssociatedSampleObtainer::processed_samples_present(repo_dir) {
+                copy_processed_samples_from_repo(repo_dir)
+            } else {
+                T::AssociatedSampleObtainer::get_processed_samples()
+            }
+        }
+        Ok(())
     }
 }

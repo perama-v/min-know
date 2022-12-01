@@ -5,6 +5,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use tree_hash::TreeHash;
 
+use crate::samples::traits::SampleObtainer;
+
 // Placeholder for the real trait.
 pub trait SszDecode {}
 
@@ -61,7 +63,7 @@ impl<T> SszTraits for T where T: Encode + Decode + TreeHash {}
 /// and value becomes an record_value.
 /// - raw_key (unformatted record_key)
 /// - raw_value (unformatted record_value)
-pub trait DataSpec : Sized {
+pub trait DataSpec: Sized {
     const DATABASE_INTERFACE_ID: &'static str;
     const NUM_CHAPTERS: usize;
     const MAX_VOLUMES: usize;
@@ -74,6 +76,8 @@ pub trait DataSpec : Sized {
     type AssociatedRecord: RecordMethods<Self> + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
+
+    type AssociatedSampleObtainer: SampleObtainer;
 
     fn spec_name() -> SpecId;
     fn num_chapters() -> usize {
@@ -160,10 +164,7 @@ pub trait RecordValueMethods {
 pub trait RecordMethods<T: DataSpec> {
     /// Returns the key struct that implements this method.
     fn get(&self) -> &Self;
-    fn new(
-        key: T::AssociatedRecordKey,
-        val: T::AssociatedRecordValue,
-    ) -> T::AssociatedRecord;
+    fn new(key: T::AssociatedRecordKey, val: T::AssociatedRecordValue) -> T::AssociatedRecord;
     /// Get the RecordKey of the Record.
     fn key(&self) -> &T::AssociatedRecordKey;
     /// Get the RecordValues of the Record.
