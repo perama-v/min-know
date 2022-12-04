@@ -7,7 +7,10 @@ use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use serde::Deserialize;
 
-use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
+use crate::{
+    specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods},
+    unchained,
+};
 
 use super::address_appearance_index::Network;
 
@@ -15,7 +18,7 @@ use super::address_appearance_index::Network;
 pub enum DataKind {
     AddressAppearanceIndex(Network),
     Sourcify,
-    FourByte
+    FourByte,
 }
 
 impl Default for DataKind {
@@ -29,18 +32,18 @@ impl DataKind {
         match self {
             DataKind::AddressAppearanceIndex(_) => "address_appearance_index",
             DataKind::Sourcify => "sourcify",
-            DataKind::FourByte => "four_byte"
+            DataKind::FourByte => "four_byte",
         }
     }
     /// The interface ID is the database kind in string form by default.
     /// Some databases may add additional parameters.
-    fn interface_id(&self) -> &str {
+    fn interface_id(&self) -> String {
         let db_name = self.as_string();
         match self {
             DataKind::AddressAppearanceIndex(network) => {
-                format!("{}_{}", db_name, network.name()).as_str()
+                format!("{}_{}", db_name, network.name())
             }
-            _ => db_name,
+            _ => db_name.to_string(),
         }
     }
     /// Returns the directory for the index for the given network.
@@ -78,30 +81,33 @@ impl DirNature {
         let dir_name = data_kind.interface_id();
         let project = data_kind.platform_directory()?;
         Ok(match data_kind {
-            DataKind::AddressAppearanceIndex(ref network) => match self {
-                DirNature::Sample => ConfigStruct {
-                    dir_nature: self,
-                    data_kind,
-                    raw_source: PathBuf::from("TODO source sample path"),
-                    data_dir: project.join("samples").join(dir_name),
-                },
-                DirNature::Default => ConfigStruct {
-                    dir_nature: self,
-                    data_kind,
-                    raw_source: PathBuf::from("TODO source default path"),
-                    data_dir: project.join(dir_name),
-                },
-                DirNature::Custom(ref x) => {
-                    let raw_source = x.raw_source.join(&dir_name);
-                    let data_dir = x.processed_data_dir.join(&dir_name);
-                    ConfigStruct {
+            DataKind::AddressAppearanceIndex(ref network) => {
+                let unchained_dir = format!("unchained_index_{}", network.name());
+                match self {
+                    DirNature::Sample => ConfigStruct {
                         dir_nature: self,
                         data_kind,
-                        raw_source,
-                        data_dir,
+                        raw_source: project.join("samples").join(unchained_dir),
+                        data_dir: project.join("samples").join(dir_name),
+                    },
+                    DirNature::Default => ConfigStruct {
+                        dir_nature: self,
+                        data_kind,
+                        raw_source: project.join(unchained_dir),
+                        data_dir: project.join(dir_name),
+                    },
+                    DirNature::Custom(ref x) => {
+                        let raw_source = x.raw_source.join(&dir_name);
+                        let data_dir = x.processed_data_dir.join(&dir_name);
+                        ConfigStruct {
+                            dir_nature: self,
+                            data_kind,
+                            raw_source,
+                            data_dir,
+                        }
                     }
                 }
-            },
+            }
             DataKind::Sourcify => todo!(),
             DataKind::FourByte => todo!(),
         })
@@ -134,6 +140,20 @@ impl ConfigStruct {
     }
     /// Returns the VolumeId for the latest Chapter file present.
     pub fn latest_volume<T: VolumeIdMethods>(&self) -> Result<T> {
+        todo!()
+    }
+    /// Returns the local cloned repo path to the processed sample directory.
+    ///
+    /// This path will be valid only if the library is run from within the
+    /// cloned github repository that contains examples.
+    pub fn exaples_path_repo_raw(&self) -> PathBuf {
+        todo!()
+    }
+    /// Returns the local cloned repo path to the raw sample directory.
+    ///
+    /// This path will be valid only if the library is run from within the
+    /// cloned github repository that contains examples.
+    pub fn examples_path_repo_processed(&self) -> PathBuf {
         todo!()
     }
 }

@@ -9,6 +9,8 @@ use crate::{
     specs::traits::{ChapterMethods, DataSpec, RecordMethods, RecordValueMethods},
 };
 
+use super::utils::{self, DirFunctions};
+
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub struct Todd<T: DataSpec> {
@@ -101,37 +103,66 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// Samples may be in the cross-platform path (Directories crate),
     /// the local folder (if repo is cloned from GH) or may need
-    /// to be obtained from a custom source.
+    /// to be obtained from a custom source. This method tries each in that
+    /// order.
+    ///
+    /// ## Example
+    /// ```
+    /// # use anyhow::Result;
+    /// # use min_know::{
+    /// #    config::dirs::{DataKind, DirNature},
+    /// #    database::types::Todd,
+    /// #    specs::address_appearance_index::AAISpec,
+    /// # };
+    /// let db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    /// db.get_sample_data()?;
+    /// # Ok::<(), anyhow::Error>(())
+    /// ```
     pub fn get_sample_data(&self) -> Result<()> {
         if let DirNature::Sample = self.config.dir_nature {
         } else {
             return Err(anyhow!("try to configure the db with DirNature::Sample"));
         }
-        if T::AssociatedSampleObtainer::raw_samples_present(self.config.raw_source) {
+        // Raw
+        let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
+        if self
+            .config
+            .raw_source
+            .contains_files(&raw_sample_filenames)?
+        {
+            // Present
             println!(
                 "The sample files are already present in {:?}",
                 self.config.raw_source
             );
         } else {
-            let repo_dir = self.config.raw_source.as_local_repo();
-            if T::AssociatedSampleObtainer::raw_samples_present(repo_dir) {
-                copy_raw_samples_from_repo(repo_dir)
+            // Absent
+            let example_dir = self.config.exaples_path_repo_raw();
+            if example_dir.contains_files(&raw_sample_filenames)? {
+                example_dir.copy_into_recursive(&self.config.raw_source)?
             } else {
-                T::AssociatedSampleObtainer::get_raw_samples()
+                T::AssociatedSampleObtainer::get_raw_samples(&self.config.raw_source)?;
             }
         }
-
-        if T::AssociatedSampleObtainer::processed_samples_present(self.config.processed_data_dir) {
+        // Processed
+        let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
+        if self
+            .config
+            .data_dir
+            .contains_files(&processed_sample_filenames)?
+        {
+            // Present
             println!(
                 "The sample files are already present in {:?}",
-                self.config.processed_data_dir
+                self.config.data_dir
             );
         } else {
-            let repo_dir = self.config.processed_data_dir.as_local_repo();
-            if T::AssociatedSampleObtainer::processed_samples_present(repo_dir) {
-                copy_processed_samples_from_repo(repo_dir)
+            // Absent
+            let example_dir = self.config.examples_path_repo_processed();
+            if example_dir.contains_files(&processed_sample_filenames)? {
+                example_dir.copy_into_recursive(&self.config.data_dir)?
             } else {
-                T::AssociatedSampleObtainer::get_processed_samples()
+                todo!("Create the samples using the raw samples.");
             }
         }
         Ok(())

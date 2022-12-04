@@ -10,10 +10,14 @@ use anyhow::Result;
 /// Each database has different samples, and must provide a
 /// type that implements this trait.
 pub trait SampleObtainer {
-    /// Detects if raw samples are present at the given location.
-    fn raw_samples_present(dir: &PathBuf) -> bool;
+    /// Returns the filenames that are raw samples.
+    ///
+    /// Used to check if the samples are present.
+    fn raw_sample_filenames() -> Vec<&'static str>;
+    /// Returns the filenames that are processed samples.
+    ///
+    /// Used to check if the samples are present.
+    fn processed_sample_filenames() -> Vec<&'static str>;
     /// Detects if processed samples are present at the given location.
-    fn processed_samples_present(dir: &PathBuf) -> bool;
-    /// Gets raw samples.
     fn get_raw_samples(dir: &PathBuf) -> Result<()>;
 }
