@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 
 pub trait DirFunctions {
     /// Determines if a directory contains all the filenames provided.
@@ -20,7 +20,10 @@ pub trait DirFunctions {
 impl DirFunctions for PathBuf {
     fn contains_files(&self, files: &Vec<&'static str>) -> Result<bool> {
         println!("Looking for samples in {:?}", self);
-        for sample in fs::read_dir(self)? {
+        let contents = fs::read_dir(self)
+            .with_context(|| format!("Failed to read files from {:?}", &self))?;
+
+        for sample in contents {
             let f = sample?.file_name();
             let Some(filename) = f.to_str() else {
                 return
