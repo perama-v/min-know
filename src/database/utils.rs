@@ -19,9 +19,7 @@ pub trait DirFunctions {
 }
 impl DirFunctions for PathBuf {
     fn contains_files(&self, files: &Vec<&'static str>) -> Result<bool> {
-        println!("Looking for samples in {:?}", self);
-        let contents = fs::read_dir(self)
-            .with_context(|| format!("Failed to read files from {:?}", &self))?;
+        let Ok(contents) = fs::read_dir(self) else {return Ok(false)};
 
         for sample in contents {
             let f = sample?.file_name();

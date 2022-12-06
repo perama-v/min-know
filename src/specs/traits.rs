@@ -5,6 +5,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use tree_hash::TreeHash;
 
+use crate::config::dirs::DataKind;
 use crate::samples::traits::SampleObtainer;
 
 // Placeholder for the real trait.
@@ -64,7 +65,6 @@ impl<T> SszTraits for T where T: Encode + Decode + TreeHash {}
 /// - raw_key (unformatted record_key)
 /// - raw_value (unformatted record_value)
 pub trait DataSpec: Sized {
-    const DATABASE_INTERFACE_ID: &'static str;
     const NUM_CHAPTERS: usize;
     const MAX_VOLUMES: usize;
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
@@ -83,8 +83,6 @@ pub trait DataSpec: Sized {
     fn num_chapters() -> usize {
         Self::NUM_CHAPTERS
     }
-    fn volume_interface_id<T>(volume: T) -> String;
-    fn chapter_interface_id<T>(chapter: T) -> String;
     fn get_all_chapter_ids() -> Vec<Self::AssociatedChapterId>;
     fn get_all_volume_ids() -> Vec<Self::AssociatedVolumeId>;
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
@@ -140,10 +138,12 @@ pub enum SpecId {
 /// ## Rationale
 /// The generic functions in database/types.rs use a set of
 /// marker traits to define common functions.
-pub trait VolumeIdMethods {}
+pub trait VolumeIdMethods {
+    /// Returns the interface id for the Volume.
+    fn interface_id(&self) -> String;
+}
 pub trait ChapterIdMethods {
-    // TODO
-    /// Returns the id for the Chapter.
+    /// Returns the interface id for the Chapter.
     fn interface_id(&self) -> String;
     /// Returns the directory name for the Chapter.
     fn dir_name(&self) -> String;

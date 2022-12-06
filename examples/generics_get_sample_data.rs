@@ -12,8 +12,8 @@ use min_know::{
 ///
 /// Try the following examples next:
 /// ```bash
-/// cargo run --example user_find_transactions
-/// cargo run --example user_check_completeness
+/// cargo run --example generics_user_0_find_transactions
+/// cargo run --example generics_user_check_completeness
 /// ```
 #[tokio::main]
 async fn main() -> Result<()> {

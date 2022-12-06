@@ -1,5 +1,5 @@
 //! Address Appearance Index (AAI)
-use anyhow::Result;
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use ssz_derive::{Decode, Encode};
 use ssz_types::{
@@ -9,6 +9,7 @@ use ssz_types::{
 use tree_hash_derive::TreeHash;
 
 use crate::{
+    config::dirs::DataKind,
     encoding::decode_and_decompress,
     parameters::address_appearance_index::{
         DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME, NUM_COMMON_BYTES,
@@ -23,8 +24,6 @@ use super::traits::*;
 pub struct AAISpec {}
 
 impl DataSpec for AAISpec {
-    const DATABASE_INTERFACE_ID: &'static str = "address_appearance_index";
-
     const NUM_CHAPTERS: usize = 256;
 
     const MAX_VOLUMES: usize = 1_000_000_000;
@@ -49,15 +48,6 @@ impl DataSpec for AAISpec {
 
     fn num_chapters() -> usize {
         Self::NUM_CHAPTERS
-    }
-
-    fn volume_interface_id<T>(volume: T) -> String {
-        todo!()
-    }
-
-    fn chapter_interface_id<T>(chapter: T) -> String {
-        todo!()
-        // format!("chapter_{:?}", chapter)
     }
 
     fn get_all_chapter_ids() -> Vec<Self::AssociatedChapterId> {
@@ -121,7 +111,11 @@ impl DataSpec for AAISpec {
 pub struct AAIVolumeId {
     oldest_block: u32,
 }
-impl VolumeIdMethods for AAIVolumeId {}
+impl VolumeIdMethods for AAIVolumeId {
+    fn interface_id(&self) -> String {
+        todo!()
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct AAIChapterId {

@@ -1,12 +1,14 @@
 use anyhow::{anyhow, Context, Result};
-use std::{fmt::Debug, fs};
+use std::{fmt::Debug, fs, path::PathBuf};
 
 use serde::Deserialize;
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
     samples::traits::SampleObtainer,
-    specs::traits::{ChapterMethods, DataSpec, RecordMethods, RecordValueMethods},
+    specs::traits::{
+        ChapterIdMethods, ChapterMethods, DataSpec, RecordMethods, RecordValueMethods,
+    },
 };
 
 use super::utils::{self, DirFunctions};
@@ -40,11 +42,8 @@ impl<T: DataSpec> Todd<T> {
         }
         Ok(())
     }
-    pub fn spec_name(&self) -> &str {
-        T::DATABASE_INTERFACE_ID
-    }
-    pub fn chapter_interface_id(&self, chapter: T) -> String {
-        T::chapter_interface_id(chapter)
+    pub fn chapter_interface_id(&self, chapter: T::AssociatedChapter) -> String {
+        chapter.chapter_id().interface_id()
     }
     /// Prepares the mininum distributable Chapter
     pub fn get_one_chapter<V>(
@@ -123,7 +122,7 @@ impl<T: DataSpec> Todd<T> {
         } else {
             return Err(anyhow!("try to configure the db with DirNature::Sample"));
         }
-        // Raw
+        // Raw samples
         let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
         if self
             .config
@@ -137,14 +136,15 @@ impl<T: DataSpec> Todd<T> {
             );
         } else {
             // Absent
-            let example_dir = self.config.exaples_path_repo_raw();
+            let example_dir =
+                PathBuf::from("./data/samples").join(self.config.data_kind.raw_source_dir_name());
             if example_dir.contains_files(&raw_sample_filenames)? {
-                example_dir.copy_into_recursive(&self.config.raw_source)?
+                example_dir.copy_into_recursive(&self.config.raw_source)?;
             } else {
-                T::AssociatedSampleObtainer::get_raw_samples(&self.config.raw_source)?;
+                T::AssociatedSampleObtainer::get_raw_samples(&self.config.raw_source)?
             }
         }
-        // Processed
+        // Processed samples
         let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
         if self
             .config
@@ -158,7 +158,8 @@ impl<T: DataSpec> Todd<T> {
             );
         } else {
             // Absent
-            let example_dir = self.config.examples_path_repo_processed();
+            let example_dir =
+                PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
             if example_dir.contains_files(&processed_sample_filenames)? {
                 example_dir.copy_into_recursive(&self.config.data_dir)?
             } else {

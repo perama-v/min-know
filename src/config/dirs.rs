@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use directories::ProjectDirs;
 use serde::Deserialize;
 
@@ -28,7 +28,7 @@ impl Default for DataKind {
 }
 
 impl DataKind {
-    fn as_string(&self) -> &str {
+    pub fn as_string(&self) -> &str {
         match self {
             DataKind::AddressAppearanceIndex(_) => "address_appearance_index",
             DataKind::Sourcify => "sourcify",
@@ -37,7 +37,7 @@ impl DataKind {
     }
     /// The interface ID is the database kind in string form by default.
     /// Some databases may add additional parameters.
-    fn interface_id(&self) -> String {
+    pub fn interface_id(&self) -> String {
         let db_name = self.as_string();
         match self {
             DataKind::AddressAppearanceIndex(network) => {
@@ -46,11 +46,24 @@ impl DataKind {
             _ => db_name.to_string(),
         }
     }
+    pub fn raw_source_dir_name(&self) -> String {
+        format!("raw_source_{}", self.interface_id())
+    }
+    /// Returns any parameter within DataKind as a string.
+    ///
+    /// E.g., AddressAppearanceIndex("mainnet") returns "mainnet".
+    pub fn params_as_string(&self) -> Option<&str> {
+        match self {
+            DataKind::AddressAppearanceIndex(network) => Some(network.name()),
+            DataKind::Sourcify => None,
+            DataKind::FourByte => None,
+        }
+    }
     /// Returns the directory for the index for the given network.
     ///
     /// This directory will contain the index directory (which contains chapter directories).
     /// Conforms to the `ProjectDirs.data_dir()` schema in the Directories crate.
-    fn platform_directory(&self) -> Result<PathBuf> {
+    pub fn platform_directory(&self) -> Result<PathBuf> {
         let proj_string = self.as_string();
         let proj = format!("todd_{}", proj_string);
         let proj = ProjectDirs::from("", "", &proj)
@@ -79,35 +92,33 @@ impl DirNature {
     /// Combines the SpecId and DirNature enums to get specific dir paths and settings.
     pub fn to_config(self, data_kind: DataKind) -> Result<ConfigStruct> {
         let dir_name = data_kind.interface_id();
+        let raw_dir_name = data_kind.raw_source_dir_name();
         let project = data_kind.platform_directory()?;
         Ok(match data_kind {
-            DataKind::AddressAppearanceIndex(ref network) => {
-                let unchained_dir = format!("unchained_index_{}", network.name());
-                match self {
-                    DirNature::Sample => ConfigStruct {
+            DataKind::AddressAppearanceIndex(ref network) => match self {
+                DirNature::Sample => ConfigStruct {
+                    dir_nature: self,
+                    data_kind,
+                    raw_source: project.join("samples").join(raw_dir_name),
+                    data_dir: project.join("samples").join(dir_name),
+                },
+                DirNature::Default => ConfigStruct {
+                    dir_nature: self,
+                    data_kind,
+                    raw_source: project.join(raw_dir_name),
+                    data_dir: project.join(dir_name),
+                },
+                DirNature::Custom(ref x) => {
+                    let raw_source = x.raw_source.join(&dir_name);
+                    let data_dir = x.processed_data_dir.join(&dir_name);
+                    ConfigStruct {
                         dir_nature: self,
                         data_kind,
-                        raw_source: project.join("samples").join(unchained_dir),
-                        data_dir: project.join("samples").join(dir_name),
-                    },
-                    DirNature::Default => ConfigStruct {
-                        dir_nature: self,
-                        data_kind,
-                        raw_source: project.join(unchained_dir),
-                        data_dir: project.join(dir_name),
-                    },
-                    DirNature::Custom(ref x) => {
-                        let raw_source = x.raw_source.join(&dir_name);
-                        let data_dir = x.processed_data_dir.join(&dir_name);
-                        ConfigStruct {
-                            dir_nature: self,
-                            data_kind,
-                            raw_source,
-                            data_dir,
-                        }
+                        raw_source,
+                        data_dir,
                     }
                 }
-            }
+            },
             DataKind::Sourcify => todo!(),
             DataKind::FourByte => todo!(),
         })
@@ -140,20 +151,6 @@ impl ConfigStruct {
     }
     /// Returns the VolumeId for the latest Chapter file present.
     pub fn latest_volume<T: VolumeIdMethods>(&self) -> Result<T> {
-        todo!()
-    }
-    /// Returns the local cloned repo path to the processed sample directory.
-    ///
-    /// This path will be valid only if the library is run from within the
-    /// cloned github repository that contains examples.
-    pub fn exaples_path_repo_raw(&self) -> PathBuf {
-        todo!()
-    }
-    /// Returns the local cloned repo path to the raw sample directory.
-    ///
-    /// This path will be valid only if the library is run from within the
-    /// cloned github repository that contains examples.
-    pub fn examples_path_repo_processed(&self) -> PathBuf {
         todo!()
     }
 }

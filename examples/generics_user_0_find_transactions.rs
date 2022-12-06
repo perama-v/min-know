@@ -21,12 +21,7 @@ fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "full");
 
     let db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
-    println!(
-        "DB is {:#?}, with name {} and num chapters {}",
-        db,
-        db.spec_name(),
-        db.chapters.len()
-    );
+    println!("DB is {:#?}", db);
 
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
