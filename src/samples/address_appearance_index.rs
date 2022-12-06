@@ -1,11 +1,12 @@
-use std::{fs, path::PathBuf};
+use std::{path::PathBuf};
 
-use anyhow::{anyhow, Result};
-use futures_util::stream::StreamExt;
+use anyhow::{Result};
+
 use reqwest::Url;
-use tokio::{fs::File, io::AsyncWriteExt, runtime::Runtime};
+use tokio::{runtime::Runtime};
 
 use super::traits::SampleObtainer;
+use super::utils::download_files;
 
 pub struct AAISampleObtainer;
 
@@ -17,37 +18,23 @@ impl SampleObtainer for AAISampleObtainer {
         todo!()
     }
 
+    /// Downloads the sample Unchained Index chunk files from IPFS.
+    ///
+    /// Saves five 25MB files locally in the sample directory.
     fn get_raw_samples(dir: &PathBuf) -> Result<()> {
+        let mut urls_and_filenames: Vec<(Url, &str)> = vec![];
+        for (index, chunk_name) in SAMPLE_CHUNK_CIDS.iter().enumerate() {
+            urls_and_filenames.push((
+                Url::parse(SAMPLE_UNCHAINED_DIR)?.join(chunk_name)?,
+                SAMPLE_CHUNKS[index],
+            ))
+        }
+        println!("Downloaded {} files to: {:?}", urls_and_filenames.len(), dir);
         let rt = Runtime::new()?;
-        rt.block_on(download_unchained_samples(dir))
+        rt.block_on(download_files(&dir, urls_and_filenames))
     }
 }
 
-/// Downloads the sample Unchained Index chunk files from IPFS.
-///
-/// Saves five 25MB files locally in the sample directory.
-async fn download_unchained_samples(chunks_dir: &PathBuf) -> Result<()> {
-    // Download from lib repo.
-    let client = reqwest::Client::new();
-    fs::create_dir_all(&chunks_dir)?;
-    for (index, chunk_name) in SAMPLE_CHUNK_CIDS.iter().enumerate() {
-        let url = Url::parse(SAMPLE_UNCHAINED_DIR)?.join(chunk_name)?;
-        let filename = chunks_dir.join(SAMPLE_CHUNKS[index]);
-        println!("Downloading chunk by CID: {}", url);
-        let mut file = File::create(filename).await?;
-        let mut stream = client.get(url).send().await?.bytes_stream();
-        while let Some(chunk_result) = stream.next().await {
-            let chunk = chunk_result?;
-            file.write_all(&chunk).await?;
-        }
-        file.flush().await?;
-    }
-    println!(
-        "Downloaded five Unchained Index sample files to: {:?}",
-        &chunks_dir
-    );
-    Ok(())
-}
 
 static SAMPLE_CHUNKS: [&str; 5] = [
     "011283653-011286904.bin",
@@ -66,3 +53,4 @@ pub static SAMPLE_CHUNK_CIDS: [&str; 5] = [
 ];
 
 static SAMPLE_UNCHAINED_DIR: &str = "https://ipfs.unchainedindex.io/ipfs/";
+
