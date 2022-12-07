@@ -15,8 +15,7 @@ use min_know::{
 /// cargo run --example generics_user_0_find_transactions
 /// cargo run --example generics_user_check_completeness
 /// ```
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 
