@@ -36,6 +36,9 @@ impl<T: DataSpec> Todd<T> {
         let vols = T::get_all_volume_ids();
         for chapter in &chapts {
             for vol in &vols {
+                todo!("Extraction by fetching iterators over relevant source db.");
+                T::AssociatedExtractor::get_all_for_chapter(vol, chapter);
+
                 let chapter = self.get_one_chapter::<V>(vol, chapter)?;
                 self.save_chapter(chapter);
             }
@@ -100,6 +103,9 @@ impl<T: DataSpec> Todd<T> {
     }
     /// Obtains the sample data for the database.
     ///
+    /// This includes processed (TODD-compliant) samples and raw samples
+    /// that can be used to create processed samples.
+    ///
     /// Samples may be in the cross-platform path (Directories crate),
     /// the local folder (if repo is cloned from GH) or may need
     /// to be obtained from a custom source. This method tries each in that
@@ -117,7 +123,7 @@ impl<T: DataSpec> Todd<T> {
     /// db.get_sample_data()?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
-    pub fn get_sample_data(&self) -> Result<()> {
+    pub fn get_sample_data(&mut self) -> Result<()> {
         if let DirNature::Sample = self.config.dir_nature {
         } else {
             return Err(anyhow!("try to configure the db with DirNature::Sample"));
@@ -129,39 +135,25 @@ impl<T: DataSpec> Todd<T> {
 
         let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
         let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
-
         // Raw samples
-        if self
+        if !self
             .config
             .raw_source
             .contains_files(&raw_sample_filenames)?
         {
-            // Present
-            println!(
-                "The sample files are already present in {:?}",
-                self.config.raw_source
-            );
-        } else {
-            // Absent
-
             if example_dir_raw.contains_files(&raw_sample_filenames)? {
                 example_dir_raw.copy_into_recursive(&self.config.raw_source)?;
             } else {
                 T::AssociatedSampleObtainer::get_raw_samples(&self.config.raw_source)?
             }
         }
+
         // Processed samples
         match processed_sample_filenames {
             Some(filenames) => {
                 if self.config.data_dir.contains_files(&filenames)? {
-                    // Present
-                    println!(
-                        "The processed sample files are already present in {:?}",
-                        self.config.data_dir
-                    );
                     return Ok(());
                 } else {
-                    // Absent
                     if example_dir_processed.contains_files(&filenames)? {
                         example_dir_processed.copy_into_recursive(&self.config.data_dir)?;
                         return Ok(());
@@ -170,9 +162,8 @@ impl<T: DataSpec> Todd<T> {
             }
             None => {}
         };
-        todo!("Create the processed samples using the raw samples.");
+        // Create the samples by processing the raw samples.
+        self.full_transform::<T>()?;
         Ok(())
     }
 }
-
-enum SampleStatus {}

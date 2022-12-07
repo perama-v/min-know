@@ -19,7 +19,7 @@ fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
 
-    let db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    let mut db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
     db.get_sample_data()?;
     Ok(())
 }

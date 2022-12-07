@@ -1,7 +1,8 @@
 use std::{
     env::current_dir,
+    ffi::OsString,
     fs::{self},
-    path::PathBuf, ffi::OsString,
+    path::PathBuf,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -20,7 +21,8 @@ pub trait DirFunctions {
 impl DirFunctions for PathBuf {
     fn contains_files(&self, files: &Vec<&'static str>) -> Result<bool> {
         let Ok(contents) = fs::read_dir(self) else {return Ok(false)};
-        let present: Vec<String> = contents.into_iter()
+        let present: Vec<String> = contents
+            .into_iter()
             .filter_map(|x| x.ok())
             .map(|x| x.file_name())
             .map(|x| x.to_os_string())

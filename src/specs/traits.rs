@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use tree_hash::TreeHash;
 
-use crate::config::dirs::DataKind;
+use crate::extraction::traits::Extractor;
 use crate::samples::traits::SampleObtainer;
 
 // Placeholder for the real trait.
@@ -77,6 +77,7 @@ pub trait DataSpec: Sized {
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
 
+    type AssociatedExtractor: Extractor;
     type AssociatedSampleObtainer: SampleObtainer;
 
     fn spec_name() -> SpecId;

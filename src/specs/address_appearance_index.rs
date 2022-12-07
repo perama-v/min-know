@@ -14,7 +14,7 @@ use crate::{
     parameters::address_appearance_index::{
         DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME, NUM_COMMON_BYTES,
     },
-    samples::address_appearance_index::AAISampleObtainer,
+    samples::address_appearance_index::AAISampleObtainer, extraction::address_appearance_index::AAIExtractor,
 };
 
 use super::traits::*;
@@ -39,6 +39,8 @@ impl DataSpec for AAISpec {
     type AssociatedRecordKey = AAIRecordKey;
 
     type AssociatedRecordValue = AAIRecordValue;
+
+    type AssociatedExtractor = AAIExtractor;
 
     type AssociatedSampleObtainer = AAISampleObtainer;
 
