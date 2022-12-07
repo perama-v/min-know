@@ -16,7 +16,10 @@ use tokio::{fs::File, io::AsyncWriteExt};
 /// rt.block_on(download_files(&dir, urls_and_filenames))
 /// # Ok(())
 /// ```
-pub async fn download_files(dest_dir: &PathBuf, urls_and_filenames: Vec<(Url, &str)>) -> Result<()> {
+pub async fn download_files(
+    dest_dir: &PathBuf,
+    urls_and_filenames: Vec<(Url, &str)>,
+) -> Result<()> {
     let client = reqwest::Client::new();
     fs::create_dir_all(&dest_dir)?;
 

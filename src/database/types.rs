@@ -122,8 +122,15 @@ impl<T: DataSpec> Todd<T> {
         } else {
             return Err(anyhow!("try to configure the db with DirNature::Sample"));
         }
-        // Raw samples
+        let example_dir_raw =
+            PathBuf::from("./data/samples").join(self.config.data_kind.raw_source_dir_name());
+        let example_dir_processed =
+            PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
+
         let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
+        let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
+
+        // Raw samples
         if self
             .config
             .raw_source
@@ -136,36 +143,36 @@ impl<T: DataSpec> Todd<T> {
             );
         } else {
             // Absent
-            let example_dir =
-                PathBuf::from("./data/samples").join(self.config.data_kind.raw_source_dir_name());
-            if example_dir.contains_files(&raw_sample_filenames)? {
-                example_dir.copy_into_recursive(&self.config.raw_source)?;
+
+            if example_dir_raw.contains_files(&raw_sample_filenames)? {
+                example_dir_raw.copy_into_recursive(&self.config.raw_source)?;
             } else {
                 T::AssociatedSampleObtainer::get_raw_samples(&self.config.raw_source)?
             }
         }
         // Processed samples
-        let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
-        if self
-            .config
-            .data_dir
-            .contains_files(&processed_sample_filenames)?
-        {
-            // Present
-            println!(
-                "The sample files are already present in {:?}",
-                self.config.data_dir
-            );
-        } else {
-            // Absent
-            let example_dir =
-                PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
-            if example_dir.contains_files(&processed_sample_filenames)? {
-                example_dir.copy_into_recursive(&self.config.data_dir)?
-            } else {
-                todo!("Create the samples using the raw samples.");
+        match processed_sample_filenames {
+            Some(filenames) => {
+                if self.config.data_dir.contains_files(&filenames)? {
+                    // Present
+                    println!(
+                        "The processed sample files are already present in {:?}",
+                        self.config.data_dir
+                    );
+                    return Ok(());
+                } else {
+                    // Absent
+                    if example_dir_processed.contains_files(&filenames)? {
+                        example_dir_processed.copy_into_recursive(&self.config.data_dir)?;
+                        return Ok(());
+                    }
+                }
             }
-        }
+            None => {}
+        };
+        todo!("Create the processed samples using the raw samples.");
         Ok(())
     }
 }
+
+enum SampleStatus {}

@@ -1,7 +1,7 @@
 use std::{
     env::current_dir,
     fs::{self},
-    path::PathBuf,
+    path::PathBuf, ffi::OsString,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -20,14 +20,14 @@ pub trait DirFunctions {
 impl DirFunctions for PathBuf {
     fn contains_files(&self, files: &Vec<&'static str>) -> Result<bool> {
         let Ok(contents) = fs::read_dir(self) else {return Ok(false)};
-
-        for sample in contents {
-            let f = sample?.file_name();
-            let Some(filename) = f.to_str() else {
-                return
-                Err(anyhow!("Unable to read a file in {:?}", self))
-            };
-            if !files.contains(&filename) {
+        let present: Vec<String> = contents.into_iter()
+            .filter_map(|x| x.ok())
+            .map(|x| x.file_name())
+            .map(|x| x.to_os_string())
+            .filter_map(|x| x.into_string().ok())
+            .collect();
+        for desired in files {
+            if !present.contains(&desired.to_string()) {
                 return Ok(false);
             }
         }

@@ -1,9 +1,9 @@
-use std::{path::PathBuf};
+use std::path::PathBuf;
 
-use anyhow::{Result};
+use anyhow::Result;
 
 use reqwest::Url;
-use tokio::{runtime::Runtime};
+use tokio::runtime::Runtime;
 
 use super::traits::SampleObtainer;
 use super::utils::download_files;
@@ -14,8 +14,8 @@ impl SampleObtainer for AAISampleObtainer {
     fn raw_sample_filenames() -> Vec<&'static str> {
         return SAMPLE_CHUNKS.to_vec();
     }
-    fn processed_sample_filenames() -> Vec<&'static str> {
-        todo!()
+    fn processed_sample_filenames() -> Option<Vec<&'static str>> {
+        None
     }
 
     /// Downloads the sample Unchained Index chunk files from IPFS.
@@ -29,12 +29,15 @@ impl SampleObtainer for AAISampleObtainer {
                 SAMPLE_CHUNKS[index],
             ))
         }
-        println!("Downloaded {} files to: {:?}", urls_and_filenames.len(), dir);
+        println!(
+            "Downloaded {} files to: {:?}",
+            urls_and_filenames.len(),
+            dir
+        );
         let rt = Runtime::new()?;
         rt.block_on(download_files(&dir, urls_and_filenames))
     }
 }
-
 
 static SAMPLE_CHUNKS: [&str; 5] = [
     "011283653-011286904.bin",
@@ -53,4 +56,3 @@ pub static SAMPLE_CHUNK_CIDS: [&str; 5] = [
 ];
 
 static SAMPLE_UNCHAINED_DIR: &str = "https://ipfs.unchainedindex.io/ipfs/";
-

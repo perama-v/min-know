@@ -17,7 +17,10 @@ pub trait SampleObtainer {
     /// Returns the filenames that are processed samples.
     ///
     /// Used to check if the samples are present.
-    fn processed_sample_filenames() -> Vec<&'static str>;
+    ///
+    /// Return `None` and the samples will be created from raw samples.
+    /// Some of those files can then be selected and included here.
+    fn processed_sample_filenames() -> Option<Vec<&'static str>>;
     /// Detects if processed samples are present at the given location.
     fn get_raw_samples(dir: &PathBuf) -> Result<()>;
 }
