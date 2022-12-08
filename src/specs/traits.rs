@@ -77,7 +77,7 @@ pub trait DataSpec: Sized {
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
 
-    type AssociatedExtractor: Extractor;
+    type AssociatedExtractor: Extractor<Self>;
     type AssociatedSampleObtainer: SampleObtainer;
 
     fn spec_name() -> SpecId;

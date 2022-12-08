@@ -11,10 +11,13 @@ use tree_hash_derive::TreeHash;
 use crate::{
     config::dirs::DataKind,
     encoding::decode_and_decompress,
+    extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
-        DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME, NUM_COMMON_BYTES,
+        BLOCKS_PER_VOLUME, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME,
+        NUM_COMMON_BYTES,
     },
-    samples::address_appearance_index::AAISampleObtainer, extraction::address_appearance_index::AAIExtractor,
+    samples::address_appearance_index::AAISampleObtainer,
+    unchained::types::BlockRange,
 };
 
 use super::traits::*;
@@ -111,17 +114,25 @@ impl DataSpec for AAISpec {
     TreeHash,
 )]
 pub struct AAIVolumeId {
-    oldest_block: u32,
+    pub oldest_block: u32,
 }
 impl VolumeIdMethods for AAIVolumeId {
     fn interface_id(&self) -> String {
         todo!()
     }
 }
+impl AAIVolumeId {
+    pub fn to_block_range(&self) -> Result<BlockRange> {
+        Ok(BlockRange::new(
+            self.oldest_block,
+            BLOCKS_PER_VOLUME - 1 + self.oldest_block,
+        )?)
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
 pub struct AAIChapterId {
-    val: FixedVector<u8, NUM_COMMON_BYTES>,
+    pub val: FixedVector<u8, NUM_COMMON_BYTES>,
 }
 impl ChapterIdMethods for AAIChapterId {
     fn interface_id(&self) -> String {
@@ -164,10 +175,10 @@ impl ChapterMethods<AAISpec> for AAIChapter {
     fn as_serialized_bytes(&self) -> Vec<u8> {
         todo!()
     }
-
+    /// Reads a Chapter from file. Currently reads Relic file structure.
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
-        let contents: RelicFileStructure = decode_and_decompress(data)?;
+        let contents: RelicChapter = decode_and_decompress(data)?;
         let volume_id = AAIVolumeId {
             oldest_block: contents.identifier.oldest_block,
         };
@@ -190,6 +201,38 @@ impl ChapterMethods<AAISpec> for AAIChapter {
             volume_id,
             records,
         })
+    }
+}
+
+impl AAIChapter {
+    /// A helper function that converts the old data chapter (file) structure into the new
+    /// one.
+    ///
+    /// This is used to minimise changes to the transformation/exctraction code during
+    /// the move to generics and can replaced eventually.
+    pub fn from_relic(data: RelicChapter) -> Self {
+        let chapter_id = AAIChapterId {
+            val: <_>::from(data.address_prefix.to_vec()),
+        };
+        let volume_id = AAIVolumeId {
+            oldest_block: data.identifier.oldest_block,
+        };
+        let mut records: Vec<AAIRecord> = vec![];
+        for item in data.addresses.to_vec() {
+            let mut r = AAIRecord::default();
+            r.key = AAIRecordKey {
+                key: <_>::from(item.address.to_vec()),
+            };
+            r.value = AAIRecordValue {
+                value: <_>::from(item.appearances.to_vec()),
+            };
+            records.push(r)
+        }
+        AAIChapter {
+            chapter_id,
+            volume_id,
+            records,
+        }
     }
 }
 
@@ -264,7 +307,7 @@ pub struct AAIAppearanceTx {
 // can be changed to a simpler format (using RecordKey and RecordValue directly).
 //
 #[derive(PartialEq, Debug, Encode, Decode, Clone, TreeHash)]
-pub struct RelicFileStructure {
+pub struct RelicChapter {
     /// Prefix common to all addresses that this data covers.
     pub address_prefix: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The blocks that this chunk data covers.

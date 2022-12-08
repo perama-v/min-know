@@ -5,6 +5,7 @@ use serde::Deserialize;
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
+    extraction::traits::Extractor,
     samples::traits::SampleObtainer,
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, RecordMethods, RecordValueMethods,
@@ -30,32 +31,48 @@ impl<T: DataSpec> Todd<T> {
             config,
         })
     }
-    // Creates new and complete todd.
+    /// Creates new and complete TODD-compliant database from
+    /// a specification and corresponding raw data source.
+    ///
+    /// ## Example
+    /// ```ignore
+    /// let mut db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    /// db.full_transform()?;
+    /// ```
+    /// ## Algorithm
+    /// Relies on the existence of an Extractor method that each database must implement.
+    /// That method raw source data in the specified directory and produces a Chapter
+    /// that matches the specified VolumeId and ChapterId.
+    ///
+    /// The returned Chapter is then saved.
+    /// This is repeated for all possible Chapters and may occur in parallel.
     pub fn full_transform<V>(&mut self) -> Result<()> {
         let chapts = T::get_all_chapter_ids();
         let vols = T::get_all_volume_ids();
-        for chapter in &chapts {
-            for vol in &vols {
-                todo!("Extraction by fetching iterators over relevant source db.");
-                T::AssociatedExtractor::get_all_for_chapter(vol, chapter);
-
-                let chapter = self.get_one_chapter::<V>(vol, chapter)?;
+        for chapter_id in &chapts {
+            for volume_id in &vols {
+                // todo!("Extraction by fetching iterators over relevant source db.");
+                let chapter: T::AssociatedChapter = T::AssociatedExtractor::chapter_from_raw(
+                    chapter_id,
+                    volume_id,
+                    &self.config.raw_source,
+                )?;
                 self.save_chapter(chapter);
             }
         }
         Ok(())
     }
     pub fn chapter_interface_id(&self, chapter: T::AssociatedChapter) -> String {
-        chapter.chapter_id().interface_id()
+        chapter.chapter_id().interface_id().to_owned()
     }
     /// Prepares the mininum distributable Chapter
-    pub fn get_one_chapter<V>(
+    pub fn deprecated_get_one_chapter<V>(
         &self,
         vol: &T::AssociatedVolumeId,
         chapter: &T::AssociatedChapterId,
     ) -> Result<T::AssociatedChapter> {
         let mut vals: Vec<T::AssociatedRecord> = vec![];
-        let source_data: Vec<(&str, V)> = self.raw_pairs();
+        let source_data: Vec<(&str, V)> = self.deprecated_raw_pairs();
         for (raw_key, raw_val) in source_data {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
@@ -67,12 +84,14 @@ impl<T: DataSpec> Todd<T> {
         let mut chapter = T::new_chapter();
         Ok(chapter)
     }
-    pub fn raw_pairs<V>(&self) -> Vec<(&str, V)> {
+    pub fn deprecated_raw_pairs<V>(&self) -> Vec<(&str, V)> {
         // A vector of generic key-value pairs.
         // E.g., (address, appearances) or (address, ABIs)
         todo!()
     }
-    pub fn save_chapter(&self, c: T::AssociatedChapter) {}
+    fn save_chapter(&self, chapter: T::AssociatedChapter) {
+        todo!("Save chapter to file.")
+    }
     /// Obtains the RecordValues that match a particular RecordKey
     ///
     /// Each Chapter contains Records with key-value pairs. This function
