@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use ssz::{Decode, Encode};
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::path::PathBuf;
 use tree_hash::TreeHash;
 
 use crate::extraction::traits::Extractor;
@@ -70,8 +71,8 @@ pub trait DataSpec: Sized {
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
 
     type AssociatedChapter: ChapterMethods<Self> + for<'a> UsefulTraits2<'a>;
-    type AssociatedChapterId: ChapterIdMethods + for<'a> UsefulTraits2<'a>;
-    type AssociatedVolumeId: VolumeIdMethods + for<'a> UsefulTraits<'a>;
+    type AssociatedChapterId: ChapterIdMethods<Self> + for<'a> UsefulTraits2<'a>;
+    type AssociatedVolumeId: VolumeIdMethods<Self> + for<'a> UsefulTraits<'a>;
 
     type AssociatedRecord: RecordMethods<Self> + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
@@ -84,8 +85,24 @@ pub trait DataSpec: Sized {
     fn num_chapters() -> usize {
         Self::NUM_CHAPTERS
     }
-    fn get_all_chapter_ids() -> Vec<Self::AssociatedChapterId>;
-    fn get_all_volume_ids() -> Vec<Self::AssociatedVolumeId>;
+    /// Gets all possible ChapterIds for a given spec.
+    ///
+    /// This is used when creating a new database, where chapters can be created
+    /// in parallel.
+    fn get_all_chapter_ids() -> Result<Vec<Self::AssociatedChapterId>> {
+        (0..Self::NUM_CHAPTERS)
+            .map(|n| Self::AssociatedChapterId::nth_id(n as u32))
+            .collect()
+    }
+    /// Gets a vector of all the VolumeIds
+    fn get_all_volume_ids(raw_data_path: &PathBuf) -> Result<Vec<Self::AssociatedVolumeId>> {
+        let latest = Self::AssociatedExtractor::latest_possible_volume(raw_data_path)?;
+        let latest_vol_position = Self::AssociatedVolumeId::is_nth(&latest)?;
+        // Loop and get nth_id
+        (0..=latest_vol_position)
+            .map(|n| Self::AssociatedVolumeId::nth_id(n as u32))
+            .collect()
+    }
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
@@ -139,15 +156,41 @@ pub enum SpecId {
 /// ## Rationale
 /// The generic functions in database/types.rs use a set of
 /// marker traits to define common functions.
-pub trait VolumeIdMethods {
+pub trait VolumeIdMethods<T: DataSpec> {
     /// Returns the interface id for the Volume.
     fn interface_id(&self) -> String;
+    /// Returns the VolumeId for the zero-based n-th Volume.
+    ///
+    /// Volumes are arranged lexicographically from 0 to n-1, where
+    /// n is the latest volume..
+    ///
+    /// # Example
+    /// If there are 100 volumes, then:
+    /// - n=0 returns the first VolumeId
+    /// - n=99 returns the last VolumeId
+    fn nth_id(n: u32) -> Result<T::AssociatedVolumeId>;
+    /// The zero-based position for the given VolumeId.
+    ///
+    /// If volume ids are placed in lexicographical order, corresponds to
+    /// the position in that sequence. First position is n=0.
+    fn is_nth(&self) -> Result<u32>;
 }
-pub trait ChapterIdMethods {
+pub trait ChapterIdMethods<T: DataSpec> {
     /// Returns the interface id for the Chapter.
     fn interface_id(&self) -> String;
-    /// Returns the directory name for the Chapter.
-    fn dir_name(&self) -> String;
+    /// Returns the ChapterId for the zero-based n-th Chapter.
+    ///
+    /// Chapters are arranged lexicographically from 0 to n-1, where
+    /// n is the total `NUM_CHAPTERS`.
+    ///
+    /// # Example
+    /// If `NUM_CHAPTERS` is 256, then:
+    /// - n=0 returns the first
+    /// - n=255 returns the last ChapterId
+    ///
+    /// # Error
+    /// Returns an error if n is outside range: `[0, NUM_CHAPTERS - 1]`.
+    fn nth_id(n: u32) -> Result<T::AssociatedChapterId>;
 }
 
 /// Marker trait.
@@ -209,4 +252,8 @@ pub trait ChapterMethods<T: DataSpec> {
     fn from_file(data: Vec<u8>) -> Result<Self>
     where
         Self: Sized;
+    /// The filename of the chapter
+    fn filename(&self) -> String {
+        format!("{}_{}.ssz", self.volume_id().interface_id(), self.chapter_id().interface_id())
+    }
 }

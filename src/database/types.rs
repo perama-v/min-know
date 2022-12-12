@@ -47,23 +47,19 @@ impl<T: DataSpec> Todd<T> {
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
     pub fn full_transform<V>(&mut self) -> Result<()> {
-        let chapts = T::get_all_chapter_ids();
-        let vols = T::get_all_volume_ids();
+        let chapts = T::get_all_chapter_ids()?;
+        let vols = T::get_all_volume_ids(&self.config.raw_source)?;
         for chapter_id in &chapts {
             for volume_id in &vols {
-                // todo!("Extraction by fetching iterators over relevant source db.");
-                let chapter: T::AssociatedChapter = T::AssociatedExtractor::chapter_from_raw(
+                let chapter = T::AssociatedExtractor::chapter_from_raw(
                     chapter_id,
                     volume_id,
                     &self.config.raw_source,
                 )?;
-                self.save_chapter(chapter);
+                self.save_chapter(chapter)?;
             }
         }
         Ok(())
-    }
-    pub fn chapter_interface_id(&self, chapter: T::AssociatedChapter) -> String {
-        chapter.chapter_id().interface_id().to_owned()
     }
     /// Prepares the mininum distributable Chapter
     pub fn deprecated_get_one_chapter<V>(
@@ -89,7 +85,11 @@ impl<T: DataSpec> Todd<T> {
         // E.g., (address, appearances) or (address, ABIs)
         todo!()
     }
-    fn save_chapter(&self, chapter: T::AssociatedChapter) {
+    fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
+        let path = &self.config.data_dir
+            .join(chapter.chapter_id().interface_id())
+            .join(chapter.filename());
+        fs::create_dir_all(path)?;
         todo!("Save chapter to file.")
     }
     /// Obtains the RecordValues that match a particular RecordKey

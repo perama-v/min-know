@@ -21,4 +21,12 @@ pub trait Extractor<T: DataSpec> {
         volume_id: &T::AssociatedVolumeId,
         source_dir: &PathBuf,
     ) -> Result<T::AssociatedChapter>;
+    /// Returns the VolumeId of the latest possible volume that can be made from
+    /// the available raw data.
+    ///
+    /// ## Example
+    /// If volumes are produce every 100 units of data (0-99, 100-199, ...),
+    /// and the raw data has 340 units. Then the latest will exclude the
+    /// incomplete 40 and return the id for volume 200-299.
+    fn latest_possible_volume(source_dir: &PathBuf) -> Result<T::AssociatedVolumeId>;
 }

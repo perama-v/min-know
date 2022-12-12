@@ -3,13 +3,14 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::Result;
+use anyhow::{anyhow, bail, Result};
 
 use crate::{
+    parameters::address_appearance_index::BLOCKS_PER_VOLUME,
     specs::{
         address_appearance_index::{
-            AAIAppearanceTx, AAIChapter, AAISpec, RelicAddressAppearances, RelicChapter,
-            RelicVolumeIdentifier,
+            AAIAppearanceTx, AAIChapter, AAIChapterId, AAISpec, AAIVolumeId,
+            RelicAddressAppearances, RelicChapter, RelicVolumeIdentifier,
         },
         traits::{ChapterIdMethods, DataSpec},
     },
@@ -26,19 +27,26 @@ pub struct AAIExtractor {}
 
 impl Extractor<AAISpec> for AAIExtractor {
     fn chapter_from_raw(
-        chapter_id: &<AAISpec as DataSpec>::AssociatedChapterId,
-        volume_id: &<AAISpec as DataSpec>::AssociatedVolumeId,
+        chapter_id: &AAIChapterId,
+        volume_id: &AAIVolumeId,
         source_dir: &PathBuf,
-    ) -> Result<<AAISpec as DataSpec>::AssociatedChapter> {
+    ) -> Result<AAIChapter> {
         // Get relevant raw files.
         let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
         let block_range = volume_id.to_block_range()?;
         let relevant_files: Vec<&ChunkFile> = chunk_files.for_range(&block_range)?;
         // Get appearances from files.
+        let leading_char = hex::encode(chapter_id.val.to_vec());
         let relic_chapter: RelicChapter =
-            get_relevant_appearances(relevant_files, block_range, &chapter_id.interface_id())?;
+            get_relevant_appearances(relevant_files, block_range, &leading_char)?;
         let chapter = AAIChapter::from_relic(relic_chapter);
         Ok(chapter)
+    }
+    fn latest_possible_volume(source_dir: &PathBuf) -> Result<AAIVolumeId> {
+        let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
+        Ok(AAIVolumeId {
+            oldest_block: latest_full_volume(latest_block_in_chunks(&chunk_files)?)?,
+        })
     }
 }
 
@@ -103,4 +111,50 @@ pub fn get_relevant_appearances(
         addresses: <_>::from(addresses),
     };
     Ok(res)
+}
+
+/// Finds the latest block in an Unchained Index chunks directory.
+///
+/// If the chunks directory contains the latest chunk: "015433333-015455555.bin"
+/// the value 15_455_555 will be returned.
+pub fn latest_block_in_chunks(chunks: &ChunksDir) -> Result<u32> {
+    let latest = chunks
+        .paths
+        .last()
+        .ok_or_else(|| {
+            anyhow!(
+                "Expected chunks dir {:?} to contain files, found none.",
+                chunks.dir
+            )
+        })?
+        .range
+        .new;
+    Ok(latest)
+}
+
+/// Gets the latest complete volume possible for a given block height (as
+/// a VolumeId)
+///
+/// latest block, id of latest full volume:
+/// - 99_999, 0
+/// - 199_999, 100_000
+/// - 200_000, 100_000
+/// - 299_998, 100_000
+/// - 299_999, 200_000
+pub fn latest_full_volume(highest_block: u32) -> Result<u32> {
+    if highest_block < BLOCKS_PER_VOLUME - 1 {
+        bail!("No complete blocks possible")
+    }
+
+    Ok(((highest_block + 1 - BLOCKS_PER_VOLUME) / BLOCKS_PER_VOLUME) * BLOCKS_PER_VOLUME)
+}
+
+#[test]
+fn test_latest_vol_id() {
+    assert!(matches!(latest_full_volume(99_998), Err(_error)));
+    assert_eq!(latest_full_volume(99_999).unwrap(), 0);
+    assert_eq!(latest_full_volume(199_999).unwrap(), 100_000);
+    assert_eq!(latest_full_volume(200_000).unwrap(), 100_000);
+    assert_eq!(latest_full_volume(299_998).unwrap(), 100_000);
+    assert_eq!(latest_full_volume(299_999).unwrap(), 200_000);
 }

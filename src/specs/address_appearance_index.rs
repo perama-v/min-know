@@ -55,14 +55,6 @@ impl DataSpec for AAISpec {
         Self::NUM_CHAPTERS
     }
 
-    fn get_all_chapter_ids() -> Vec<Self::AssociatedChapterId> {
-        todo!()
-    }
-
-    fn get_all_volume_ids() -> Vec<Self::AssociatedVolumeId> {
-        todo!()
-    }
-
     fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId {
         todo!()
     }
@@ -116,8 +108,23 @@ impl DataSpec for AAISpec {
 pub struct AAIVolumeId {
     pub oldest_block: u32,
 }
-impl VolumeIdMethods for AAIVolumeId {
+impl VolumeIdMethods<AAISpec> for AAIVolumeId {
     fn interface_id(&self) -> String {
+        let mut name = format!("{:0>9}", self.oldest_block);
+        for i in [6, 3] {
+            name.insert(i, '_');
+        }
+        format!("volume_{}", name)
+    }
+    fn nth_id(n: u32) -> Result<Self> {
+        // n=0, id=0
+        // n=1, id=100_000
+        // n=2, id=200_000
+        let oldest_block = n * BLOCKS_PER_VOLUME;
+        Ok(AAIVolumeId { oldest_block })
+    }
+
+    fn is_nth(&self) -> Result<u32> {
         todo!()
     }
 }
@@ -134,12 +141,20 @@ impl AAIVolumeId {
 pub struct AAIChapterId {
     pub val: FixedVector<u8, NUM_COMMON_BYTES>,
 }
-impl ChapterIdMethods for AAIChapterId {
+impl ChapterIdMethods<AAISpec> for AAIChapterId {
     fn interface_id(&self) -> String {
-        hex::encode(self.val.to_vec())
+        let chars = hex::encode(self.val.to_vec());
+        format!("chapter_0x{}", chars)
     }
-    fn dir_name(&self) -> String {
-        format!("chapter_0x{}", self.interface_id())
+    fn nth_id(n: u32) -> Result<Self> {
+        if n as usize >= AAISpec::NUM_CHAPTERS {
+            bail!("'n' must be <= NUM_CHAPTERS")
+        }
+        let byte_vec = vec![n as u8];
+        let Ok(fv) = FixedVector::<u8, NUM_COMMON_BYTES>::new(byte_vec) else {
+            bail!("Provided vector is too long for Fixed Vector.")
+        };
+        Ok(AAIChapterId { val: fv })
     }
 }
 
@@ -150,8 +165,6 @@ pub struct AAIChapter {
     pub records: Vec<AAIRecord>,
 }
 impl ChapterMethods<AAISpec> for AAIChapter {
-    //type RecordType<T> = Record<T>;
-
     fn get(self) -> Self {
         self
     }
