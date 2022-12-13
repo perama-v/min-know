@@ -12,7 +12,6 @@ use crate::{
             AAIAppearanceTx, AAIChapter, AAIChapterId, AAISpec, AAIVolumeId,
             RelicAddressAppearances, RelicChapter, RelicVolumeIdentifier,
         },
-        traits::{ChapterIdMethods, DataSpec},
     },
     unchained::{
         structure::TransactionId,
@@ -30,17 +29,19 @@ impl Extractor<AAISpec> for AAIExtractor {
         chapter_id: &AAIChapterId,
         volume_id: &AAIVolumeId,
         source_dir: &PathBuf,
-    ) -> Result<AAIChapter> {
+    ) -> Result<Option<AAIChapter>> {
         // Get relevant raw files.
         let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
         let block_range = volume_id.to_block_range()?;
-        let relevant_files: Vec<&ChunkFile> = chunk_files.for_range(&block_range)?;
+        let Some(relevant_files) = chunk_files.for_range(&block_range) else {
+            return Ok(None)
+        };
         // Get appearances from files.
         let leading_char = hex::encode(chapter_id.val.to_vec());
         let relic_chapter: RelicChapter =
             get_relevant_appearances(relevant_files, block_range, &leading_char)?;
         let chapter = AAIChapter::from_relic(relic_chapter);
-        Ok(chapter)
+        Ok(Some(chapter))
     }
     fn latest_possible_volume(source_dir: &PathBuf) -> Result<AAIVolumeId> {
         let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;

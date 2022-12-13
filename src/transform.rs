@@ -93,7 +93,10 @@ fn create_specific_volume_files(
 
         for volume_info in chapter_info.volumes {
             // One file for each range-defined volume.
-            let relevant_files: Vec<&ChunkFile> = chunk_files.for_range(&volume_info)?;
+            let relevant_files = match chunk_files.for_range(&volume_info) {
+                Some(files) => files,
+                None => vec![],
+            };
             let volume: AddressIndexVolumeChapter =
                 get_relevant_appearances(relevant_files, volume_info, &chapter_info.leading_chars)?;
 

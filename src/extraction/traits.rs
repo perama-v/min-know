@@ -15,12 +15,13 @@ use crate::specs::traits::DataSpec;
 pub trait Extractor<T: DataSpec> {
     /// Returns a formed Chapter using raw data in the provided source directory.
     ///
-    /// E.g.,
+    /// Returns `None` if the are no source files that match the provided IDs.
+    /// This may be the case when processing sample data.
     fn chapter_from_raw(
         chapter_id: &T::AssociatedChapterId,
         volume_id: &T::AssociatedVolumeId,
         source_dir: &PathBuf,
-    ) -> Result<T::AssociatedChapter>;
+    ) -> Result<Option<T::AssociatedChapter>>;
     /// Returns the VolumeId of the latest possible volume that can be made from
     /// the available raw data.
     ///

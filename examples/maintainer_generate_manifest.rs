@@ -3,7 +3,7 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    types::{AddressIndexPath, Network, UnchainedPath},
+    types::{AddressIndexPath, Network},
     IndexConfig,
 };
 

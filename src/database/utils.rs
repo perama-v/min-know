@@ -1,11 +1,9 @@
 use std::{
-    env::current_dir,
-    ffi::OsString,
     fs::{self},
     path::PathBuf,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Result};
 
 pub trait DirFunctions {
     /// Determines if a directory contains all the filenames provided.

@@ -1,6 +1,7 @@
 //! Address Appearance Index (AAI)
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
+use ssz::{Decode, Encode};
 use ssz_derive::{Decode, Encode};
 use ssz_types::{
     typenum::{U1073741824, U20},
@@ -125,7 +126,10 @@ impl VolumeIdMethods<AAISpec> for AAIVolumeId {
     }
 
     fn is_nth(&self) -> Result<u32> {
-        todo!()
+        // id=0, n=0
+        // id=100_000, n=1
+        // id=200_000, n=2
+        Ok(self.oldest_block / BLOCKS_PER_VOLUME)
     }
 }
 impl AAIVolumeId {
@@ -158,7 +162,7 @@ impl ChapterIdMethods<AAISpec> for AAIChapterId {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIChapter {
     pub chapter_id: AAIChapterId,
     pub volume_id: AAIVolumeId,
@@ -173,20 +177,20 @@ impl ChapterMethods<AAISpec> for AAIChapter {
         todo!()
     }
 
-    fn volume_id(&self) -> AAIVolumeId {
-        todo!()
+    fn volume_id(&self) -> &AAIVolumeId {
+        &self.volume_id
     }
 
-    fn chapter_id(&self) -> AAIChapterId {
-        todo!()
+    fn chapter_id(&self) -> &AAIChapterId {
+        &self.chapter_id
     }
 
-    fn records(self) -> Vec<AAIRecord> {
-        self.records
+    fn records(&self) -> &Vec<AAIRecord> {
+        &self.records
     }
 
     fn as_serialized_bytes(&self) -> Vec<u8> {
-        todo!()
+        self.as_ssz_bytes()
     }
     /// Reads a Chapter from file. Currently reads Relic file structure.
     fn from_file(data: Vec<u8>) -> Result<Self> {

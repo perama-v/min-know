@@ -4,16 +4,14 @@ use anyhow::Result;
 
 use min_know::{
     config::{
-        address_appearance_index::Network,
         dirs::{DataKind, DirNature},
     },
     database::types::Todd,
     specs::{
         address_appearance_index::AAISpec,
-        traits::{DataSpec, SpecId},
     },
 };
-use ssz::Encode;
+
 
 /// Uses local index data to extract transaction identifiers important for a given address.
 fn main() -> Result<()> {

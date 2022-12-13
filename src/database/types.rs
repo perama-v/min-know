@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-use super::utils::{self, DirFunctions};
+use super::utils::DirFunctions;
 
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -49,6 +49,11 @@ impl<T: DataSpec> Todd<T> {
     pub fn full_transform<V>(&mut self) -> Result<()> {
         let chapts = T::get_all_chapter_ids()?;
         let vols = T::get_all_volume_ids(&self.config.raw_source)?;
+        println!(
+            "There are {} volumes, each with {} chapters.",
+            vols.len(),
+            chapts.len()
+        );
         for chapter_id in &chapts {
             for volume_id in &vols {
                 let chapter = T::AssociatedExtractor::chapter_from_raw(
@@ -56,7 +61,10 @@ impl<T: DataSpec> Todd<T> {
                     volume_id,
                     &self.config.raw_source,
                 )?;
-                self.save_chapter(chapter)?;
+                match chapter {
+                    Some(c) => self.save_chapter(c)?,
+                    None => continue,
+                }
             }
         }
         Ok(())
@@ -77,7 +85,7 @@ impl<T: DataSpec> Todd<T> {
                 vals.push(rec)
             }
         }
-        let mut chapter = T::new_chapter();
+        let chapter = T::new_chapter();
         Ok(chapter)
     }
     pub fn deprecated_raw_pairs<V>(&self) -> Vec<(&str, V)> {
@@ -86,11 +94,18 @@ impl<T: DataSpec> Todd<T> {
         todo!()
     }
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
-        let path = &self.config.data_dir
-            .join(chapter.chapter_id().interface_id())
-            .join(chapter.filename());
-        fs::create_dir_all(path)?;
-        todo!("Save chapter to file.")
+        let chapter_dir_path = &self
+            .config
+            .data_dir
+            .join(&chapter.chapter_id().interface_id());
+        fs::create_dir_all(chapter_dir_path)?;
+        let encoded = chapter.as_serialized_bytes();
+        let filename = chapter.filename();
+        println!("Saving chapter: {}, with {} records ({} bytes).",
+            &filename, chapter.records().len(), encoded.len());
+        let filepath = chapter_dir_path.join(&filename);
+        fs::write(&filepath, encoded).context(anyhow!("Unable to write file {:?}", &filepath))?;
+        Ok(())
     }
     /// Obtains the RecordValues that match a particular RecordKey
     ///
@@ -114,7 +129,7 @@ impl<T: DataSpec> Todd<T> {
                 let rec = r.get();
                 let key = rec.key();
                 if key == &target_record_key {
-                    matching.extend(r.values_as_strings())
+                    matching.extend(r.clone().values_as_strings())
                 }
             }
         }
@@ -182,6 +197,7 @@ impl<T: DataSpec> Todd<T> {
             None => {}
         };
         // Create the samples by processing the raw samples.
+        println!("Creating db samples by processing raw samples.");
         self.full_transform::<T>()?;
         Ok(())
     }

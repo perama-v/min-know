@@ -96,8 +96,8 @@ pub trait DataSpec: Sized {
     }
     /// Gets a vector of all the VolumeIds
     fn get_all_volume_ids(raw_data_path: &PathBuf) -> Result<Vec<Self::AssociatedVolumeId>> {
-        let latest = Self::AssociatedExtractor::latest_possible_volume(raw_data_path)?;
-        let latest_vol_position = Self::AssociatedVolumeId::is_nth(&latest)?;
+        let latest_vol = Self::AssociatedExtractor::latest_possible_volume(raw_data_path)?;
+        let latest_vol_position = Self::AssociatedVolumeId::is_nth(&latest_vol)?;
         // Loop and get nth_id
         (0..=latest_vol_position)
             .map(|n| Self::AssociatedVolumeId::nth_id(n as u32))
@@ -238,10 +238,18 @@ pub trait ChapterMethods<T: DataSpec> {
     //
     // For an ABI database, the record_key is a contract identifier.
     fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord;
-    fn volume_id(&self) -> T::AssociatedVolumeId;
-    fn chapter_id(&self) -> T::AssociatedChapterId;
+    /// Get the VolumeId.
+    ///
+    /// The method likely just returns the relevant struct member, which is
+    /// otherwise inacessible to methods generic over T.
+    fn volume_id(&self) -> &T::AssociatedVolumeId;
+    /// Get the ChapterId.
+    ///
+    /// The method likely just returns the relevant struct member, which is
+    /// otherwise inacessible to methods generic over T.
+    fn chapter_id(&self) -> &T::AssociatedChapterId;
     /// Gets all the records present in the Chapter.
-    fn records(self) -> Vec<T::AssociatedRecord>;
+    fn records(&self) -> &Vec<T::AssociatedRecord>;
     /// Chapter struct as byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
@@ -254,6 +262,10 @@ pub trait ChapterMethods<T: DataSpec> {
         Self: Sized;
     /// The filename of the chapter
     fn filename(&self) -> String {
-        format!("{}_{}.ssz", self.volume_id().interface_id(), self.chapter_id().interface_id())
+        format!(
+            "{}_{}.ssz",
+            self.volume_id().interface_id(),
+            self.chapter_id().interface_id()
+        )
     }
 }

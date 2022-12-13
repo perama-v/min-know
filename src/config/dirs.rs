@@ -1,15 +1,15 @@
 use std::{
-    fmt::format,
-    path::{Path, PathBuf},
+
+    path::{ PathBuf},
 };
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use serde::Deserialize;
 
 use crate::{
     specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods},
-    unchained,
+
 };
 
 use super::address_appearance_index::Network;

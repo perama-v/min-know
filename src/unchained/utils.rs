@@ -40,14 +40,17 @@ impl ChunksDir {
     /// Obtains the details of chunk files relevant for a given block range.
     ///
     /// Chunks are relevant if they intersect the desired range.
-    pub fn for_range(&self, desired_range: &BlockRange) -> Result<Vec<&ChunkFile>> {
+    pub fn for_range(&self, desired_range: &BlockRange) -> Option<Vec<&ChunkFile>> {
         let mut relevant: Vec<&ChunkFile> = vec![];
         for chunk in &self.paths {
             if chunk.range.intersection_exists(desired_range) {
                 relevant.push(chunk);
             }
         }
-        Ok(relevant)
+        if relevant.len() == 0 {
+            return None;
+        }
+        Some(relevant)
     }
 }
 
