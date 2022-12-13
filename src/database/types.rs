@@ -10,6 +10,7 @@ use crate::{
     samples::traits::SampleObtainer,
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, RecordMethods, RecordValueMethods,
+        VolumeIdMethods,
     },
 };
 
@@ -47,6 +48,9 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
+    ///
+    /// ## Errors
+    /// All errors encountered during child function execution are displayed here.
     pub fn full_transform<V>(&mut self) -> Result<()> {
         let chapter_ids = &T::get_all_chapter_ids()?;
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
@@ -55,33 +59,32 @@ impl<T: DataSpec> Todd<T> {
             volume_ids.len(),
             chapter_ids.len()
         );
-
-        chapter_ids.par_iter().for_each(|chapter_id| {
-            for volume_id in volume_ids {
+        volume_ids.par_iter().for_each(|volume_id| {
+            chapter_ids.par_iter().for_each(|chapter_id| {
                 let chapter = T::AssociatedExtractor::chapter_from_raw(
                     &chapter_id,
                     volume_id,
                     &self.config.raw_source,
                 );
-                let ch = match chapter {
-                    Ok(c) => c,
-                    Err(e) => {
-                        println!("Error for chapter: {}", e);
-                        continue
-                    },
-                };
-                match ch {
-                    Some(c) => match self.save_chapter(c) {
-                        Ok(_) => continue,
-                        Err(e) => {
-                            println!("Error for chapter: {}", e);
-                            continue
+                let v_id = volume_id.interface_id();
+                let c_id = chapter_id.interface_id();
+                match chapter {
+                    Ok(chap_opt) => match chap_opt {
+                        Some(chap) => match self.save_chapter(chap) {
+                            Ok(_) => {}
+                            Err(e) => println!(
+                                "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
+                                v_id, c_id, e
+                            ),
                         },
+                        None => {/* No raw data for this volume_id/chapter_id combo (skip). */},
                     },
-                    None => continue,
-                }
-            }
-
+                    Err(e) => println!(
+                        "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
+                        v_id, c_id, e
+                    ),
+                };
+            })
         });
 
         Ok(())
