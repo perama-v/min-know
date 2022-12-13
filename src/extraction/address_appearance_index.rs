@@ -7,11 +7,9 @@ use anyhow::{anyhow, bail, Result};
 
 use crate::{
     parameters::address_appearance_index::BLOCKS_PER_VOLUME,
-    specs::{
-        address_appearance_index::{
-            AAIAppearanceTx, AAIChapter, AAIChapterId, AAISpec, AAIVolumeId,
-            RelicAddressAppearances, RelicChapter, RelicVolumeIdentifier,
-        },
+    specs::address_appearance_index::{
+        AAIAppearanceTx, AAIChapter, AAIChapterId, AAISpec, AAIVolumeId, RelicAddressAppearances,
+        RelicChapter, RelicVolumeIdentifier,
     },
     unchained::{
         structure::TransactionId,

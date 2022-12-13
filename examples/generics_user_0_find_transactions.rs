@@ -3,15 +3,10 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{
-        dirs::{DataKind, DirNature},
-    },
+    config::dirs::{DataKind, DirNature},
     database::types::Todd,
-    specs::{
-        address_appearance_index::AAISpec,
-    },
+    specs::address_appearance_index::AAISpec,
 };
-
 
 /// Uses local index data to extract transaction identifiers important for a given address.
 fn main() -> Result<()> {

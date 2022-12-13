@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use std::{fmt::Debug, fs, path::PathBuf};
 
+use rayon::prelude::*;
 use serde::Deserialize;
 
 use crate::{
@@ -47,26 +48,42 @@ impl<T: DataSpec> Todd<T> {
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
     pub fn full_transform<V>(&mut self) -> Result<()> {
-        let chapts = T::get_all_chapter_ids()?;
-        let vols = T::get_all_volume_ids(&self.config.raw_source)?;
+        let chapter_ids = &T::get_all_chapter_ids()?;
+        let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
         println!(
             "There are {} volumes, each with {} chapters.",
-            vols.len(),
-            chapts.len()
+            volume_ids.len(),
+            chapter_ids.len()
         );
-        for chapter_id in &chapts {
-            for volume_id in &vols {
+
+        chapter_ids.par_iter().for_each(|chapter_id| {
+            for volume_id in volume_ids {
                 let chapter = T::AssociatedExtractor::chapter_from_raw(
-                    chapter_id,
+                    &chapter_id,
                     volume_id,
                     &self.config.raw_source,
-                )?;
-                match chapter {
-                    Some(c) => self.save_chapter(c)?,
+                );
+                let ch = match chapter {
+                    Ok(c) => c,
+                    Err(e) => {
+                        println!("Error for chapter: {}", e);
+                        continue
+                    },
+                };
+                match ch {
+                    Some(c) => match self.save_chapter(c) {
+                        Ok(_) => continue,
+                        Err(e) => {
+                            println!("Error for chapter: {}", e);
+                            continue
+                        },
+                    },
                     None => continue,
                 }
             }
-        }
+
+        });
+
         Ok(())
     }
     /// Prepares the mininum distributable Chapter
@@ -101,8 +118,12 @@ impl<T: DataSpec> Todd<T> {
         fs::create_dir_all(chapter_dir_path)?;
         let encoded = chapter.as_serialized_bytes();
         let filename = chapter.filename();
-        println!("Saving chapter: {}, with {} records ({} bytes).",
-            &filename, chapter.records().len(), encoded.len());
+        println!(
+            "Saving chapter: {}, with {} records ({} bytes).",
+            &filename,
+            chapter.records().len(),
+            encoded.len()
+        );
         let filepath = chapter_dir_path.join(&filename);
         fs::write(&filepath, encoded).context(anyhow!("Unable to write file {:?}", &filepath))?;
         Ok(())

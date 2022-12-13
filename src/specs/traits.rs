@@ -70,9 +70,9 @@ pub trait DataSpec: Sized {
     const MAX_VOLUMES: usize;
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
 
-    type AssociatedChapter: ChapterMethods<Self> + for<'a> UsefulTraits2<'a>;
-    type AssociatedChapterId: ChapterIdMethods<Self> + for<'a> UsefulTraits2<'a>;
-    type AssociatedVolumeId: VolumeIdMethods<Self> + for<'a> UsefulTraits<'a>;
+    type AssociatedChapter: ChapterMethods<Self> + for<'a> UsefulTraits2<'a> + Send + Sync;
+    type AssociatedChapterId: ChapterIdMethods<Self> + for<'a> UsefulTraits2<'a> + Send + Sync;
+    type AssociatedVolumeId: VolumeIdMethods<Self> + for<'a> UsefulTraits<'a> + Send + Sync;
 
     type AssociatedRecord: RecordMethods<Self> + for<'a> UsefulTraits2<'a>;
     type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;

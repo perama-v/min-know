@@ -1,16 +1,10 @@
-use std::{
-
-    path::{ PathBuf},
-};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use directories::ProjectDirs;
 use serde::Deserialize;
 
-use crate::{
-    specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods},
-
-};
+use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
 
 use super::address_appearance_index::Network;
 
