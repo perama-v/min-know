@@ -1,6 +1,7 @@
 use std::env;
 
 use anyhow::Result;
+use env_logger;
 
 use min_know::{
     config::dirs::{DataKind, DirNature},
@@ -18,6 +19,7 @@ use min_know::{
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
+    env_logger::init();
 
     let mut db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
     db.get_sample_data()?;

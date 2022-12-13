@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use std::{fmt::Debug, fs, path::PathBuf};
 
+use log::{info, warn, error, debug};
 use rayon::prelude::*;
 use serde::Deserialize;
 
@@ -54,7 +55,7 @@ impl<T: DataSpec> Todd<T> {
     pub fn full_transform<V>(&mut self) -> Result<()> {
         let chapter_ids = &T::get_all_chapter_ids()?;
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
-        println!(
+        info!(
             "There are {} volumes, each with {} chapters.",
             volume_ids.len(),
             chapter_ids.len()
@@ -69,20 +70,19 @@ impl<T: DataSpec> Todd<T> {
                 let v_id = volume_id.interface_id();
                 let c_id = chapter_id.interface_id();
                 match chapter {
+                    Err(e) => error!("Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
+                        v_id, c_id, e
+                    ),
                     Ok(chap_opt) => match chap_opt {
+                        None => {/* No raw data for this volume_id/chapter_id combo (skip). */},
                         Some(chap) => match self.save_chapter(chap) {
                             Ok(_) => {}
-                            Err(e) => println!(
+                            Err(e) => error!(
                                 "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
                                 v_id, c_id, e
                             ),
                         },
-                        None => {/* No raw data for this volume_id/chapter_id combo (skip). */},
                     },
-                    Err(e) => println!(
-                        "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
-                        v_id, c_id, e
-                    ),
                 };
             })
         });
