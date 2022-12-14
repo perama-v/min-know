@@ -138,14 +138,14 @@ impl ConfigStruct {
     }
     /// Returns the path for the directory that holds all chapters that
     /// match the given ChapterId.
-    pub fn similar_chapters_path<T, U>(&self, chapter: T) -> Result<PathBuf>
+    pub fn chapter_dir_path<T, U>(&self, chapter: &T) -> PathBuf
     where
         T: ChapterIdMethods<U>,
         U: DataSpec,
     {
         let mut p = self.data_dir.to_path_buf();
         p.push(chapter.interface_id());
-        Ok(p)
+        p
     }
     /// Returns the VolumeId for the latest Chapter file present.
     pub fn latest_volume<T, U>(&self) -> Result<T>

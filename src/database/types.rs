@@ -147,8 +147,7 @@ impl<T: DataSpec> Todd<T> {
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
         let chapter_dir_path = &self
             .config
-            .data_dir
-            .join(&chapter.chapter_id().interface_id());
+            .chapter_dir_path(chapter.chapter_id());
         fs::create_dir_all(chapter_dir_path)?;
         let encoded = chapter.as_serialized_bytes();
         let filename = chapter.filename();
@@ -169,13 +168,12 @@ impl<T: DataSpec> Todd<T> {
     pub fn find(&self, raw_record_key: &str) -> Result<Vec<String>> {
         let target_record_key = T::raw_key_as_record_key(raw_record_key)?;
         let chapter_id = T::record_key_to_chapter_id(&target_record_key)?;
-        let chap_dir = self.config.similar_chapters_path(chapter_id)?;
+        let chap_dir = self.config.chapter_dir_path(&chapter_id);
         // Read each file and collect matching Values
         let files = fs::read_dir(&chap_dir)
             .with_context(|| format!("Failed to read dir {:?}", chap_dir))?;
         let mut matching: Vec<String> = vec![];
         for filename in files {
-
             let path = filename?.path();
             debug!("Reading file: {:?}", path);
             let bytes =
