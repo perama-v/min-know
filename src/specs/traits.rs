@@ -258,7 +258,7 @@ pub trait ChapterMethods<T: DataSpec> {
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
     fn as_serialized_bytes(&self) -> Vec<u8>;
-    /// Chapter struct from byte representation for storage.
+    /// Chapter struct from byte representation from storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
     fn from_file(data: Vec<u8>) -> Result<Self>

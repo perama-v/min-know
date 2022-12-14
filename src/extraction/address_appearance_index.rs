@@ -36,6 +36,8 @@ impl Extractor<AAISpec> for AAIExtractor {
         };
         // Get appearances from files.
         let leading_char = hex::encode(chapter_id.val.to_vec());
+        // This (RelicChapter->AAIChapter) is a workaround to use existing code.
+        // Ideally get_relevant_appearances() returns AAIChapter directly.
         let relic_chapter: RelicChapter =
             get_relevant_appearances(relevant_files, block_range, &leading_char)?;
         let chapter = AAIChapter::from_relic(relic_chapter);

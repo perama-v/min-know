@@ -10,8 +10,6 @@ use ssz_types::{
 use tree_hash_derive::TreeHash;
 
 use crate::{
-    config::dirs::DataKind,
-    encoding::decode_and_decompress,
     extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
         BLOCKS_PER_VOLUME, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME,
@@ -199,34 +197,13 @@ impl ChapterMethods<AAISpec> for AAIChapter {
     /// Reads a Chapter from file. Currently reads Relic file structure.
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
-        let contents = match RelicChapter::from_ssz_bytes(&data){
+        let chapter = match AAIChapter::from_ssz_bytes(&data){
             Ok(c) => c,
             Err(e) => bail!("Could not decode the SSZ data. Check that the library
             spec version matches the version in the manifest.  {:?}",
             e),
         };
-        let volume_id = AAIVolumeId {
-            oldest_block: contents.identifier.oldest_block,
-        };
-        let chapter_id = contents.address_prefix.to_vec()[0..3].to_vec();
-        let chapter_id = AAIChapterId {
-            val: <_>::from(chapter_id),
-        }; // contents.address_prefix;
-        let mut records = vec![];
-        // TODO: Change stored file structure to avoid this conversion step.
-        for a in contents.addresses.to_vec() {
-            let key = AAIRecordKey { key: a.address };
-            let value = AAIRecordValue {
-                value: a.appearances,
-            };
-            let record = AAIRecord { key, value };
-            records.push(record);
-        }
-        Ok(AAIChapter {
-            chapter_id,
-            volume_id,
-            records,
-        })
+        Ok(chapter)
     }
     fn filename(&self) -> String {
         format!(
@@ -274,6 +251,17 @@ impl AAIChapter {
             volume_id,
             records,
         }
+    }
+    /// Reads a Chapter from RelicChapter file. Currently reads Relic file structure.
+    fn from_relic_file(data: Vec<u8>) -> Result<Self> {
+        // Files are ssz encoded.
+        let relic_chapter = match RelicChapter::from_ssz_bytes(&data){
+            Ok(c) => c,
+            Err(e) => bail!("Could not decode the SSZ data. Check that the library
+            spec version matches the version in the manifest.  {:?}",
+            e),
+        };
+        Ok(AAIChapter::from_relic(relic_chapter))
     }
 }
 
