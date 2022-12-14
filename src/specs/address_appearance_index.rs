@@ -252,17 +252,6 @@ impl AAIChapter {
             records,
         }
     }
-    /// Reads a Chapter from RelicChapter file. Currently reads Relic file structure.
-    fn from_relic_file(data: Vec<u8>) -> Result<Self> {
-        // Files are ssz encoded.
-        let relic_chapter = match RelicChapter::from_ssz_bytes(&data){
-            Ok(c) => c,
-            Err(e) => bail!("Could not decode the SSZ data. Check that the library
-            spec version matches the version in the manifest.  {:?}",
-            e),
-        };
-        Ok(AAIChapter::from_relic(relic_chapter))
-    }
 }
 
 pub type DefaultBytesPerAddress = U20;
