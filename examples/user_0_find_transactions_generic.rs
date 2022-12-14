@@ -12,8 +12,10 @@ use min_know::{
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
 
-    let db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
     println!("DB is {:#?}", db);
 
     // A random address.

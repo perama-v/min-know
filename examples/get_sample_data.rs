@@ -25,6 +25,5 @@ async fn main() -> Result<()> {
     let unchained_path = UnchainedPath::Sample;
 
     index.get_sample_data(&unchained_path).await?;
-
     Ok(())
 }

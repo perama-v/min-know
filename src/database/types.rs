@@ -31,7 +31,8 @@ pub struct Todd<T: DataSpec> {
 
 /// Implement generic methods common to all databases.
 impl<T: DataSpec> Todd<T> {
-    pub fn new(specification: DataKind, directories: DirNature) -> Result<Self> {
+    /// Initialise the database library with the given configuration.
+    pub fn init(specification: DataKind, directories: DirNature) -> Result<Self> {
         // Use the spec to then get the DataConfig.
         let config = directories.to_config(specification)?;
         Ok(Self {
@@ -44,7 +45,7 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// ## Example
     /// ```ignore
-    /// let mut db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    /// let mut db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
     /// db.full_transform()?;
     /// ```
     /// ## Algorithm
@@ -55,7 +56,7 @@ impl<T: DataSpec> Todd<T> {
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
     ///
-    pub fn full_transform<V>(&mut self) -> Result<()> {
+    pub fn full_transform(&mut self) -> Result<()> {
         let chapter_ids = &T::get_all_chapter_ids()?;
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
         info!(
@@ -81,6 +82,7 @@ impl<T: DataSpec> Todd<T> {
                 }
             })
         });
+        todo!("automatically self.generate_manifest()?");
         Ok(())
     }
     /// Prepares the mininum distributable Chapter
@@ -173,10 +175,13 @@ impl<T: DataSpec> Todd<T> {
             .with_context(|| format!("Failed to read dir {:?}", chap_dir))?;
         let mut matching: Vec<String> = vec![];
         for filename in files {
+
             let path = filename?.path();
+            debug!("Reading file: {:?}", path);
             let bytes =
-                fs::read(&path).with_context(|| format!("Failed to read files from {:?}", path))?;
-            let chapter = <T::AssociatedChapter>::from_file(bytes)?;
+                fs::read(&path).with_context(|| format!("Failed to read file from {:?}", path))?;
+            let chapter = <T::AssociatedChapter>::from_file(bytes)
+                .with_context(|| format!("Failed to read/decode file: {:?}", path))?;
             let records = chapter.records();
             for r in records {
                 let rec = r.get();
@@ -209,7 +214,7 @@ impl<T: DataSpec> Todd<T> {
     /// #    database::types::Todd,
     /// #    specs::address_appearance_index::AAISpec,
     /// # };
-    /// let db: Todd<AAISpec> = Todd::new(DataKind::default(), DirNature::Sample)?;
+    /// let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
     /// db.get_sample_data()?;
     /// # Ok::<(), anyhow::Error>(())
     /// ```
@@ -256,7 +261,7 @@ impl<T: DataSpec> Todd<T> {
 
         let Some(volume_interface_ids) = volume_interface_ids else {
             info!("No sample filenames provided: creating samples from raw data.");
-            self.full_transform::<T>()?;
+            self.full_transform()?;
             return Ok(())
         };
         let volume_ids = volume_interface_ids
@@ -266,7 +271,7 @@ impl<T: DataSpec> Todd<T> {
 
         let Ok(volume_ids) = volume_ids else {
                 warn!("Couldn't derive VolumeId from provided interface id: skipping check for existing samples.");
-                self.full_transform::<T>()?;
+                self.full_transform()?;
                 return Ok(())
             };
         // Chapter directories as (directory_name, filenames)
@@ -274,7 +279,7 @@ impl<T: DataSpec> Todd<T> {
         for i in 0..T::NUM_CHAPTERS {
             let Ok(chapter_id) = T::AssociatedChapterId::nth_id(i as u32) else {
                 warn!("Couldn't derive nth ChapterId: skipping check for existing samples.");
-                self.full_transform::<T>()?;
+                self.full_transform()?;
                 return Ok(())
             };
             let mut filenames: Vec<String> = vec![];
@@ -316,7 +321,7 @@ impl<T: DataSpec> Todd<T> {
             return Ok(());
         } else {
             info!("Local directory does not contain sample files: creating from raw data.");
-            self.full_transform::<T>()?;
+            self.full_transform()?;
         }
         Ok(())
     }

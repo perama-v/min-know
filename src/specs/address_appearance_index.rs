@@ -199,7 +199,12 @@ impl ChapterMethods<AAISpec> for AAIChapter {
     /// Reads a Chapter from file. Currently reads Relic file structure.
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
-        let contents: RelicChapter = decode_and_decompress(data)?;
+        let contents = match RelicChapter::from_ssz_bytes(&data){
+            Ok(c) => c,
+            Err(e) => bail!("Could not decode the SSZ data. Check that the library
+            spec version matches the version in the manifest.  {:?}",
+            e),
+        };
         let volume_id = AAIVolumeId {
             oldest_block: contents.identifier.oldest_block,
         };
