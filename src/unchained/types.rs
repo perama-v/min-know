@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use log::debug;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -146,7 +147,7 @@ impl UnchainedFile {
         }
         self.parsed = txs;
 
-        println!(
+        debug!(
             "In {:?}. {:0>7} addresses started with 0x{} and had tx in range ({}-{}). Chunk attributes: nAddr {:0>7}, nApp {:0>7}.",
             self.path.file_name().unwrap(), self.parsed.len(), address_leading_char,
             self.desired.old, self.desired.new,

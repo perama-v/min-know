@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use log::{error, info};
+use log::{debug, error, info, warn};
 use rayon::prelude::*;
 use serde::Deserialize;
 
@@ -73,7 +73,10 @@ impl<T: DataSpec> Todd<T> {
                     let mut c = count.lock().unwrap();
                     *c += 1;
                     if *c % 100 == 0 {
-                        info!("Finished checking/creating chapter {} of {}", c, total_chapters)
+                        info!(
+                            "Finished checking/creating chapter {} of {}",
+                            c, total_chapters
+                        )
                     }
                 }
             })
@@ -96,7 +99,7 @@ impl<T: DataSpec> Todd<T> {
                 vals.push(rec)
             }
         }
-        let chapter = T::new_chapter();
+        let chapter = todo!("(deprecated) previously: T::new_chapter()");
         Ok(chapter)
     }
     pub fn deprecated_raw_pairs<V>(&self) -> Vec<(&str, V)> {
@@ -147,7 +150,7 @@ impl<T: DataSpec> Todd<T> {
         fs::create_dir_all(chapter_dir_path)?;
         let encoded = chapter.as_serialized_bytes();
         let filename = chapter.filename();
-        println!(
+        debug!(
             "Saving chapter: {}, with {} records ({} bytes).",
             &filename,
             chapter.records().len(),
@@ -241,26 +244,76 @@ impl<T: DataSpec> Todd<T> {
         Ok(())
     }
     /// Ensures that the processed samples are either present or obtained.
+    ///
+    /// First looks in the expected location, then looks in the local
+    /// directory (and copies if present), then attempts to processes from raw
+    /// data.
     fn handle_database_samples(&mut self) -> Result<()> {
         let example_dir_processed =
             PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
-        let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
 
-        let Some(filenames) = processed_sample_filenames else {
+        let volume_interface_ids = T::AssociatedSampleObtainer::sample_volumes();
+
+        let Some(volume_interface_ids) = volume_interface_ids else {
             info!("No sample filenames provided: creating samples from raw data.");
             self.full_transform::<T>()?;
             return Ok(())
         };
-        if self.config.data_dir.contains_files(&filenames)? {
-            info!(
-                "Sample directory already contains {} database samples.",
-                filenames.len()
-            );
+        let volume_ids = volume_interface_ids
+            .iter()
+            .map(|x| T::AssociatedVolumeId::from_interface_id(x))
+            .collect::<Result<Vec<T::AssociatedVolumeId>>>();
+
+        let Ok(volume_ids) = volume_ids else {
+                warn!("Couldn't derive VolumeId from provided interface id: skipping check for existing samples.");
+                self.full_transform::<T>()?;
+                return Ok(())
+            };
+        // Chapter directories as (directory_name, filenames)
+        let mut dirnames_and_files: Vec<(String, Vec<String>)> = vec![];
+        for i in 0..T::NUM_CHAPTERS {
+            let Ok(chapter_id) = T::AssociatedChapterId::nth_id(i as u32) else {
+                warn!("Couldn't derive nth ChapterId: skipping check for existing samples.");
+                self.full_transform::<T>()?;
+                return Ok(())
+            };
+            let mut filenames: Vec<String> = vec![];
+            for volume_id in &volume_ids {
+                let filename = T::AssociatedChapter::new_empty(volume_id, &chapter_id).filename();
+                filenames.push(filename);
+            }
+            dirnames_and_files.push((chapter_id.interface_id(), filenames));
+        }
+        // Check expected location.
+        let mut data_dir_complete = true;
+        for (dirname, filenames) in &dirnames_and_files {
+            let chap_dir = self.config.data_dir.join(&dirname);
+            // Detect if any of the sample files are missing.
+            if !chap_dir.contains_files(&filenames)? {
+                data_dir_complete = false
+            }
+        }
+        if data_dir_complete {
+            info!("Sample directory already contains all database samples.");
             return Ok(());
         }
-        if example_dir_processed.contains_files(&filenames)? {
+        // Check local directory.
+        let mut local_data_dir_complete = true;
+        for (dirname, filenames) in &dirnames_and_files {
+            let chap_dir = example_dir_processed.join(&dirname);
+            // Detect if any of the sample files are missing.
+            if !chap_dir.contains_files(&filenames)? {
+                local_data_dir_complete = false
+            }
+        }
+        if local_data_dir_complete {
             info!("Local directory has sample files: copying to samples directory.");
-            example_dir_processed.copy_into_recursive(&self.config.data_dir)?;
+            for (dirname, _filenames) in &dirnames_and_files {
+                let src_chap_dir = example_dir_processed.join(&dirname);
+                let dest_chap_dir = self.config.data_dir.join(&dirname);
+                src_chap_dir.copy_into_recursive(&dest_chap_dir)?;
+            }
+            return Ok(());
         } else {
             info!("Local directory does not contain sample files: creating from raw data.");
             self.full_transform::<T>()?;

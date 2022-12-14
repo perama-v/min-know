@@ -14,13 +14,12 @@ pub trait SampleObtainer {
     ///
     /// Used to check if the samples are present.
     fn raw_sample_filenames() -> Vec<&'static str>;
-    /// Returns the filenames that are processed samples.
-    ///
-    /// Used to check if the samples are present.
+    /// Returns the volume interface ids for volumes that
+    /// are represented in the samples.
     ///
     /// Return `None` and the samples will be created from raw samples.
-    /// Some of those files can then be selected and included here.
-    fn processed_sample_filenames() -> Option<Vec<&'static str>>;
+    /// The volumes created can then be inspected and included here.
+    fn sample_volumes() -> Option<Vec<&'static str>>;
     /// Detects if processed samples are present at the given location.
     fn get_raw_samples(dir: &PathBuf) -> Result<()>;
 }

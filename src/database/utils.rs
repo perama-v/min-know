@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     fs::{self},
     path::PathBuf,
 };
@@ -9,7 +10,7 @@ pub trait DirFunctions {
     /// Determines if a directory contains all the filenames provided.
     ///
     /// E.g., Use to check if samples are present in sample directory.
-    fn contains_files(&self, files: &[&'static str]) -> Result<bool>;
+    fn contains_files<T: AsRef<str> + Display>(&self, files: &[T]) -> Result<bool>;
 
     /// Copies the source directory files into destination directory.
     ///
@@ -17,7 +18,8 @@ pub trait DirFunctions {
     fn copy_into_recursive(&self, destination: &PathBuf) -> Result<()>;
 }
 impl DirFunctions for PathBuf {
-    fn contains_files(&self, files: &[&'static str]) -> Result<bool> {
+    // test<T: AsRef<str>>(inp: &[T]) {
+    fn contains_files<T: AsRef<str> + Display>(&self, files: &[T]) -> Result<bool> {
         let Ok(contents) = fs::read_dir(self) else {return Ok(false)};
         let present: Vec<String> = contents
             .into_iter()

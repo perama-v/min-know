@@ -14,8 +14,8 @@ impl SampleObtainer for AAISampleObtainer {
     fn raw_sample_filenames() -> Vec<&'static str> {
         return SAMPLE_CHUNKS.to_vec();
     }
-    fn processed_sample_filenames() -> Option<Vec<&'static str>> {
-        None
+    fn sample_volumes() -> Option<Vec<&'static str>> {
+        Some(SAMPLE_VOLUMES.to_vec())
     }
 
     /// Downloads the sample Unchained Index chunk files from IPFS.
@@ -38,6 +38,13 @@ impl SampleObtainer for AAISampleObtainer {
         rt.block_on(download_files(&dir, urls_and_filenames))
     }
 }
+
+static SAMPLE_VOLUMES: [&str; 4] = [
+    "volume_011_200_000",
+    "volume_012_300_000",
+    "volume_013_400_000",
+    "volume_014_400_000",
+];
 
 static SAMPLE_CHUNKS: [&str; 5] = [
     "011283653-011286904.bin",

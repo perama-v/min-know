@@ -87,10 +87,6 @@ impl DataSpec for AAISpec {
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue {
         todo!()
     }
-
-    fn new_chapter() -> Self::AssociatedChapter {
-        todo!()
-    }
 }
 
 #[derive(
@@ -130,6 +126,14 @@ impl VolumeIdMethods<AAISpec> for AAIVolumeId {
         // id=100_000, n=1
         // id=200_000, n=2
         Ok(self.oldest_block / BLOCKS_PER_VOLUME)
+    }
+
+    fn from_interface_id(interface_id: &str) -> Result<Self> {
+        let oldest_block = interface_id
+            .trim_start_matches("volume")
+            .replace("_", "")
+            .parse::<u32>()?;
+        Ok(AAIVolumeId { oldest_block })
     }
 }
 impl AAIVolumeId {
@@ -218,6 +222,21 @@ impl ChapterMethods<AAISpec> for AAIChapter {
             volume_id,
             records,
         })
+    }
+    fn filename(&self) -> String {
+        format!(
+            "{}_{}.ssz",
+            self.volume_id().interface_id(),
+            self.chapter_id().interface_id()
+        )
+    }
+
+    fn new_empty(volume_id: &AAIVolumeId, chapter_id: &AAIChapterId) -> Self {
+        AAIChapter {
+            chapter_id: chapter_id.clone(),
+            volume_id: volume_id.clone(),
+            records: vec![],
+        }
     }
 }
 

@@ -118,7 +118,7 @@ pub trait DataSpec: Sized {
     /// Some unformatted data that needs to be converted to an record_value
     /// to then be appended to a Chapter.record_values vector.
     fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
-    fn new_chapter() -> Self::AssociatedChapter;
+    //fn new_chapter() -> Self::AssociatedChapter;
 }
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
@@ -159,6 +159,10 @@ pub enum SpecId {
 pub trait VolumeIdMethods<T: DataSpec> {
     /// Returns the interface id for the Volume.
     fn interface_id(&self) -> String;
+    /// Returns the VolumeId for the given interface id.
+    fn from_interface_id(interface_id: &str) -> Result<Self>
+    where
+        Self: Sized;
     /// Returns the VolumeId for the zero-based n-th Volume.
     ///
     /// Volumes are arranged lexicographically from 0 to n-1, where
@@ -261,11 +265,6 @@ pub trait ChapterMethods<T: DataSpec> {
     where
         Self: Sized;
     /// The filename of the chapter
-    fn filename(&self) -> String {
-        format!(
-            "{}_{}.ssz",
-            self.volume_id().interface_id(),
-            self.chapter_id().interface_id()
-        )
-    }
+    fn filename(&self) -> String;
+    fn new_empty(volume_id: &T::AssociatedVolumeId, chapter_id: &T::AssociatedChapterId) -> Self;
 }
