@@ -17,7 +17,7 @@ use crate::{
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, RecordMethods, RecordValueMethods,
         VolumeIdMethods,
-    },
+    }, database::utils::log_count,
 };
 
 use super::utils::DirFunctions;
@@ -64,26 +64,20 @@ impl<T: DataSpec> Todd<T> {
             volume_ids.len(),
             chapter_ids.len()
         );
-        let total_chapters = chapter_ids.len() * volume_ids.len();
+        let total_chapters = (chapter_ids.len() * volume_ids.len()) as u32;
         let count = Arc::new(Mutex::new(0_u32));
 
         volume_ids.par_iter().for_each(|volume_id| {
             chapter_ids.par_iter().for_each(|chapter_id| {
                 self.create_chapter(&volume_id, &chapter_id);
-                {
-                    let mut c = count.lock().unwrap();
-                    *c += 1;
-                    if *c % 100 == 0 {
-                        info!(
-                            "Finished checking/creating chapter {} of {}",
-                            c, total_chapters
-                        )
-                    }
-                }
+                log_count(count.clone(), total_chapters, "Finished checking/creating chapter", 100);
             })
         });
-        todo!("automatically self.generate_manifest()?");
+        self.generate_manifest()?;
         Ok(())
+    }
+    pub fn generate_manifest(&self) -> Result<()> {
+        todo!();
     }
     /// Prepares the mininum distributable Chapter
     pub fn deprecated_get_one_chapter<V>(
