@@ -1,7 +1,12 @@
 use anyhow::{anyhow, Context, Result};
-use std::{fmt::Debug, fs, path::PathBuf};
+use std::{
+    fmt::Debug,
+    fs,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
-use log::{info, warn, error, debug};
+use log::{error, info};
 use rayon::prelude::*;
 use serde::Deserialize;
 
@@ -50,8 +55,6 @@ impl<T: DataSpec> Todd<T> {
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
     ///
-    /// ## Errors
-    /// All errors encountered during child function execution are displayed here.
     pub fn full_transform<V>(&mut self) -> Result<()> {
         let chapter_ids = &T::get_all_chapter_ids()?;
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
@@ -60,33 +63,21 @@ impl<T: DataSpec> Todd<T> {
             volume_ids.len(),
             chapter_ids.len()
         );
+        let total_chapters = chapter_ids.len() * volume_ids.len();
+        let count = Arc::new(Mutex::new(0_u32));
+
         volume_ids.par_iter().for_each(|volume_id| {
             chapter_ids.par_iter().for_each(|chapter_id| {
-                let chapter = T::AssociatedExtractor::chapter_from_raw(
-                    &chapter_id,
-                    volume_id,
-                    &self.config.raw_source,
-                );
-                let v_id = volume_id.interface_id();
-                let c_id = chapter_id.interface_id();
-                match chapter {
-                    Err(e) => error!("Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
-                        v_id, c_id, e
-                    ),
-                    Ok(chap_opt) => match chap_opt {
-                        None => {/* No raw data for this volume_id/chapter_id combo (skip). */},
-                        Some(chap) => match self.save_chapter(chap) {
-                            Ok(_) => {}
-                            Err(e) => error!(
-                                "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
-                                v_id, c_id, e
-                            ),
-                        },
-                    },
-                };
+                self.create_chapter(&volume_id, &chapter_id);
+                {
+                    let mut c = count.lock().unwrap();
+                    *c += 1;
+                    if *c % 100 == 0 {
+                        info!("Finished checking/creating chapter {} of {}", c, total_chapters)
+                    }
+                }
             })
         });
-
         Ok(())
     }
     /// Prepares the mininum distributable Chapter
@@ -112,6 +103,41 @@ impl<T: DataSpec> Todd<T> {
         // A vector of generic key-value pairs.
         // E.g., (address, appearances) or (address, ABIs)
         todo!()
+    }
+    /// Creates then saves a single chapter.
+    ///
+    /// ## Errors
+    /// All errors encountered during child function execution are handled
+    /// by logging here (no errors are returned). This is to enable the
+    /// function to be called concurrently.
+    fn create_chapter(
+        &self,
+        volume_id: &T::AssociatedVolumeId,
+        chapter_id: &T::AssociatedChapterId,
+    ) {
+        let chapter = T::AssociatedExtractor::chapter_from_raw(
+            &chapter_id,
+            volume_id,
+            &self.config.raw_source,
+        );
+        let v_id = volume_id.interface_id();
+        let c_id = chapter_id.interface_id();
+        match chapter {
+            Err(e) => error!(
+                "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
+                v_id, c_id, e
+            ),
+            Ok(chap_opt) => match chap_opt {
+                None => { /* No raw data for this volume_id/chapter_id combo (skip). */ }
+                Some(chap) => match self.save_chapter(chap) {
+                    Ok(_) => {}
+                    Err(e) => error!(
+                        "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
+                        v_id, c_id, e
+                    ),
+                },
+            },
+        };
     }
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
         let chapter_dir_path = &self
@@ -169,6 +195,9 @@ impl<T: DataSpec> Todd<T> {
     /// to be obtained from a custom source. This method tries each in that
     /// order.
     ///
+    /// The processed samples may need to be created from the raw samples, which
+    /// can be slow.
+    ///
     /// ## Example
     /// ```
     /// # use anyhow::Result;
@@ -186,43 +215,56 @@ impl<T: DataSpec> Todd<T> {
         } else {
             return Err(anyhow!("try to configure the db with DirNature::Sample"));
         }
-        let example_dir_raw =
+        self.handle_raw_samples()?;
+        self.handle_database_samples()?;
+        Ok(())
+    }
+    /// Ensures that the unprocessed samples are either present or obtained.
+    fn handle_raw_samples(&self) -> Result<()> {
+        let raw_source_dir = &self.config.raw_source;
+        let local_example_dir_raw =
             PathBuf::from("./data/samples").join(self.config.data_kind.raw_source_dir_name());
-        let example_dir_processed =
-            PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
-
         let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
-        let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
-        // Raw samples
-        if !self
-            .config
-            .raw_source
-            .contains_files(&raw_sample_filenames)?
-        {
-            if example_dir_raw.contains_files(&raw_sample_filenames)? {
-                example_dir_raw.copy_into_recursive(&self.config.raw_source)?;
-            } else {
-                T::AssociatedSampleObtainer::get_raw_samples(&self.config.raw_source)?
-            }
+
+        if raw_source_dir.contains_files(&raw_sample_filenames)? {
+            info!("Checking raw sample files: already present.");
+            return Ok(());
         }
 
-        // Processed samples
-        match processed_sample_filenames {
-            Some(filenames) => {
-                if self.config.data_dir.contains_files(&filenames)? {
-                    return Ok(());
-                } else {
-                    if example_dir_processed.contains_files(&filenames)? {
-                        example_dir_processed.copy_into_recursive(&self.config.data_dir)?;
-                        return Ok(());
-                    }
-                }
-            }
-            None => {}
+        if local_example_dir_raw.contains_files(&raw_sample_filenames)? {
+            info!("Raw sample files found in local repository: moving to samples directory.");
+            local_example_dir_raw.copy_into_recursive(&raw_source_dir)?;
+        } else {
+            info!("Raw samples not found: downloading.");
+            T::AssociatedSampleObtainer::get_raw_samples(&raw_source_dir)?
+        }
+        Ok(())
+    }
+    /// Ensures that the processed samples are either present or obtained.
+    fn handle_database_samples(&mut self) -> Result<()> {
+        let example_dir_processed =
+            PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
+        let processed_sample_filenames = T::AssociatedSampleObtainer::processed_sample_filenames();
+
+        let Some(filenames) = processed_sample_filenames else {
+            info!("No sample filenames provided: creating samples from raw data.");
+            self.full_transform::<T>()?;
+            return Ok(())
         };
-        // Create the samples by processing the raw samples.
-        println!("Creating db samples by processing raw samples.");
-        self.full_transform::<T>()?;
+        if self.config.data_dir.contains_files(&filenames)? {
+            info!(
+                "Sample directory already contains {} database samples.",
+                filenames.len()
+            );
+            return Ok(());
+        }
+        if example_dir_processed.contains_files(&filenames)? {
+            info!("Local directory has sample files: copying to samples directory.");
+            example_dir_processed.copy_into_recursive(&self.config.data_dir)?;
+        } else {
+            info!("Local directory does not contain sample files: creating from raw data.");
+            self.full_transform::<T>()?;
+        }
         Ok(())
     }
 }
