@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result, bail};
 use directories::ProjectDirs;
+use log::warn;
 use serde::Deserialize;
 
 use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
@@ -148,11 +149,54 @@ impl ConfigStruct {
         p
     }
     /// Returns the VolumeId for the latest Chapter file present.
-    pub fn latest_volume<T, U>(&self) -> Result<T>
-    where
-        T: VolumeIdMethods<U>,
-        U: DataSpec,
+    pub fn latest_volume<T: DataSpec>(&self) -> Result<T::AssociatedVolumeId>
     {
-        todo!()
+        // Read the first chapter directory (at random)
+        let chapter_dirs = fs::read_dir(&self.data_dir).with_context(|| {
+            format!("Couldn't read data directory {:?}.", &self.data_dir)
+        })?.next();
+        let Some(first) = chapter_dirs else {
+            bail!("No chapter directories found in {:?}",
+            chapter_dirs)};
+        let first = first?.path();
+        let chapter = T::AssociatedChapterId::from_chapter_directory(&first)?;
+        let vols: Vec<(PathBuf, T::AssociatedVolumeId)> =
+            self.parse_all_files_for_chapter::<T>(&chapter)?;
+        let mut order: u32 = 0;
+        let mut latest = T::AssociatedVolumeId::default();
+        for (_path, vol) in vols {
+            let current_order = vol.is_nth()?;
+            if current_order >= order {
+                order = current_order;
+                latest = vol
+            }
+        }
+        Ok(latest)
+    }
+    /// For a given chapter returns the filenames and volume_ids it contains.
+    pub fn parse_all_files_for_chapter<T: DataSpec>(&self, chapter: &T::AssociatedChapterId) -> Result<Vec<(PathBuf, T::AssociatedVolumeId)>>
+    {
+        let chapter_name = chapter.interface_id();
+        let dir = self.chapter_dir_path(chapter);
+        let files = fs::read_dir(&dir)
+            .with_context(|| format!("Couldn't read chapter directory {:?}.", &dir))?;
+
+        let mut all_files: Vec<(PathBuf, T::AssociatedVolumeId)> = vec![];
+        for chapterfile in files {
+            let file = chapterfile?;
+            let filename = file.file_name();
+            let Some(filename) = filename.to_str() else {bail!("Couldn't read filename {:?}.", file)};
+            // volume_XXX_XXX_XXX_chapter_0xXX.ssz
+            // Use knowledge of the chapter directory to get the volume id.
+            let volume_str = filename.replace(&chapter_name, "").replace("_.ssz", "");
+
+            let vol_id = T::AssociatedVolumeId::from_interface_id(&volume_str)?;
+            all_files.push(
+                (file.path(), vol_id)
+            )
+        }
+        warn!("Need to handle all filename suffixes");
+        Ok(all_files)
     }
 }
+

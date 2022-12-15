@@ -1,9 +1,10 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use ssz::{Decode, Encode};
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::path::PathBuf;
+use std::str::FromStr;
 use tree_hash::TreeHash;
 
 use crate::extraction::traits::Extractor;
@@ -81,10 +82,22 @@ pub trait DataSpec: Sized {
     type AssociatedExtractor: Extractor<Self>;
     type AssociatedSampleObtainer: SampleObtainer;
 
+    type AssociatedManifest: ManifestMethods<Self> + for<'a> UsefulTraits2<'a>;
+    /// Returns the enum variant that represents the spec for the database.
+    ///
+    /// This is used in coordinating platform-specific directories. It ensures
+    /// that all implementations of the spec also create a new enum variant.
     fn spec_name() -> SpecId;
+    /// Returns the version of the specification for the particular database.
+    fn spec_version() -> String;
+    /// Returns the number of Chapters that the spec defines.
     fn num_chapters() -> usize {
         Self::NUM_CHAPTERS
     }
+    /// Returns the string representing the specification.
+    ///
+    /// For example, a CID or a URL.
+    fn spec_schemas_resource() -> String;
     /// Gets all possible ChapterIds for a given spec.
     ///
     /// This is used when creating a new database, where chapters can be created
@@ -156,13 +169,11 @@ pub enum SpecId {
 /// ## Rationale
 /// The generic functions in database/types.rs use a set of
 /// marker traits to define common functions.
-pub trait VolumeIdMethods<T: DataSpec> {
+pub trait VolumeIdMethods<T: DataSpec>: Sized {
+    /// Returns the VolumeId for the given interface id.
+    fn from_interface_id(interface_id: &str) -> Result<Self>;
     /// Returns the interface id for the Volume.
     fn interface_id(&self) -> String;
-    /// Returns the VolumeId for the given interface id.
-    fn from_interface_id(interface_id: &str) -> Result<Self>
-    where
-        Self: Sized;
     /// Returns the VolumeId for the zero-based n-th Volume.
     ///
     /// Volumes are arranged lexicographically from 0 to n-1, where
@@ -179,7 +190,9 @@ pub trait VolumeIdMethods<T: DataSpec> {
     /// the position in that sequence. First position is n=0.
     fn is_nth(&self) -> Result<u32>;
 }
-pub trait ChapterIdMethods<T: DataSpec> {
+pub trait ChapterIdMethods<T: DataSpec>: Sized {
+    /// Returns the ChapterId from an interface id.
+    fn from_interface_id(id_string: &str) -> Result<Self>;
     /// Returns the interface id for the Chapter.
     fn interface_id(&self) -> String;
     /// Returns the ChapterId for the zero-based n-th Chapter.
@@ -195,6 +208,18 @@ pub trait ChapterIdMethods<T: DataSpec> {
     /// # Error
     /// Returns an error if n is outside range: `[0, NUM_CHAPTERS - 1]`.
     fn nth_id(n: u32) -> Result<T::AssociatedChapterId>;
+    /// Derives a ChapterId from a chapter directory
+    ///
+    /// A chapter directory contains only files with the same chapter id.
+    /// It is named using the interface id.
+    fn from_chapter_directory(dir_path: &PathBuf) -> Result<Self> {
+        let Some(chap_dir_name) = dir_path.file_name() else {
+            bail!("Couldn't read dir name {:?}.", dir_path)};
+        let Some(chapter_name) = chap_dir_name.to_str() else {
+            bail!("Couldn't parse dir name {:?}.", chap_dir_name)};
+        let id = Self::from_interface_id(chapter_name)?;
+        Ok(id)
+    }
 }
 
 /// Marker trait.
@@ -267,4 +292,48 @@ pub trait ChapterMethods<T: DataSpec> {
     /// The filename of the chapter
     fn filename(&self) -> String;
     fn new_empty(volume_id: &T::AssociatedVolumeId, chapter_id: &T::AssociatedChapterId) -> Self;
+}
+
+/// Methods for the manifest of the database.
+///
+/// This refers to the object that contains the metadata that
+/// will form the JSON-encoded manifest.
+///
+/// The manifest is required to contain some specific data, including
+/// as the IPFS CID for each chapter. Other data may be added as needed
+/// for any given database.
+pub trait ManifestMethods<T: DataSpec> {
+    /// Returns the version string.
+    fn spec_version(&self) -> &str;
+    /// Sets the version string.
+    fn set_spec_version(&mut self, version: String);
+    /// Returns the schemas string that can be used to acquire the spec
+    /// for the database.
+    fn schemas(&self) -> &str;
+    /// Sets the schemas string that can be used to acquire the spec
+    /// for the database.
+    fn set_schemas(&mut self, schemas: String);
+    /// Returns the id of the database.
+    fn database_interface_id(&self) -> &str;
+    /// Adds the database interface id.
+    ///
+    /// This value originates from the DataKind enum. Its value
+    /// may depend on configuration choices, such as network.
+    fn set_database_interface_id(&mut self, id: String);
+    /// Returns the id of the most recent volume.
+    fn latest_volume_identifier(&self) -> &str;
+    /// Sets the interface identifier of the latest volume.
+    fn set_latest_volume_identifier(&mut self, volume_interface_id: String);
+    /// Returns the CIDs for all Chapters.
+    fn cids(&self) -> Result<Vec<(&str, T::AssociatedVolumeId, T::AssociatedChapterId)>>;
+    /// Sets the CIDs for all Chapters to the Manifest.
+    ///
+    /// CID: v0 IPFS Content Identifiers (CID). CIDs are all paired with
+    /// Volume and Chapter Ids so that their interface ids can be stored
+    /// alongside each CID. E.g., (CID, volume_interface_id, chapter_interface_id)
+    /// can be grouped in the manifest.
+    fn set_cids<U: AsRef<str> + Display>(
+        &mut self,
+        cids: &[(U, T::AssociatedVolumeId, T::AssociatedChapterId)],
+    );
 }

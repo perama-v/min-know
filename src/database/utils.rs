@@ -1,7 +1,8 @@
 use std::{
     fmt::Display,
     fs::{self},
-    path::PathBuf, sync::{Arc, Mutex},
+    path::PathBuf,
+    sync::{Arc, Mutex},
 };
 
 use anyhow::Result;
@@ -64,9 +65,6 @@ pub(crate) fn log_count(count: Arc<Mutex<u32>>, total: u32, message: &str, thres
     let mut c = count.lock().unwrap();
     *c += 1;
     if *c % threshold == 0 {
-        info!(
-            "{} {} of {}",
-            message, c, total
-        )
+        info!("{} {} of {}", message, c, total)
     }
 }

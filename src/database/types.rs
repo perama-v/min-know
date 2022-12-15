@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use std::{
     fmt::Debug,
     fs,
@@ -12,12 +12,14 @@ use serde::Deserialize;
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
+    database::utils::log_count,
     extraction::traits::Extractor,
+    ipfs::{cid_v0_from_bytes, cid_v0_string_from_bytes},
     samples::traits::SampleObtainer,
     specs::traits::{
-        ChapterIdMethods, ChapterMethods, DataSpec, RecordMethods, RecordValueMethods,
-        VolumeIdMethods,
-    }, database::utils::log_count,
+        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods,
+        RecordValueMethods, VolumeIdMethods,
+    },
 };
 
 use super::utils::DirFunctions;
@@ -70,14 +72,59 @@ impl<T: DataSpec> Todd<T> {
         volume_ids.par_iter().for_each(|volume_id| {
             chapter_ids.par_iter().for_each(|chapter_id| {
                 self.create_chapter(&volume_id, &chapter_id);
-                log_count(count.clone(), total_chapters, "Finished checking/creating chapter", 100);
+                log_count(
+                    count.clone(),
+                    total_chapters,
+                    "Finished checking/creating chapter",
+                    100,
+                );
             })
         });
+        info!("Finished creating database.");
         self.generate_manifest()?;
         Ok(())
     }
+    /// Creates a new manifest file.
+    ///
+    /// This will override an existing manifest file. The file
+    /// in the directory alongside the data and raw data directories.
+    ///
+    /// ## Algorithm
+    /// 1. Goes through each Chapter file in the data directory.
+    /// 2. The IPFS CID (v0) is computed from the file bytes as-is (encoded).
+    /// 3. Additional database metadata is recorded.
+    /// 4. File is saved as a {database_interface_id}_manifest.json.
     pub fn generate_manifest(&self) -> Result<()> {
-        todo!();
+        info!("Generating manifest.");
+        let mut manifest = T::AssociatedManifest::default();
+        let mut cids: Vec<(String, T::AssociatedVolumeId, T::AssociatedChapterId)> = vec![];
+        // Go through all the files in config.data_dir
+        let chapter_dirs = fs::read_dir(&self.config.data_dir).with_context(|| {
+            format!("Couldn't read data directory {:?}.", &self.config.data_dir)
+        })?;
+        for chapter_dir in chapter_dirs {
+            // Obtain ChapterId from directory name.
+            let dir = chapter_dir?.path();
+            let chap_id = T::AssociatedChapterId::from_chapter_directory(&dir)?;
+            // Obtain VolumeIds using ChapterId
+            let chapter_files: Vec<(PathBuf, T::AssociatedVolumeId)> =
+                self.config.parse_all_files_for_chapter::<T>(&chap_id)?;
+            for (chapter_path, volume_id) in chapter_files {
+                let bytes = fs::read(chapter_path)?;
+                let cid = cid_v0_string_from_bytes(&bytes)?;
+                cids.push((cid, volume_id, chap_id.clone()))
+            }
+        }
+        let latest_volume: T::AssociatedVolumeId = self.config.latest_volume::<T>()?;
+        // For each file get filename (--> volume_id and chapter_id) and bytes
+        // CID from bytes
+        manifest.set_spec_version(T::spec_version());
+        manifest.set_schemas(T::spec_schemas_resource());
+        manifest.set_database_interface_id(self.config.data_kind.interface_id());
+        manifest.set_latest_volume_identifier(latest_volume.interface_id());
+        manifest.set_cids(&cids);
+        debug!("Manifest created {:?}", manifest);
+        todo!("Save manifest.");
     }
     /// Prepares the mininum distributable Chapter
     pub fn deprecated_get_one_chapter<V>(
@@ -91,7 +138,7 @@ impl<T: DataSpec> Todd<T> {
             let record_key = T::raw_key_as_record_key(raw_key)?;
             if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
                 let record_value = T::raw_value_as_record_value(raw_val).get();
-                let rec: T::AssociatedRecord = <T::AssociatedRecord>::new(record_key, record_value);
+                let rec: T::AssociatedRecord = T::AssociatedRecord::new(record_key, record_value);
                 vals.push(rec)
             }
         }
@@ -139,9 +186,7 @@ impl<T: DataSpec> Todd<T> {
         };
     }
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
-        let chapter_dir_path = &self
-            .config
-            .chapter_dir_path(chapter.chapter_id());
+        let chapter_dir_path = &self.config.chapter_dir_path(chapter.chapter_id());
         fs::create_dir_all(chapter_dir_path)?;
         let encoded = chapter.as_serialized_bytes();
         let filename = chapter.filename();

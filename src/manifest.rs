@@ -43,8 +43,8 @@ use crate::{
 /// decompressed and the tree root hash is calculated. The values are
 /// stored in memory. When all files are processed, the
 /// data is serialized and compressed and written to a file called
-/// "manifest.ssz_snappy" under the main data directory, alongside
-/// the divisin folders.
+/// "manifest.json" under the main data directory, alongside
+/// the division folders.
 pub fn generate(path: &AddressIndexPath, network: &Network) -> Result<()> {
     let chapters = get_chapter_dirs(path, network)?;
     let mut chapter_metadata: Vec<ManifestChapter> = vec![];

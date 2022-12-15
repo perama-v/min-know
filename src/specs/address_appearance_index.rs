@@ -1,4 +1,6 @@
 //! Address Appearance Index (AAI)
+use std::fmt::Display;
+
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use ssz::{Decode, Encode};
@@ -13,7 +15,7 @@ use crate::{
     extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
         BLOCKS_PER_VOLUME, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME,
-        NUM_COMMON_BYTES,
+        NUM_COMMON_BYTES, SPEC_RESOURCE_LOCATION,
     },
     samples::address_appearance_index::AAISampleObtainer,
     unchained::types::BlockRange,
@@ -46,8 +48,18 @@ impl DataSpec for AAISpec {
 
     type AssociatedSampleObtainer = AAISampleObtainer;
 
+    type AssociatedManifest = AAIManifest;
+
     fn spec_name() -> SpecId {
         SpecId::AddressAppearanceIndex
+    }
+
+    fn spec_version() -> String {
+        String::from("0.1.0")
+    }
+
+    fn spec_schemas_resource() -> String {
+        String::from("https://github.com/perama-v/address-index/tree/main/address_appearance_index")
     }
 
     fn num_chapters() -> usize {
@@ -162,6 +174,13 @@ impl ChapterIdMethods<AAISpec> for AAIChapterId {
         };
         Ok(AAIChapterId { val: fv })
     }
+    fn from_interface_id(id_string: &str) -> Result<Self> {
+        let string = id_string.trim_start_matches("chapter_0x");
+        let bytes = hex::decode(string)?;
+        Ok(AAIChapterId {
+            val: <_>::from(bytes),
+        })
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
@@ -197,11 +216,13 @@ impl ChapterMethods<AAISpec> for AAIChapter {
     /// Reads a Chapter from file. Currently reads Relic file structure.
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
-        let chapter = match AAIChapter::from_ssz_bytes(&data){
+        let chapter = match AAIChapter::from_ssz_bytes(&data) {
             Ok(c) => c,
-            Err(e) => bail!("Could not decode the SSZ data. Check that the library
+            Err(e) => bail!(
+                "Could not decode the SSZ data. Check that the library
             spec version matches the version in the manifest.  {:?}",
-            e),
+                e
+            ),
         };
         Ok(chapter)
     }
@@ -345,4 +366,81 @@ pub struct RelicAddressAppearances {
 #[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, TreeHash, Serialize, Deserialize)]
 pub struct RelicVolumeIdentifier {
     pub oldest_block: u32,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct AAIManifest {
+    pub spec_version: String,
+    pub schemas: String,
+    pub database_interface_id: String,
+    pub latest_volume_identifier: String,
+    pub chapter_cids: Vec<AAIManifestChapter>,
+}
+
+impl ManifestMethods<AAISpec> for AAIManifest {
+    fn spec_version(&self) -> &str {
+        &self.spec_version
+    }
+
+    fn set_spec_version(&mut self, version: String) {
+        self.spec_version = version
+    }
+
+    fn schemas(&self) -> &str {
+        &self.schemas
+    }
+
+    fn set_schemas(&mut self, schemas: String) {
+        self.schemas = schemas
+    }
+
+    fn database_interface_id(&self) -> &str {
+        &self.database_interface_id
+    }
+
+    fn set_database_interface_id(&mut self, id: String) {
+        self.database_interface_id = id;
+    }
+
+    fn latest_volume_identifier(&self) -> &str {
+        &self.latest_volume_identifier
+    }
+
+    fn set_latest_volume_identifier(&mut self, volume_interface_id: String) {
+        self.latest_volume_identifier = volume_interface_id
+    }
+
+    fn cids(&self) -> Result<Vec<(&str, AAIVolumeId, AAIChapterId)>> {
+        let mut result: Vec<(&str, AAIVolumeId, AAIChapterId)> = vec![];
+        for chapter in &self.chapter_cids {
+            let volume_id = AAIVolumeId::from_interface_id(&chapter.volume_interface_id)?;
+            let chapter_id = AAIChapterId::from_interface_id(&chapter.chapter_interface_id)?;
+            result.push((&chapter.cid_v0, volume_id, chapter_id))
+        }
+        Ok(result)
+    }
+
+    fn set_cids<U: AsRef<str> + Display>(&mut self, cids: &[(U, AAIVolumeId, AAIChapterId)]) {
+        for (cid, volume_id, chapter_id) in cids {
+            let chapter = AAIManifestChapter {
+                chapter_interface_id: volume_id.interface_id(),
+                volume_interface_id: chapter_id.interface_id(),
+                cid_v0: cid.to_string(),
+            };
+            self.chapter_cids.push(chapter)
+        }
+        // Sort by VolumeId, then by ChapterId for ties.
+        self.chapter_cids.sort_by(|a, b| {
+            a.volume_interface_id
+                .cmp(&b.volume_interface_id)
+                .then(a.chapter_interface_id.cmp(&b.chapter_interface_id))
+        })
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct AAIManifestChapter {
+    pub chapter_interface_id: String,
+    pub volume_interface_id: String,
+    pub cid_v0: String,
 }

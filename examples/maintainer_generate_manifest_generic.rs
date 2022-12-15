@@ -14,7 +14,7 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let mut db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
     db.generate_manifest()?;
 
     Ok(())

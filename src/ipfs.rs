@@ -5,6 +5,13 @@ use anyhow::Result;
 use cid::multihash::{Code, MultihashDigest};
 use cid::Cid;
 
+/// Computes the CIDv0 for the given bytes, returning as a String.
+pub fn cid_v0_string_from_bytes(bytes: &[u8]) -> Result<String> {
+    let h = Code::Sha2_256.digest(bytes);
+    let cid = Cid::new_v0(h)?;
+    Ok(cid.to_string())
+}
+
 /// Computes the CIDv1 for the given bytes.
 pub fn cid_v1_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let h = Code::Sha2_256.digest(bytes);
