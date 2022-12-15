@@ -123,8 +123,14 @@ impl<T: DataSpec> Todd<T> {
         manifest.set_database_interface_id(self.config.data_kind.interface_id());
         manifest.set_latest_volume_identifier(latest_volume.interface_id());
         manifest.set_cids(&cids);
-        debug!("Manifest created {:?}", manifest);
-        todo!("Save manifest.");
+
+        let manifest_path = self.config.manifest_file_path()?;
+        let json_manifest = serde_json::to_string_pretty(&manifest)?;
+
+        fs::write(&manifest_path, json_manifest)
+            .with_context(|| format!("Failed to write file: {:?}", &manifest_path))?;
+        debug!("Manifest saved.");
+        Ok(())
     }
     /// Prepares the mininum distributable Chapter
     pub fn deprecated_get_one_chapter<V>(

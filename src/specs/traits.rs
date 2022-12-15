@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use ssz::{Decode, Encode};
 use std::fmt::{Debug, Display};

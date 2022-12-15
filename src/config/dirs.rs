@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use anyhow::{anyhow, Context, Result, bail};
+use anyhow::{anyhow, bail, Context, Result};
 use directories::ProjectDirs;
 use log::warn;
 use serde::Deserialize;
@@ -134,8 +134,14 @@ pub struct ConfigStruct {
 
 impl ConfigStruct {
     /// Gets the path of the manifest file.
-    pub fn manifest_file(&self) -> Result<PathBuf> {
-        todo!()
+    pub fn manifest_file_path(&self) -> Result<PathBuf> {
+        let mut manifest_filename = self.data_kind.interface_id();
+        manifest_filename.push_str("_manifest");
+        let mut path = self.data_kind.platform_directory()?
+            .join(manifest_filename);
+        path.set_extension("json");
+        Ok(path)
+
     }
     /// Returns the path for the directory that holds all chapters that
     /// match the given ChapterId.
@@ -149,12 +155,11 @@ impl ConfigStruct {
         p
     }
     /// Returns the VolumeId for the latest Chapter file present.
-    pub fn latest_volume<T: DataSpec>(&self) -> Result<T::AssociatedVolumeId>
-    {
+    pub fn latest_volume<T: DataSpec>(&self) -> Result<T::AssociatedVolumeId> {
         // Read the first chapter directory (at random)
-        let chapter_dirs = fs::read_dir(&self.data_dir).with_context(|| {
-            format!("Couldn't read data directory {:?}.", &self.data_dir)
-        })?.next();
+        let chapter_dirs = fs::read_dir(&self.data_dir)
+            .with_context(|| format!("Couldn't read data directory {:?}.", &self.data_dir))?
+            .next();
         let Some(first) = chapter_dirs else {
             bail!("No chapter directories found in {:?}",
             chapter_dirs)};
@@ -174,8 +179,10 @@ impl ConfigStruct {
         Ok(latest)
     }
     /// For a given chapter returns the filenames and volume_ids it contains.
-    pub fn parse_all_files_for_chapter<T: DataSpec>(&self, chapter: &T::AssociatedChapterId) -> Result<Vec<(PathBuf, T::AssociatedVolumeId)>>
-    {
+    pub fn parse_all_files_for_chapter<T: DataSpec>(
+        &self,
+        chapter: &T::AssociatedChapterId,
+    ) -> Result<Vec<(PathBuf, T::AssociatedVolumeId)>> {
         let chapter_name = chapter.interface_id();
         let dir = self.chapter_dir_path(chapter);
         let files = fs::read_dir(&dir)
@@ -188,15 +195,12 @@ impl ConfigStruct {
             let Some(filename) = filename.to_str() else {bail!("Couldn't read filename {:?}.", file)};
             // volume_XXX_XXX_XXX_chapter_0xXX.ssz
             // Use knowledge of the chapter directory to get the volume id.
-            let volume_str = filename.replace(&chapter_name, "").replace("_.ssz", "");
-
+            let without_chapter = filename.replace(&chapter_name, "");
+            let Some((volume_str, _suffix)) = without_chapter.split_once("_.") else {
+                bail!("Filename could not be split by '_' and '.': {}", filename)};
             let vol_id = T::AssociatedVolumeId::from_interface_id(&volume_str)?;
-            all_files.push(
-                (file.path(), vol_id)
-            )
+            all_files.push((file.path(), vol_id))
         }
-        warn!("Need to handle all filename suffixes");
         Ok(all_files)
     }
 }
-
