@@ -2,8 +2,11 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
+use log::info;
 use reqwest::Url;
 use tokio::runtime::Runtime;
+
+use crate::samples::utils::DownloadTask;
 
 use super::traits::SampleObtainer;
 use super::utils::download_files;
@@ -22,20 +25,19 @@ impl SampleObtainer for AAISampleObtainer {
     ///
     /// Saves five 25MB files locally in the sample directory.
     fn get_raw_samples(dir: &PathBuf) -> Result<()> {
-        let mut urls_and_filenames: Vec<(Url, &str)> = vec![];
+        let mut tasks: Vec<DownloadTask> = vec![];
         for (index, chunk_name) in SAMPLE_CHUNK_CIDS.iter().enumerate() {
-            urls_and_filenames.push((
-                Url::parse(SAMPLE_UNCHAINED_DIR)?.join(chunk_name)?,
-                SAMPLE_CHUNKS[index],
-            ))
+            tasks.push(DownloadTask {
+                url: Url::parse(SAMPLE_UNCHAINED_URL)?.join(chunk_name)?,
+                dest_dir: dir.to_path_buf(),
+                filename: SAMPLE_CHUNKS[index].to_string(),
+            })
         }
-        println!(
-            "Downloaded {} files to: {:?}",
-            urls_and_filenames.len(),
-            dir
-        );
+        info!("Downloading {} files to: {:?}", tasks.len(), dir);
         let rt = Runtime::new()?;
-        rt.block_on(download_files(&dir, urls_and_filenames))
+        rt.block_on(download_files(tasks))?;
+
+        Ok(())
     }
 }
 
@@ -62,4 +64,4 @@ pub static SAMPLE_CHUNK_CIDS: [&str; 5] = [
     "Qmegr6DCEQ6Si1FZbbRZJFhXWM9hWbG7PnYcEGFGkPuJuB",
 ];
 
-static SAMPLE_UNCHAINED_DIR: &str = "https://ipfs.unchainedindex.io/ipfs/";
+static SAMPLE_UNCHAINED_URL: &str = "https://ipfs.unchainedindex.io/ipfs/";

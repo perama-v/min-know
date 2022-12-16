@@ -423,8 +423,8 @@ impl ManifestMethods<AAISpec> for AAIManifest {
     fn set_cids<U: AsRef<str> + Display>(&mut self, cids: &[(U, AAIVolumeId, AAIChapterId)]) {
         for (cid, volume_id, chapter_id) in cids {
             let chapter = AAIManifestChapter {
-                chapter_interface_id: volume_id.interface_id(),
-                volume_interface_id: chapter_id.interface_id(),
+                volume_interface_id: volume_id.interface_id(),
+                chapter_interface_id: chapter_id.interface_id(),
                 cid_v0: cid.to_string(),
             };
             self.chapter_cids.push(chapter)
@@ -440,7 +440,7 @@ impl ManifestMethods<AAISpec> for AAIManifest {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct AAIManifestChapter {
-    pub chapter_interface_id: String,
     pub volume_interface_id: String,
+    pub chapter_interface_id: String,
     pub cid_v0: String,
 }

@@ -1,10 +1,12 @@
 use anyhow::{anyhow, bail, Context, Result};
+use reqwest::Url;
 use std::{
     fmt::Debug,
     fs,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+use tokio::runtime::Runtime;
 
 use log::{debug, error, info, warn};
 use rayon::prelude::*;
@@ -14,8 +16,11 @@ use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
     database::utils::log_count,
     extraction::traits::Extractor,
-    ipfs::{cid_v0_from_bytes, cid_v0_string_from_bytes},
-    samples::traits::SampleObtainer,
+    ipfs::cid_v0_string_from_bytes,
+    samples::{
+        traits::SampleObtainer,
+        utils::{download_files, DownloadTask},
+    },
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods,
         RecordValueMethods, VolumeIdMethods,
@@ -293,6 +298,51 @@ impl<T: DataSpec> Todd<T> {
             }
         }
         Ok(matching)
+    }
+    /// Acquires the parts of the database that a user would be interested in.
+    ///
+    /// The user provides the database keys important to them. This is used
+    /// locally to determine which Chapters are relevant. Those Chapters
+    /// are then downloaded using the CIDs present in the local manifest file.
+    ///
+    /// ## Algorithm
+    ///
+    /// 1. Convert the raw keys into ChapterIds.
+    /// 2. Go through all the Chapter CIDs in the manifest.
+    /// 3. Keep Chapter CIDs that match the ChapterIds from the raw keys.
+    /// 4. Use the CIDs to download the Chapters and save locally.
+    pub fn obtain_relevant_data(&self, keys: &[&str], gateway: &str) -> Result<()> {
+        warn!("TODO: Manifest should be downloaded not sourced locally.");
+
+        let mut relevant_chapter_ids: Vec<T::AssociatedChapterId> = vec![];
+        for k in keys {
+            let record_key = T::raw_key_as_record_key(&k)?;
+            let chapter_id = T::record_key_to_chapter_id(&record_key)?;
+            relevant_chapter_ids.push(chapter_id);
+        }
+
+        let path = self.config.manifest_file_path()?;
+        let str = fs::read_to_string(&path)
+            .with_context(|| format!("Failed to read manifest: {:?}", &path))?;
+        let manifest: T::AssociatedManifest = serde_json::from_str(&str)?;
+
+        let mut tasks: Vec<DownloadTask> = vec![];
+        for (cid, vol_id, chap_id) in manifest.cids()? {
+            if relevant_chapter_ids.contains(&chap_id) {
+                let url = Url::parse(gateway)?.join(cid)?;
+                let dest_dir = self.config.chapter_dir_path(&chap_id);
+                let filename = T::AssociatedChapter::new_empty(&vol_id, &chap_id).filename();
+                tasks.push(DownloadTask {
+                    url,
+                    dest_dir,
+                    filename,
+                })
+            }
+        }
+        let rt = Runtime::new()?;
+        rt.block_on(download_files(tasks))?;
+        info!("TODO: Downloaded data can now be pinned on IPFS to support the network.");
+        Ok(())
     }
     /// Obtains the sample data for the database.
     ///

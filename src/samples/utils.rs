@@ -2,6 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Ok, Result};
 use futures_util::{future::join_all, stream::StreamExt};
+use log::{debug, warn, info};
 use reqwest::Url;
 use tokio::{fs::File, io::AsyncWriteExt};
 
@@ -16,22 +17,23 @@ use tokio::{fs::File, io::AsyncWriteExt};
 /// rt.block_on(download_files(&dir, urls_and_filenames))
 /// # Ok(())
 /// ```
-pub async fn download_files(
-    dest_dir: &PathBuf,
-    urls_and_filenames: Vec<(Url, &str)>,
-) -> Result<()> {
+pub(crate) async fn download_files(urls_dirs_filenames: Vec<DownloadTask>) -> Result<()> {
     let client = reqwest::Client::new();
-    fs::create_dir_all(&dest_dir)?;
-
     let mut download_handles = vec![];
 
-    for (url, filename) in urls_and_filenames {
-        let filepath = dest_dir.join(filename);
-        println!("Downloading file {} from: {}", filename, url);
+    for task in urls_dirs_filenames {
+        fs::create_dir_all(&task.dest_dir)?;
+
+        let filepath = task.dest_dir.join(&task.filename);
+        if filepath.exists() {
+            info!("Skipped downloading file (already exists) {:?}.", filepath);
+            continue
+        };
+        debug!("Downloading file {} from: {}", &task.filename, task.url);
         let client = client.clone();
         let handle = tokio::spawn(async move {
             let mut file = File::create(filepath).await?;
-            let mut stream = client.get(url).send().await?.bytes_stream();
+            let mut stream = client.get(task.url).send().await?.bytes_stream();
             while let Some(result) = stream.next().await {
                 let chunk = result?;
                 file.write_all(&chunk).await?;
@@ -43,4 +45,15 @@ pub async fn download_files(
     }
     join_all(download_handles).await;
     Ok(())
+}
+
+/// Details of a file to be downloaded and stored locally.
+///
+/// Used for coordinating concurrent downloads.
+pub struct DownloadTask {
+    pub url: Url,
+    /// Directory that the file will be created in.
+    pub dest_dir: PathBuf,
+    /// Name of the file.
+    pub filename: String,
 }
