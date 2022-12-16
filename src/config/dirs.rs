@@ -90,27 +90,31 @@ impl DirNature {
         let raw_dir_name = data_kind.raw_source_dir_name();
         let project = data_kind.platform_directory()?;
         Ok(match data_kind {
-            DataKind::AddressAppearanceIndex(ref network) => match self {
+            DataKind::AddressAppearanceIndex(ref _network) => match self {
                 DirNature::Sample => ConfigStruct {
                     dir_nature: self,
+                    base_dir_nature_dependent: project.join("samples"),
                     data_kind,
                     raw_source: project.join("samples").join(raw_dir_name),
                     data_dir: project.join("samples").join(dir_name),
                 },
                 DirNature::Default => ConfigStruct {
                     dir_nature: self,
+                    base_dir_nature_dependent: project.clone(),
                     data_kind,
                     raw_source: project.join(raw_dir_name),
                     data_dir: project.join(dir_name),
                 },
                 DirNature::Custom(ref x) => {
                     let raw_source = x.raw_source.join(&dir_name);
+                    let base_dir_nature_dependent = x.processed_data_dir.clone();
                     let data_dir = x.processed_data_dir.join(&dir_name);
                     ConfigStruct {
-                        dir_nature: self,
+                        dir_nature: self.clone(),
+                        base_dir_nature_dependent,
                         data_kind,
                         raw_source,
-                        data_dir,
+                        data_dir
                     }
                 }
             },
@@ -124,6 +128,9 @@ impl DirNature {
 pub struct ConfigStruct {
     /// Which directory type is being configured. E.g., Real vs sample data.
     pub dir_nature: DirNature,
+    /// The directory that contains the manifest and data_dir. Accounts for
+    /// whether data is real/sample.
+    pub base_dir_nature_dependent: PathBuf,
     /// Which database is being configured.
     pub data_kind: DataKind,
     /// The path to the unformatted raw source data. Used for populating the database.
@@ -137,7 +144,7 @@ impl ConfigStruct {
     pub fn manifest_file_path(&self) -> Result<PathBuf> {
         let mut manifest_filename = self.data_kind.interface_id();
         manifest_filename.push_str("_manifest");
-        let mut path = self.data_kind.platform_directory()?
+        let mut path = self.base_dir_nature_dependent
             .join(manifest_filename);
         path.set_extension("json");
         Ok(path)
@@ -193,8 +200,6 @@ impl ConfigStruct {
             let file = chapterfile?;
             let filename = file.file_name();
             let Some(filename) = filename.to_str() else {bail!("Couldn't read filename {:?}.", file)};
-            // volume_XXX_XXX_XXX_chapter_0xXX.ssz
-            // Use knowledge of the chapter directory to get the volume id.
             let without_chapter = filename.replace(&chapter_name, "");
             let Some((volume_str, _suffix)) = without_chapter.split_once("_.") else {
                 bail!("Filename could not be split by '_' and '.': {}", filename)};
