@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
-    db.full_transform()?;
+    db.extend()?;
 
     Ok(())
 }

@@ -58,15 +58,70 @@ impl<T: DataSpec> Todd<T> {
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
     ///
-    pub fn full_transform(&mut self) -> Result<()> {
-        let chapter_ids = &T::get_all_chapter_ids()?;
+    pub fn full_transform(&self) -> Result<()> {
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
-        info!(
-            "There are {} volumes, each with {} chapters.",
-            volume_ids.len(),
-            chapter_ids.len()
-        );
+        let chapter_ids = &T::get_all_chapter_ids()?;
+        self.create_listed_chapters(volume_ids, chapter_ids)?;
+        info!("Finished creating database.");
+        self.generate_manifest()?;
+        Ok(())
+    }
+    /// Extends the database by transforming unincorporated raw data.
+    ///
+    /// ## Algorithm
+    /// - First new VolumeId: Find the latest volume that exists, increment, get VolumeId.
+    /// - Latest new VolumeId:
+    ///     - Get all VolumeIds possible based on raw data (use extractor methods)
+    ///     - Get the latest VolumeId present in processed data.
+    ///     - Remove existing from the list of possible.
+    /// - Get list of vol_ids in range: first..=last.
+    /// - For vol_ids/chapter_ids combinations, self.create_chapter
+    /// - Generate manifest unless changes were None.
+    ///
+    /// ## Database specific concepts
+    ///
+    /// For each database, the latest volume can be found from raw data properties:
+    /// - AAI: Block number of the latest chunk is used.
+    /// - Nametag: Index of the last file in the append-only raw database.
+    ///     - Edits are appended not added as a new entry, not included in the exsisting file.
+    ///     - All entries have an index. The index of the latest entry is used.
+    /// - Contract source code: The index of the latest entry is used.
+    /// - 4 byte signature: The index of the latest entry is used.
+    pub fn extend(&self) -> Result<()> {
+        let all_possible_volume_ids = T::get_all_volume_ids(&self.config.raw_source)?;
+
+        let latest_existing_vol = self.config.latest_volume::<T>()?;
+        let index_of_existing = latest_existing_vol.is_nth()? as usize;
+
+        let mut new_volume_ids: Vec<T::AssociatedVolumeId> = vec![];
+        for (index, vol) in all_possible_volume_ids.into_iter().enumerate() {
+            if index > index_of_existing {
+                new_volume_ids.push(vol);
+            }
+        }
+        let chapter_ids = &T::get_all_chapter_ids()?;
+        self.create_listed_chapters(&new_volume_ids, chapter_ids)?;
+        info!("Finished extending database.");
+        self.generate_manifest()?;
+        Ok(())
+    }
+    /// Creates every possible Chapter using the VolumeIds/ChapterIds provided.
+    ///
+    /// Every combination of is created.
+    ///
+    /// Used by self.full_transform() and self.extend().
+    fn create_listed_chapters(
+        &self,
+        volume_ids: &Vec<T::AssociatedVolumeId>,
+        chapter_ids: &Vec<T::AssociatedChapterId>,
+    ) -> Result<()> {
         let total_chapters = (chapter_ids.len() * volume_ids.len()) as u32;
+        info!(
+            "{} VolumeIds, each with {} ChapterIds is {} total Chapters.",
+            volume_ids.len(),
+            chapter_ids.len(),
+            total_chapters
+        );
         let count = Arc::new(Mutex::new(0_u32));
 
         volume_ids.par_iter().for_each(|volume_id| {
@@ -80,8 +135,6 @@ impl<T: DataSpec> Todd<T> {
                 );
             })
         });
-        info!("Finished creating database.");
-        self.generate_manifest()?;
         Ok(())
     }
     /// Creates a new manifest file.
@@ -167,29 +220,34 @@ impl<T: DataSpec> Todd<T> {
         volume_id: &T::AssociatedVolumeId,
         chapter_id: &T::AssociatedChapterId,
     ) {
-        let chapter = T::AssociatedExtractor::chapter_from_raw(
+        let chapter_result = T::AssociatedExtractor::chapter_from_raw(
             &chapter_id,
             volume_id,
             &self.config.raw_source,
         );
-        let v_id = volume_id.interface_id();
-        let c_id = chapter_id.interface_id();
-        match chapter {
-            Err(e) => error!(
-                "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
-                v_id, c_id, e
-            ),
-            Ok(chap_opt) => match chap_opt {
-                None => { /* No raw data for this volume_id/chapter_id combo (skip). */ }
-                Some(chap) => match self.save_chapter(chap) {
-                    Ok(_) => {}
-                    Err(e) => error!(
-                        "Error processing chapter (vol_id: {:?}, chap_id: {:?}): {}",
-                        v_id, c_id, e
-                    ),
-                },
-            },
+        let current_chapter = format!(
+            "chapter (vol_id: {:?}, chap_id: {:?})",
+            volume_id.interface_id(),
+            chapter_id.interface_id()
+        );
+
+        let chapter_option = match chapter_result {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Error processing {}: {}", current_chapter, e);
+                return;
+            }
         };
+
+        let Some(chapter) = chapter_option else {
+            /* No raw data for this volume_id/chapter_id combo (skip). */
+            return
+        };
+
+        match self.save_chapter(chapter) {
+            Ok(_) => {}
+            Err(e) => error!("Error processing {}: {}", current_chapter, e),
+        }
     }
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
         let chapter_dir_path = &self.config.chapter_dir_path(chapter.chapter_id());

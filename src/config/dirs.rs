@@ -114,7 +114,7 @@ impl DirNature {
                         base_dir_nature_dependent,
                         data_kind,
                         raw_source,
-                        data_dir
+                        data_dir,
                     }
                 }
             },
@@ -144,11 +144,9 @@ impl ConfigStruct {
     pub fn manifest_file_path(&self) -> Result<PathBuf> {
         let mut manifest_filename = self.data_kind.interface_id();
         manifest_filename.push_str("_manifest");
-        let mut path = self.base_dir_nature_dependent
-            .join(manifest_filename);
+        let mut path = self.base_dir_nature_dependent.join(manifest_filename);
         path.set_extension("json");
         Ok(path)
-
     }
     /// Returns the path for the directory that holds all chapters that
     /// match the given ChapterId.
