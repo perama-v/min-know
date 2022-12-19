@@ -1,6 +1,7 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
-use min_know::specs::{address_appearance_index::{AAIVolumeId, AAIAppearanceTx}, traits::VolumeIdMethods};
+use anyhow::Context;
+use min_know::specs::{address_appearance_index::{AAIVolumeId, AAIAppearanceTx, AAISpec, AAIChapterId}, traits::{VolumeIdMethods, DataSpec, ChapterIdMethods}};
 
 use crate::common::aai_db;
 
@@ -21,8 +22,24 @@ fn uc_files_present() {
 }
 
 #[test]
-fn sample_files_nonzero() {
-    todo!("Ensure that sample files all contain data.");
+fn sample_files_all_greater_than_50kb() {
+    let db = aai_db();
+    let chapter_dirs = fs::read_dir(&db.config.data_dir).with_context(|| {
+        format!("Couldn't read data directory {:?}.", &db.config.data_dir)
+    }).unwrap();
+    for chapter_dir in chapter_dirs {
+        // Obtain ChapterId from directory name.
+        let dir = chapter_dir.unwrap().path();
+        let chap_id = AAIChapterId::from_chapter_directory(&dir).unwrap();
+        // Obtain VolumeIds using ChapterId
+        let chapter_files: Vec<(PathBuf, AAIVolumeId)> =
+            db.config.parse_all_files_for_chapter::<AAISpec>(&chap_id).unwrap();
+        for (chapter_path, _volume_id) in chapter_files {
+            let bytes = fs::read(chapter_path).unwrap();
+            let kbytes = bytes.len() / 1000;
+            assert_eq!(kbytes > 50, true);
+        }
+    }
 }
 
 #[test]
