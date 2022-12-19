@@ -21,6 +21,11 @@ fn uc_files_present() {
 }
 
 #[test]
+fn sample_files_nonzero() {
+    todo!("Ensure that sample files all contain data.");
+}
+
+#[test]
 fn sample_manifest_readable() {
     aai_db().manifest().unwrap();
 }
