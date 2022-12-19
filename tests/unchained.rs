@@ -5,7 +5,6 @@ use cid::{
     Cid,
 };
 use min_know::{
-    types::{Network, UnchainedPath},
     unchained::types::{BlockRange, UnchainedFile},
 };
 
@@ -13,11 +12,8 @@ mod common;
 
 #[test]
 fn sample_header_sample_ok() {
-    let path = UnchainedPath::Sample;
-    let network = Network::default();
-    let index_path = path
-        .chunks_dir(&network)
-        .unwrap()
+    let db = common::aai_db();
+    let index_path = db.config.raw_source
         .join("011283653-011286904.bin");
     let target = BlockRange {
         old: 11_200_000,
@@ -30,12 +26,11 @@ fn sample_header_sample_ok() {
 fn sample_header_local_ok() {
     println!("Env is: {:?}", std::env::current_dir());
     // Run test from this dir:
-    let path = UnchainedPath::Custom(PathBuf::from("./data"));
-    let network = Network::default();
+    let db = common::aai_db();
+    let local_example_dir_raw =
+        PathBuf::from("./data/samples").join(db.config.data_kind.raw_source_dir_name());
     // Look for this file:
-    let index_path = path
-        .chunks_dir(&network)
-        .unwrap()
+    let index_path = local_example_dir_raw
         .join("011283653-011286904.bin");
     let target = BlockRange {
         old: 11_200_000,
