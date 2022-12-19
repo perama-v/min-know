@@ -458,3 +458,15 @@ pub struct AAIManifestChapter {
     pub chapter_interface_id: String,
     pub cid_v0: String,
 }
+
+#[test]
+fn encode_decode() -> Result<()> {
+    use crate::specs::{
+        address_appearance_index::AAIAppearanceTx
+    };
+    let data_in = AAIAppearanceTx { block: 122455, index: 23 };
+    let encoded = data_in.clone().as_ssz_bytes();
+    let data_out: AAIAppearanceTx = <_>::from_ssz_bytes(&encoded).unwrap();
+    assert_eq!(data_in, data_out);
+    Ok(())
+}
