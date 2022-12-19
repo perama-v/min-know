@@ -1,29 +1,28 @@
 use std::env;
 
 use anyhow::Result;
+use env_logger;
 
 use min_know::{
-    types::{AddressIndexPath, Network, UnchainedPath},
-    IndexConfig,
+    config::dirs::{DataKind, DirNature},
+    database::types::Todd,
+    specs::address_appearance_index::AAISpec,
 };
 
-/// Downloads sample index data that can be used for testing.
+/// Obtains/downloads sample index data that can be used for testing.
 ///
 /// Try the following examples next:
 /// ```bash
-/// cargo run --example user_find_transactions
-/// cargo run --example user_check_completeness
+/// cargo run --example user_0_find_transactions_generic
+/// cargo run --example user_check_completeness_generic
 /// ```
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
 
-    let data_dir = AddressIndexPath::Sample;
-    let network = Network::default();
-    let index = IndexConfig::new(&data_dir, &network);
-    let unchained_path = UnchainedPath::Sample;
-
-    index.get_sample_data(&unchained_path).await?;
+    let mut db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    db.get_sample_data()?;
     Ok(())
 }

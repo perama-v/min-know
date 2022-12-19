@@ -2,8 +2,9 @@ use std::env;
 
 use anyhow::{anyhow, Result};
 use min_know::{
-    types::{AddressIndexPath, Network},
-    IndexConfig,
+    config::dirs::{DataKind, DirNature},
+    database::types::Todd,
+    specs::{address_appearance_index::{AAISpec, AAIAppearanceTx}},
 };
 use web3::types::H256;
 
@@ -13,13 +14,20 @@ use web3::types::H256;
 async fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
 
-    let address = "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae";
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    println!("DB is {:#?}", db);
+
+    // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
-    let data_dir = AddressIndexPath::Sample;
-    let network = Network::default();
-    let index = IndexConfig::new(&data_dir, &network);
-    let appearances = index.find_transactions(address)?;
+    let values = db.find(address)?;
+    let mut appearances: Vec<AAIAppearanceTx> = vec![];
+    for v in values {
+        appearances.extend(v.value.to_vec());
+    }
+    println!("{:?}",appearances);
     println!("Level 1 complete: User transactions found.\n");
     // Suppose that the user was running a lightweight portal client
     // https://github.com/ethereum/portal-network-specs#the-json-rpc-api

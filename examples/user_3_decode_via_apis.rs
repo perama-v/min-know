@@ -8,9 +8,9 @@ use serde_json::Value;
 use web3::types::{BlockNumber, H160, H256};
 
 use min_know::{
-    contract_utils::metadata::cid_from_runtime_bytecode,
-    types::{AddressIndexPath, Network},
-    IndexConfig,
+    config::dirs::{DataKind, DirNature},
+    database::types::Todd,
+    specs::{address_appearance_index::{AAISpec, AAIAppearanceTx}}, contract_utils::metadata::cid_from_runtime_bytecode,
 };
 
 const FOURBYTE: &str = "https://www.4byte.directory/api/v1/event-signatures/";
@@ -37,13 +37,15 @@ const SOURCIFY_PARTIAL: &str = "https://repo.sourcify.dev/contracts/partial_matc
 async fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
 
-    //let address = "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae";
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    println!("DB is {:#?}", db);
 
-    // Random addresses picked from block in sample range.
-    let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9"; // 2
-
-    // let address = "0xcb776c47291b55bf02b159810712f6897874f1cc"; // 7
+    // A random address.
+    let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
+    //let address = "0xcb776c47291b55bf02b159810712f6897874f1cc"; // 7
     //let address = "0x691e27c4c24cf8a5700563e42dadf66b557f372c"; // 44
     //let address = "0x00d83bf7cec1f97489cf324aa8d159bae6aa4df5"; // 1
     //let address = "0xebfd902f83d8ec838ad24259b5bf9617e1b774fc"; // 1
@@ -52,10 +54,11 @@ async fn main() -> Result<()> {
     //let address = "0x00bdb5699745f5b860228c8f939abf1b9ae374ed"; // 1504
     //let address = "0xbf705e134a86c67b703a601c8d5a6caab06cbfd0"; // 7
 
-    let data_dir = AddressIndexPath::Sample;
-    let network = Network::default();
-    let index = IndexConfig::new(&data_dir, &network);
-    let appearances = index.find_transactions(address)?;
+    let values = db.find(address)?;
+    let mut appearances: Vec<AAIAppearanceTx> = vec![];
+    for v in values {
+        appearances.extend(v.value.to_vec());
+    }
     println!(
         "(sample index data) Address {} appeared in {} transactions",
         &address,

@@ -389,14 +389,14 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// Each Chapter contains Records with key-value pairs. This function
     /// aggregates values from all relevant Records (across different Chapters).
-    pub fn find(&self, raw_record_key: &str) -> Result<Vec<String>> {
+    pub fn find(&self, raw_record_key: &str) -> Result<Vec<T::AssociatedRecordValue>> {
         let target_record_key = T::raw_key_as_record_key(raw_record_key)?;
         let chapter_id = T::record_key_to_chapter_id(&target_record_key)?;
         let chap_dir = self.config.chapter_dir_path(&chapter_id);
         // Read each file and collect matching Values
         let files = fs::read_dir(&chap_dir)
             .with_context(|| format!("Failed to read dir {:?}", chap_dir))?;
-        let mut matching: Vec<String> = vec![];
+        let mut matching: Vec<T::AssociatedRecordValue> = vec![];
         for filename in files {
             let path = filename?.path();
             debug!("Reading file: {:?}", path);
@@ -406,10 +406,11 @@ impl<T: DataSpec> Todd<T> {
                 .with_context(|| format!("Failed to read/decode file: {:?}", path))?;
             let records = chapter.records();
             for r in records {
-                let rec = r.get();
-                let key = rec.key();
+
+                let key = r.key();
                 if key == &target_record_key {
-                    matching.extend(r.clone().values_as_strings())
+                    let val = r.value().clone();
+                    matching.push(val)
                 }
             }
         }

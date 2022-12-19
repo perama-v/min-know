@@ -296,9 +296,10 @@ impl RecordMethods<AAISpec> for AAIRecord {
         &self.key
     }
 
-    fn values_as_strings(self) -> Vec<String> {
-        self.value.as_strings()
+    fn value(&self) -> &AAIRecordValue {
+        &self.value
     }
+
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
@@ -341,10 +342,23 @@ pub struct AAIAppearanceTx {
     pub index: u32,
 }
 
+impl AAIAppearanceTx {
+    /// Converts to web3.rs transaction type.
+    pub fn as_web3_tx_id(&self) -> web3::types::TransactionId {
+        let tx_block_id =
+            web3::types::BlockId::Number(web3::types::BlockNumber::Number(<_>::from(self.block)));
+        let tx_index = <_>::from(self.index);
+        web3::types::TransactionId::Block(tx_block_id, tx_index)
+    }
+}
+
+//
 //
 // Relic structures. The files are currently stored in this format, but this
 // can be changed to a simpler format (using RecordKey and RecordValue directly).
 //
+//
+
 #[derive(PartialEq, Debug, Encode, Decode, Clone, TreeHash)]
 pub struct RelicChapter {
     /// Prefix common to all addresses that this data covers.

@@ -234,14 +234,16 @@ pub trait ChapterIdMethods<T: DataSpec>: Sized {
     }
 }
 
-/// Marker trait.
+/// Methods that RecordKeys must implement.
 pub trait RecordKeyMethods {
     /// Returns the key struct that implements this method.
     fn get(self) -> Self;
 }
+/// Methods that RecordValues must implement.
 pub trait RecordValueMethods {
     /// Returns the value struct that implements this method.
     fn get(self) -> Self;
+    /// Returns the value, with all elements as Strings in a vector.
     fn as_strings(self) -> Vec<String>;
 }
 
@@ -252,8 +254,8 @@ pub trait RecordMethods<T: DataSpec> {
     fn new(key: T::AssociatedRecordKey, val: T::AssociatedRecordValue) -> T::AssociatedRecord;
     /// Get the RecordKey of the Record.
     fn key(&self) -> &T::AssociatedRecordKey;
-    /// Get the RecordValues of the Record.
-    fn values_as_strings(self) -> Vec<String>;
+    /// Get the RecordValue of the Record.
+    fn value(&self) -> &T::AssociatedRecordValue;
 }
 /// Methods for the smallest distributable chapter in the database.
 ///
