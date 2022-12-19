@@ -1,16 +1,16 @@
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, Context, Result};
 use reqwest::Url;
 use std::{
     fmt::Debug,
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, collections::HashSet,
 };
 use tokio::runtime::Runtime;
 
 use log::{debug, error, info, warn};
 use rayon::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
@@ -30,7 +30,7 @@ use crate::{
 use super::utils::DirFunctions;
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Todd<T: DataSpec> {
     pub chapters: Vec<T::AssociatedChapter>,
     pub config: ConfigStruct,
@@ -66,7 +66,7 @@ impl<T: DataSpec> Todd<T> {
     pub fn full_transform(&self) -> Result<()> {
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
         let chapter_ids = &T::get_all_chapter_ids()?;
-        self.create_listed_chapters(volume_ids, chapter_ids)?;
+        self.create_chapter_combinations(volume_ids, chapter_ids)?;
         info!("Finished creating database.");
         self.generate_manifest()?;
         Ok(())
@@ -74,12 +74,9 @@ impl<T: DataSpec> Todd<T> {
     /// Extends the database by transforming unincorporated raw data.
     ///
     /// ## Algorithm
-    /// - First new VolumeId: Find the latest volume that exists, increment, get VolumeId.
-    /// - Latest new VolumeId:
-    ///     - Get all VolumeIds possible based on raw data (use extractor methods)
-    ///     - Get the latest VolumeId present in processed data.
-    ///     - Remove existing from the list of possible.
-    /// - Get list of vol_ids in range: first..=last.
+    /// - Get the latest VolumeId present in processed data.
+    /// - Get all VolumeIds possible based on raw data (use extractor methods)
+    /// - Keep only the VolumeIds that are later than the latest existing VolumeId.
     /// - For vol_ids/chapter_ids combinations, self.create_chapter
     /// - Generate manifest unless changes were None.
     ///
@@ -105,9 +102,30 @@ impl<T: DataSpec> Todd<T> {
             }
         }
         let chapter_ids = &T::get_all_chapter_ids()?;
-        self.create_listed_chapters(&new_volume_ids, chapter_ids)?;
+        self.create_chapter_combinations(&new_volume_ids, chapter_ids)?;
         info!("Finished extending database.");
         self.generate_manifest()?;
+        Ok(())
+    }
+    /// Identifies missing database files and creates them
+    /// by transforming unincorporated raw data.
+    ///
+    /// Files are considered missing if they are present in the manifest and
+    /// absent in the file system.
+    pub fn repair_from_raw(&self) -> Result<()> {
+        let audit = self.check_completeness()?;
+        let missing_chapters = audit.missing_chapters()?;
+        if missing_chapters.len() == 0 {
+            info!("Database is complete. No repairs needed.");
+            return Ok(());
+        }
+        info!(
+            "{} Chapter(s) are missing and will be created from raw data.",
+            missing_chapters.len()
+        );
+        self.create_specific_chapters(missing_chapters)?;
+        info!("Finished rapairing database.");
+
         Ok(())
     }
     /// Creates every possible Chapter using the VolumeIds/ChapterIds provided.
@@ -115,30 +133,40 @@ impl<T: DataSpec> Todd<T> {
     /// Every combination of is created.
     ///
     /// Used by self.full_transform() and self.extend().
-    fn create_listed_chapters(
+    fn create_chapter_combinations(
         &self,
-        volume_ids: &Vec<T::AssociatedVolumeId>,
-        chapter_ids: &Vec<T::AssociatedChapterId>,
+        volume_ids: &[T::AssociatedVolumeId],
+        chapter_ids: &[T::AssociatedChapterId],
     ) -> Result<()> {
-        let total_chapters = (chapter_ids.len() * volume_ids.len()) as u32;
         info!(
-            "{} VolumeIds, each with {} ChapterIds is {} total Chapters.",
+            "{} VolumeIds, each with {} ChapterIds.",
             volume_ids.len(),
-            chapter_ids.len(),
-            total_chapters
+            chapter_ids.len()
         );
+        let ids: Vec<(&T::AssociatedVolumeId, &T::AssociatedChapterId)> =
+            volume_ids.iter().zip(chapter_ids.iter()).collect();
+        self.create_specific_chapters(&ids)?;
+        Ok(())
+    }
+    /// Creates specific Chapters using the VolumeIds/ChapterIds provided.
+    ///
+    /// Used by self.repair() and indirectly by self.full_transform() and self.extend().
+    fn create_specific_chapters(
+        &self,
+        ids: &[(&T::AssociatedVolumeId, &T::AssociatedChapterId)],
+    ) -> Result<()> {
+        let total_chapters = ids.len() as u32;
+        info!("{} total Chapters.", total_chapters);
         let count = Arc::new(Mutex::new(0_u32));
 
-        volume_ids.par_iter().for_each(|volume_id| {
-            chapter_ids.par_iter().for_each(|chapter_id| {
-                self.create_chapter(&volume_id, &chapter_id);
-                log_count(
-                    count.clone(),
-                    total_chapters,
-                    "Finished checking/creating chapter",
-                    100,
-                );
-            })
+        ids.par_iter().for_each(|(volume_id, chapter_id)| {
+            self.create_chapter(&volume_id, &chapter_id);
+            log_count(
+                count.clone(),
+                total_chapters,
+                "Finished checking/creating chapter",
+                100,
+            );
         });
         Ok(())
     }
@@ -189,6 +217,94 @@ impl<T: DataSpec> Todd<T> {
             .with_context(|| format!("Failed to write file: {:?}", &manifest_path))?;
         debug!("Manifest saved.");
         Ok(())
+    }
+    /// Checks the database for completeness with respect the manifest file
+    /// present.
+    ///
+    /// ## Algorithm
+    ///
+    /// - Check for missing Chapter directories (a user may only need a subset).
+    /// - Of the present chapter directories, check volumes one at a time.
+    ///     - If a volume is absent, record the reason (bad hash, no file)
+    ///     - If a volume is absent across all chapter directories, then record the vol id
+    ///     - Otherwise record the individual absent files.
+    pub fn check_completeness(&self) -> Result<CompletenessAudit<T>> {
+        let manifest = self.manifest()?;
+
+        let mut audit = CompletenessAudit {
+            absent_chapter_ids: vec![],
+            absent_volume_ids: vec![],
+            absent_individual_files: vec![],
+        };
+        // Check directories first.
+        let present = self.chapters_present()?;
+        for c in T::get_all_chapter_ids()? {
+            if !present.contains(&c) {
+                audit.absent_chapter_ids.push(c)
+            }
+        }
+        // Check files.
+        let latest_manifest_vol = T::AssociatedVolumeId::from_interface_id(manifest.latest_volume_identifier())?;
+        let all_possible_volumes = latest_manifest_vol.all_prior()?;
+        // VolumeIds with at least one valid file observed.
+        let mut vols_seen: Vec<T::AssociatedVolumeId> = vec![];
+
+        for (manifest_cid, volume_id, chapter_id) in manifest.cids()? {
+            if audit.absent_chapter_ids.contains(&chapter_id) {
+                // Skip file if its directory is known to be absent by its ChapterId.
+                continue
+            }
+            // Try to read the file.
+            let chap_dir = self.config.chapter_dir_path(&chapter_id);
+            let filename = T::AssociatedChapter::new_empty(&volume_id, &chapter_id).filename();
+            let filepath = chap_dir.join(filename);
+
+            // If it is absent, ::NoFile
+            if !filepath.exists() {
+                let abs = AbsentFile::NoFile(volume_id, chapter_id);
+                audit.absent_individual_files.push(abs);
+                continue
+            }
+
+            // If it is wrong, ::DifferentHash
+            let bytes = fs::read(filepath)?;
+            let file_cid = cid_v0_string_from_bytes(&bytes)?;
+            if manifest_cid != file_cid {
+                let abs = AbsentFile::DifferentHash(volume_id, chapter_id);
+                audit.absent_individual_files.push(abs);
+                continue
+            }
+
+            // If is is present, add to vols_seen (unless alread there).
+            if !vols_seen.contains(&volume_id) {
+                // Record all volumes that are seen at least once.
+                vols_seen.push(volume_id)
+            }
+        }
+
+        for v in all_possible_volumes {
+            if !vols_seen.contains(&v) {
+                audit.absent_volume_ids.push(v)
+            }
+        }
+
+        Ok(audit)
+    }
+    /// Gets the ChapterIds of the Chapter directories that exist in the file system.
+    ///
+    /// Does not check if the directories are empty.
+    fn chapters_present(&self) -> Result<Vec<T::AssociatedChapterId>> {
+        let chapter_dirs = fs::read_dir(&self.config.data_dir).with_context(|| {
+            format!("Couldn't read data directory {:?}.", &self.config.data_dir)
+        })?;
+        let mut chapters_present: Vec<T::AssociatedChapterId> = vec![];
+        for chapter_dir in chapter_dirs {
+            // Obtain ChapterId from directory name.
+            let dir = chapter_dir?.path();
+            let chap_id = T::AssociatedChapterId::from_chapter_directory(&dir)?;
+            chapters_present.push(chap_id);
+        }
+        Ok(chapters_present)
     }
     /// Prepares the mininum distributable Chapter
     pub fn deprecated_get_one_chapter<V>(
@@ -299,6 +415,13 @@ impl<T: DataSpec> Todd<T> {
         }
         Ok(matching)
     }
+    pub fn manifest(&self) -> Result<T::AssociatedManifest> {
+        let path = self.config.manifest_file_path()?;
+        let str = fs::read_to_string(&path)
+            .with_context(|| format!("Failed to read manifest: {:?}", &path))?;
+        let manifest: T::AssociatedManifest = serde_json::from_str(&str)?;
+        Ok(manifest)
+    }
     /// Acquires the parts of the database that a user would be interested in.
     ///
     /// The user provides the database keys important to them. This is used
@@ -312,7 +435,7 @@ impl<T: DataSpec> Todd<T> {
     /// 3. Keep Chapter CIDs that match the ChapterIds from the raw keys.
     /// 4. Use the CIDs to download the Chapters and save locally.
     pub fn obtain_relevant_data(&self, keys: &[&str], gateway: &str) -> Result<()> {
-        warn!("TODO: Manifest should be downloaded not sourced locally.");
+        warn!("TODO: Manifest should be downloaded by an end user, not sourced locally.");
 
         let mut relevant_chapter_ids: Vec<T::AssociatedChapterId> = vec![];
         for k in keys {
@@ -320,12 +443,7 @@ impl<T: DataSpec> Todd<T> {
             let chapter_id = T::record_key_to_chapter_id(&record_key)?;
             relevant_chapter_ids.push(chapter_id);
         }
-
-        let path = self.config.manifest_file_path()?;
-        let str = fs::read_to_string(&path)
-            .with_context(|| format!("Failed to read manifest: {:?}", &path))?;
-        let manifest: T::AssociatedManifest = serde_json::from_str(&str)?;
-
+        let manifest = self.manifest()?;
         let mut tasks: Vec<DownloadTask> = vec![];
         for (cid, vol_id, chap_id) in manifest.cids()? {
             if relevant_chapter_ids.contains(&chap_id) {
@@ -474,6 +592,45 @@ impl<T: DataSpec> Todd<T> {
             info!("Local directory does not contain sample files: creating from raw data.");
             self.full_transform()?;
         }
+        Ok(())
+    }
+}
+
+/// A file that is in a given manifest, but not available for some reason.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AbsentFile<T: DataSpec> {
+    DifferentHash(T::AssociatedVolumeId, T::AssociatedChapterId),
+    NoFile(T::AssociatedVolumeId, T::AssociatedChapterId),
+}
+
+/// The status of the local database completeness with respect to a manifest.
+///
+/// Files are considered absent if they are present in the manifest and
+/// absent in the file system.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CompletenessAudit<T: DataSpec> {
+    /// VolumeIds in the Manifest that do not appear anywhere in the file system.
+    pub absent_volume_ids: Vec<T::AssociatedVolumeId>,
+    /// ChapterIds in the Manifest that do not appear anywhere in the file system.
+    pub absent_chapter_ids: Vec<T::AssociatedChapterId>,
+    /// Files in the manifest that do not appear in the file system.
+    ///
+    /// Excludes files that are absent as part of a missing set of ChapterId/VolumeId.
+    pub absent_individual_files: Vec<AbsentFile<T>>,
+}
+
+impl<T: DataSpec> CompletenessAudit<T> {
+    fn missing_chapters(&self) -> Result<&[(&T::AssociatedVolumeId, &T::AssociatedChapterId)]> {
+        todo!()
+    }
+}
+
+impl<T: DataSpec> std::fmt::Display for CompletenessAudit<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = format!("{} missing ChapterIds, {} missing VolumeIds and {} missing individual files",
+            self.absent_volume_ids.len(),
+            self.absent_chapter_ids.len(),
+            self.absent_individual_files.len());
         Ok(())
     }
 }

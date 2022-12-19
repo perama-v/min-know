@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Ok, Result};
 use futures_util::{future::join_all, stream::StreamExt};
-use log::{debug, warn, info};
+use log::{debug, info, warn};
 use reqwest::Url;
 use tokio::{fs::File, io::AsyncWriteExt};
 
@@ -27,7 +27,7 @@ pub(crate) async fn download_files(urls_dirs_filenames: Vec<DownloadTask>) -> Re
         let filepath = task.dest_dir.join(&task.filename);
         if filepath.exists() {
             info!("Skipped downloading file (already exists) {:?}.", filepath);
-            continue
+            continue;
         };
         debug!("Downloading file {} from: {}", &task.filename, task.url);
         let client = client.clone();

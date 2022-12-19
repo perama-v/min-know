@@ -1,13 +1,14 @@
 use std::env;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 
 use min_know::{
     config::dirs::{DataKind, DirNature},
     database::types::Todd,
     specs::address_appearance_index::AAISpec,
 };
-/// Uses local raw data to add new data to an existing database.
+
+/// Uses a manifest file to obtain data relevant for a user.
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
@@ -15,7 +16,9 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
-    db.extend()?;
+    println!("DB is {:#?}", db);
 
+    let check = db.check_completeness()?;
+    println!("Check result: {:?}", check);
     Ok(())
 }

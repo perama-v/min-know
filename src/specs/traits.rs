@@ -107,7 +107,7 @@ pub trait DataSpec: Sized {
             .map(|n| Self::AssociatedChapterId::nth_id(n as u32))
             .collect()
     }
-    /// Gets a vector of all the VolumeIds
+    /// Gets a vector of all the VolumeIds as defined by the available raw data.
     fn get_all_volume_ids(raw_data_path: &PathBuf) -> Result<Vec<Self::AssociatedVolumeId>> {
         let latest_vol = Self::AssociatedExtractor::latest_possible_volume(raw_data_path)?;
         let latest_vol_position = Self::AssociatedVolumeId::is_nth(&latest_vol)?;
@@ -189,6 +189,18 @@ pub trait VolumeIdMethods<T: DataSpec>: Sized {
     /// If volume ids are placed in lexicographical order, corresponds to
     /// the position in that sequence. First position is n=0.
     fn is_nth(&self) -> Result<u32>;
+    /// Gets all the VolumeIds earlier than and including the given VolumeId.
+    ///
+    /// E.g. If the Volume has a zero-based index of 10, returns 11 VolumeIds (0, 1, 2, ... 10).
+    fn all_prior(&self) -> Result<Vec<T::AssociatedVolumeId>> {
+        let mut vols: Vec<T::AssociatedVolumeId> = vec![];
+        let last = self.is_nth()?;
+        for n in 0..=last {
+            let vol = Self::nth_id(n)?;
+            vols.push(vol)
+        }
+        Ok(vols)
+    }
 }
 pub trait ChapterIdMethods<T: DataSpec>: Sized {
     /// Returns the ChapterId from an interface id.

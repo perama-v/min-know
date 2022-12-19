@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::parameters::address_appearance_index::{
     DEFAULT_BYTES_PER_ADDRESS, MAX_NETWORK_NAME_BYTES,
@@ -29,7 +29,7 @@ use crate::parameters::address_appearance_index::{
 /// let network_name = String::from("goerli");
 /// let network = Network::new(bytes_per_address, network_name);
 /// ```
-#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub enum Network {
     Mainnet(Params),
     Other(Params),
@@ -72,7 +72,7 @@ impl Network {
 
 /// Holds information that may differ between networks. Allows
 /// default values to be altered.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct Params {
     pub bytes_per_address: u32,
     pub network_name: String,

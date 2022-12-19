@@ -7,7 +7,7 @@ use min_know::{
     database::types::Todd,
     specs::address_appearance_index::AAISpec,
 };
-/// Uses local raw data to add new data to an existing database.
+/// Uses local raw data to add add missing data to an existing database.
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "full");
@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
-    db.extend()?;
+    db.repair_from_raw()?;
 
     Ok(())
 }

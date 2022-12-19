@@ -2,14 +2,13 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{anyhow, bail, Context, Result};
 use directories::ProjectDirs;
-use log::warn;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
 
 use super::address_appearance_index::Network;
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub enum DataKind {
     AddressAppearanceIndex(Network),
     Sourcify,
@@ -67,7 +66,7 @@ impl DataKind {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct PathPair {
     /// Path for unprocessed data.
     pub raw_source: PathBuf,
@@ -75,7 +74,7 @@ pub struct PathPair {
     pub processed_data_dir: PathBuf,
 }
 /// Helper for setting up a config.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub enum DirNature {
     #[default]
     Sample,
@@ -124,7 +123,7 @@ impl DirNature {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct ConfigStruct {
     /// Which directory type is being configured. E.g., Real vs sample data.
     pub dir_nature: DirNature,
@@ -160,6 +159,12 @@ impl ConfigStruct {
         p
     }
     /// Returns the VolumeId for the latest Chapter file present.
+    ///
+    /// Assumes that all the Chapter directories contain data for the same Volumes.
+    ///
+    /// If a Chapter directory has had some files deleted, then this method will
+    /// not detect that (unless it is the first directory). This situation is better
+    /// navigated using the db.check_completeness() method.
     pub fn latest_volume<T: DataSpec>(&self) -> Result<T::AssociatedVolumeId> {
         // Read the first chapter directory (at random)
         let chapter_dirs = fs::read_dir(&self.data_dir)
