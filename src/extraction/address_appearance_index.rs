@@ -11,10 +11,10 @@ use crate::{
         AAIAppearanceTx, AAIChapter, AAIChapterId, AAISpec, AAIVolumeId, RelicAddressAppearances,
         RelicChapter, RelicVolumeIdentifier,
     },
-    unchained::{
+    utils::unchained::{
+        files::{ChunkFile, ChunksDir},
         structure::TransactionId,
         types::{BlockRange, UnchainedFile},
-        utils::{ChunkFile, ChunksDir},
     },
 };
 

@@ -4,17 +4,14 @@ use cid::{
     multihash::{Code, MultihashDigest},
     Cid,
 };
-use min_know::{
-    unchained::types::{BlockRange, UnchainedFile},
-};
+use min_know::utils::unchained::types::{BlockRange, UnchainedFile};
 
 mod common;
 
 #[test]
 fn sample_header_sample_ok() {
     let db = common::aai_db();
-    let index_path = db.config.raw_source
-        .join("011283653-011286904.bin");
+    let index_path = db.config.raw_source.join("011283653-011286904.bin");
     let target = BlockRange {
         old: 11_200_000,
         new: 11_300_000,
@@ -30,8 +27,7 @@ fn sample_header_local_ok() {
     let local_example_dir_raw =
         PathBuf::from("./data/samples").join(db.config.data_kind.raw_source_dir_name());
     // Look for this file:
-    let index_path = local_example_dir_raw
-        .join("011283653-011286904.bin");
+    let index_path = local_example_dir_raw.join("011283653-011286904.bin");
     let target = BlockRange {
         old: 11_200_000,
         new: 11_300_000,

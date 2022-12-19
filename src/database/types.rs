@@ -4,7 +4,7 @@ use std::{
     fmt::Debug,
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex}, collections::HashSet,
+    sync::{Arc, Mutex},
 };
 use tokio::runtime::Runtime;
 
@@ -14,20 +14,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config::dirs::{ConfigStruct, DataKind, DirNature},
-    database::utils::log_count,
     extraction::traits::Extractor,
-    ipfs::cid_v0_string_from_bytes,
-    samples::{
-        traits::SampleObtainer,
-        utils::{download_files, DownloadTask},
-    },
+    samples::traits::SampleObtainer,
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods,
         RecordValueMethods, VolumeIdMethods,
     },
+    utils::{
+        download::{download_files, DownloadTask},
+        ipfs::cid_v0_string_from_bytes,
+        system::DirFunctions,
+    },
 };
-
-use super::utils::DirFunctions;
 
 /// The definition for the entire new database.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -244,7 +242,8 @@ impl<T: DataSpec> Todd<T> {
             }
         }
         // Check files.
-        let latest_manifest_vol = T::AssociatedVolumeId::from_interface_id(manifest.latest_volume_identifier())?;
+        let latest_manifest_vol =
+            T::AssociatedVolumeId::from_interface_id(manifest.latest_volume_identifier())?;
         let all_possible_volumes = latest_manifest_vol.all_prior()?;
         // VolumeIds with at least one valid file observed.
         let mut vols_seen: Vec<T::AssociatedVolumeId> = vec![];
@@ -252,7 +251,7 @@ impl<T: DataSpec> Todd<T> {
         for (manifest_cid, volume_id, chapter_id) in manifest.cids()? {
             if audit.absent_chapter_ids.contains(&chapter_id) {
                 // Skip file if its directory is known to be absent by its ChapterId.
-                continue
+                continue;
             }
             // Try to read the file.
             let chap_dir = self.config.chapter_dir_path(&chapter_id);
@@ -263,7 +262,7 @@ impl<T: DataSpec> Todd<T> {
             if !filepath.exists() {
                 let abs = AbsentFile::NoFile(volume_id, chapter_id);
                 audit.absent_individual_files.push(abs);
-                continue
+                continue;
             }
 
             // If it is wrong, ::DifferentHash
@@ -272,7 +271,7 @@ impl<T: DataSpec> Todd<T> {
             if manifest_cid != file_cid {
                 let abs = AbsentFile::DifferentHash(volume_id, chapter_id);
                 audit.absent_individual_files.push(abs);
-                continue
+                continue;
             }
 
             // If is is present, add to vols_seen (unless alread there).
@@ -406,7 +405,6 @@ impl<T: DataSpec> Todd<T> {
                 .with_context(|| format!("Failed to read/decode file: {:?}", path))?;
             let records = chapter.records();
             for r in records {
-
                 let key = r.key();
                 if key == &target_record_key {
                     let val = r.value().clone();
@@ -628,10 +626,21 @@ impl<T: DataSpec> CompletenessAudit<T> {
 
 impl<T: DataSpec> std::fmt::Display for CompletenessAudit<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = format!("{} missing ChapterIds, {} missing VolumeIds and {} missing individual files",
+        write!(
+            f,
+            "{} missing ChapterIds, {} missing VolumeIds and {} missing individual files",
             self.absent_volume_ids.len(),
             self.absent_chapter_ids.len(),
-            self.absent_individual_files.len());
-        Ok(())
+            self.absent_individual_files.len()
+        )
+    }
+}
+
+/// Logs a counter with a message every time the count reaches a threshold.
+fn log_count(count: Arc<Mutex<u32>>, total: u32, message: &str, threshold: u32) {
+    let mut c = count.lock().unwrap();
+    *c += 1;
+    if *c % threshold == 0 {
+        info!("{} {} of {}", message, c, total)
     }
 }

@@ -1,12 +1,12 @@
+use anyhow::Result;
+
+use log::info;
 use std::{
     fmt::Display,
     fs::{self},
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-
-use anyhow::Result;
-use log::info;
 
 pub trait DirFunctions {
     /// Determines if a directory contains all the filenames provided.
@@ -57,14 +57,5 @@ impl DirFunctions for PathBuf {
             }
         }
         Ok(())
-    }
-}
-
-/// Logs a counter with a message every time the count reaches a threshold.
-pub(crate) fn log_count(count: Arc<Mutex<u32>>, total: u32, message: &str, threshold: u32) {
-    let mut c = count.lock().unwrap();
-    *c += 1;
-    if *c % threshold == 0 {
-        info!("{} {} of {}", message, c, total)
     }
 }

@@ -1,15 +1,12 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-
 use log::info;
 use reqwest::Url;
 use tokio::runtime::Runtime;
 
-use crate::samples::utils::DownloadTask;
-
-use super::traits::SampleObtainer;
-use super::utils::download_files;
+use crate::samples::traits::SampleObtainer;
+use crate::utils::download::{download_files, DownloadTask};
 
 pub struct AAISampleObtainer;
 

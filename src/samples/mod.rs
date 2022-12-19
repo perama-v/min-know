@@ -4,4 +4,3 @@
 //! each specification implement the necessary non-generic methods.
 pub mod address_appearance_index;
 pub mod traits;
-pub mod utils;

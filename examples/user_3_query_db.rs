@@ -5,7 +5,7 @@ use anyhow::Result;
 use min_know::{
     config::dirs::{DataKind, DirNature},
     database::types::Todd,
-    specs::{address_appearance_index::{AAISpec, AAIAppearanceTx}},
+    specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
 };
 
 /// Uses local index data to extract transaction identifiers important for a given address.
@@ -25,6 +25,6 @@ fn main() -> Result<()> {
     for v in values {
         appearances.extend(v.value.to_vec());
     }
-    println!("{:?}",appearances);
+    println!("{:?}", appearances);
     Ok(())
 }

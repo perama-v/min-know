@@ -18,7 +18,7 @@ use crate::{
         NUM_COMMON_BYTES, SPEC_RESOURCE_LOCATION,
     },
     samples::address_appearance_index::AAISampleObtainer,
-    unchained::types::BlockRange,
+    utils::unchained::types::BlockRange,
 };
 
 use super::traits::*;
@@ -109,8 +109,7 @@ impl DataSpec for AAISpec {
     Serialize,
     Deserialize,
     Encode,
-    Decode,
-    TreeHash,
+    Decode
 )]
 pub struct AAIVolumeId {
     pub oldest_block: u32,
@@ -155,7 +154,7 @@ impl AAIVolumeId {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIChapterId {
     pub val: FixedVector<u8, NUM_COMMON_BYTES>,
 }
@@ -278,7 +277,7 @@ impl AAIChapter {
 pub type DefaultBytesPerAddress = U20;
 pub type MaxTxsPerVolume = U1073741824;
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIRecord {
     pub key: AAIRecordKey,
     pub value: AAIRecordValue,
@@ -299,10 +298,9 @@ impl RecordMethods<AAISpec> for AAIRecord {
     fn value(&self) -> &AAIRecordValue {
         &self.value
     }
-
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIRecordKey {
     pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
@@ -314,7 +312,7 @@ impl RecordKeyMethods for AAIRecordKey {
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIRecordValue {
     /// The transactions where the address appeared.
     pub value: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
@@ -334,7 +332,7 @@ impl RecordValueMethods for AAIRecordValue {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode, TreeHash)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIAppearanceTx {
     /// The Ethereum execution block number.
     pub block: u32,
@@ -359,7 +357,7 @@ impl AAIAppearanceTx {
 //
 //
 
-#[derive(PartialEq, Debug, Encode, Decode, Clone, TreeHash)]
+#[derive(PartialEq, Debug, Encode, Decode, Clone)]
 pub struct RelicChapter {
     /// Prefix common to all addresses that this data covers.
     pub address_prefix: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
@@ -369,7 +367,7 @@ pub struct RelicChapter {
     pub addresses: VariableList<RelicAddressAppearances, MAX_ADDRESSES_PER_VOLUME>,
 }
 
-#[derive(Debug, Default, PartialEq, Clone, Encode, Decode, TreeHash)]
+#[derive(Debug, Default, PartialEq, Clone, Encode, Decode)]
 pub struct RelicAddressAppearances {
     /// The address that appeared in a transaction.
     pub address: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
@@ -377,7 +375,7 @@ pub struct RelicAddressAppearances {
     pub appearances: VariableList<AAIAppearanceTx, MAX_TXS_PER_VOLUME>,
 }
 
-#[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, TreeHash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, Serialize, Deserialize)]
 pub struct RelicVolumeIdentifier {
     pub oldest_block: u32,
 }
@@ -461,10 +459,11 @@ pub struct AAIManifestChapter {
 
 #[test]
 fn encode_decode() -> Result<()> {
-    use crate::specs::{
-        address_appearance_index::AAIAppearanceTx
+    use crate::specs::address_appearance_index::AAIAppearanceTx;
+    let data_in = AAIAppearanceTx {
+        block: 122455,
+        index: 23,
     };
-    let data_in = AAIAppearanceTx { block: 122455, index: 23 };
     let encoded = data_in.clone().as_ssz_bytes();
     let data_out: AAIAppearanceTx = <_>::from_ssz_bytes(&encoded).unwrap();
     assert_eq!(data_in, data_out);

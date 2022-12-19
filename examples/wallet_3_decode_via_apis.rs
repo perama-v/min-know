@@ -10,7 +10,8 @@ use web3::types::{BlockNumber, H160, H256};
 use min_know::{
     config::dirs::{DataKind, DirNature},
     database::types::Todd,
-    specs::{address_appearance_index::{AAISpec, AAIAppearanceTx}}, contract_utils::metadata::cid_from_runtime_bytecode,
+    specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
+    utils::contract::cid_from_runtime_bytecode,
 };
 
 const FOURBYTE: &str = "https://www.4byte.directory/api/v1/event-signatures/";

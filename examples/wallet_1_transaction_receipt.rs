@@ -4,7 +4,7 @@ use anyhow::{anyhow, Result};
 use min_know::{
     config::dirs::{DataKind, DirNature},
     database::types::Todd,
-    specs::{address_appearance_index::{AAISpec, AAIAppearanceTx}},
+    specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
 };
 use web3::types::H256;
 
@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
     for v in values {
         appearances.extend(v.value.to_vec());
     }
-    println!("{:?}",appearances);
+    println!("{:?}", appearances);
     println!("Level 1 complete: User transactions found.\n");
     // Suppose that the user was running a lightweight portal client
     // https://github.com/ethereum/portal-network-specs#the-json-rpc-api

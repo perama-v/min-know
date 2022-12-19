@@ -6,8 +6,8 @@ use std::path::PathBuf;
 
 use super::{
     constants::{AD_ENTRY, AP_ENTRY},
+    files::{file_structure, get_range, no_unexpected_appearances},
     structure::{AddressData, AddressEntry, Body, Header, TransactionId},
-    utils::{file_structure, get_range, no_unexpected_appearances},
 };
 
 /// Unchained Index .bin file read and tracker.

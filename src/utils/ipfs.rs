@@ -1,9 +1,8 @@
-//! IPFS-related helpers like CID computation.
-
 use anyhow::Result;
-
-use cid::multihash::{Code, MultihashDigest};
-use cid::Cid;
+use cid::{
+    multihash::{Code, MultihashDigest},
+    Cid,
+};
 
 /// Computes the CIDv0 for the given bytes, returning as a String.
 pub fn cid_v0_string_from_bytes(bytes: &[u8]) -> Result<String> {
