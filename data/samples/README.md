@@ -1,7 +1,8 @@
 # Sample data
 
 For quick testing of the library, only a few of the Unchained Index chunk files
-are included (`data/samples/unchained_index`). These chunk files represent
+are included (`data/samples/raw_source_address_appearance_index_mainnet`).
+These chunk files represent
 all the appearances on mainnet for a narrow range of blocks.
 
 From this, some address-appearance-index files are created in the

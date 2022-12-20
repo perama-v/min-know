@@ -10,6 +10,7 @@ In the example below, this database will be called "MyData".
 - [Getting started](#getting-started)
   - [End goal](#end-goal)
   - [Overview](#overview)
+  - [Existing specs and data](#existing-specs-and-data)
   - [Begin](#begin)
   - [Provide types for the spec implementation](#provide-types-for-the-spec-implementation)
   - [Provide implementations for types](#provide-implementations-for-types)
@@ -19,7 +20,6 @@ In the example below, this database will be called "MyData".
   - [Add extractor](#add-extractor)
   - [Add sample handler](#add-sample-handler)
   - [Add MyData to choices](#add-mydata-to-choices)
-
 
 ## End goal
 
@@ -72,6 +72,35 @@ Once those decisions are made, a new module can be added to this library.
 
 The heart of the library is the `DataSpec`. The type system will
 auto-complete the components of the spec that you are required to complete.
+
+## Existing specs and data
+
+The [TODD spec](https://github.com/perama-v/TODD) is a meta-spec.
+It allows other specs to be defined that are compliant with it.
+
+Here are two examples, showing the relationship between raw data, a spec
+that is TODD-compliant and the min-know code that transforms the raw data
+into TODD-compliant data.
+
+- Address appearance index data
+    - raw data: https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf
+    - todd-compliant spec: https://github.com/perama-v/address-appearance-index-specs
+    - todd-compliant code: [./src/specs/address_appearance_index.rs](./src/specs/address_appearance_index.rs)
+- Contract names and tags data
+    - raw data: https://github.com/perama-v/RolodETH/tree/main/data
+    - todd-compliant spec: https://github.com/perama-v/TODD/blob/main/example_specs/nametag.md
+    - todd-compliant code: unimplemented
+- Contract metadata
+    - raw data: https://sourcify.dev/
+    - todd-compliant spec: unimplemented
+    - todd-compliant code: unimplemented
+- Contract log and function signatures
+    - raw data: https://github.com/ethereum-lists/4bytes and https://www.4byte.directory/
+    - todd-compliant spec: unimplemented
+    - todd-compliant code: unimplemented
+
+The common theme with the above data is that there are users who only want
+part of the whole. Yet the whole also keeps growing as new data is added.
 
 ## Begin
 

@@ -6,6 +6,7 @@ as a generic library. It can be used to make data TODD-compliant to facilitate
 peer-to-peer distribution.
 
 > Status: prototype
+
 - [Min-know](#min-know)
   - [Why does this library exist?](#why-does-this-library-exist)
   - [Principles](#principles)
@@ -14,6 +15,8 @@ peer-to-peer distribution.
     - [Address appearances index](#address-appearances-index)
   - [Database Maintainers](#database-maintainers)
   - [Extend the library for your data](#extend-the-library-for-your-data)
+  - [Manifest Coordination using a smart contract](#manifest-coordination-using-a-smart-contract)
+  - [Pin by default to IPFS](#pin-by-default-to-ipfs)
   - [Contributing](#contributing)
 
 ## Why does this library exist?
@@ -135,6 +138,39 @@ Other raw formats might be flat files containing data of various kinds.
 
 See the [getting started guide](./GETTING_STARTED.md) for how to use min-know for
 a new database.
+
+## Manifest Coordination using a smart contract
+
+TODD-compilance is about coordination by default (e.g., having a Schelling point for
+a distributed database)
+
+The manifest contains the CIDs of all the Chapters for a given database. A new
+manifest is created when a database is updated and new CIDs are added. Old CIDs
+remain unchanged.
+
+After creating the manifest, that person can post it under their own
+[IPNS](https://docs.ipfs.tech/concepts/ipns/#how-ipns-works). Anyone
+who knows this IPNS can watch for new manifests to be published there.
+
+To broadcast that you are going to publish, you can perform a single transaction
+to a [broadcasting contract](https://github.com/perama-v/GAMB) to record your
+IPNS name with the topic you wish to publish (the name of the database you are
+publishing).
+
+After this single transaction, you can update your IPNS to the latest manifest
+hash for free.
+
+Anyone else can also submit their IPNS name to the contract and publish new
+volumes for the database. While not yet implmemented, the process of
+checking that contract, fetching manifests, comparing the CIDs they contain
+and coordinating to collaborate on publishing can all be automated.
+
+## Pin by default to IPFS
+
+While not implmemented in this library, it is intended that end-users of a TODD-compliant
+diatabase could automatically pin any Chapters they download. This could be an
+opt out process and could result in most users contributing significantly to the
+long term availability of data.
 
 ## Contributing
 
