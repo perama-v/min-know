@@ -9,13 +9,12 @@ use ssz_types::{
     typenum::{U1073741824, U20},
     FixedVector, VariableList,
 };
-use tree_hash_derive::TreeHash;
 
 use crate::{
     extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
-        BLOCKS_PER_VOLUME, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME, MAX_TXS_PER_VOLUME,
-        NUM_COMMON_BYTES, SPEC_RESOURCE_LOCATION,
+        BLOCKS_PER_VOLUME,
+        NumCommonBytes, NUM_CHAPTERS, MaxAddressesPerVolume,
     },
     samples::address_appearance_index::AAISampleObtainer,
     utils::unchained::types::BlockRange,
@@ -28,7 +27,7 @@ use super::traits::*;
 pub struct AAISpec {}
 
 impl DataSpec for AAISpec {
-    const NUM_CHAPTERS: usize = 256;
+    const NUM_CHAPTERS: usize = NUM_CHAPTERS as usize;
 
     const MAX_VOLUMES: usize = 1_000_000_000;
 
@@ -147,7 +146,7 @@ impl AAIVolumeId {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIChapterId {
-    pub val: FixedVector<u8, NUM_COMMON_BYTES>,
+    pub val: FixedVector<u8, NumCommonBytes>,
 }
 impl ChapterIdMethods<AAISpec> for AAIChapterId {
     fn interface_id(&self) -> String {
@@ -159,7 +158,7 @@ impl ChapterIdMethods<AAISpec> for AAIChapterId {
             bail!("'n' must be <= NUM_CHAPTERS")
         }
         let byte_vec = vec![n as u8];
-        let Ok(fv) = FixedVector::<u8, NUM_COMMON_BYTES>::new(byte_vec) else {
+        let Ok(fv) = FixedVector::<u8, NumCommonBytes>::new(byte_vec) else {
             bail!("Provided vector is too long for Fixed Vector.")
         };
         Ok(AAIChapterId { val: fv })
@@ -351,19 +350,19 @@ impl AAIAppearanceTx {
 #[derive(PartialEq, Debug, Encode, Decode, Clone)]
 pub struct RelicChapter {
     /// Prefix common to all addresses that this data covers.
-    pub address_prefix: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
+    pub address_prefix: FixedVector<u8, DefaultBytesPerAddress>,
     /// The blocks that this chunk data covers.
     pub identifier: RelicVolumeIdentifier,
     /// The addresses that appeared in this range and the relevant transactions.
-    pub addresses: VariableList<RelicAddressAppearances, MAX_ADDRESSES_PER_VOLUME>,
+    pub addresses: VariableList<RelicAddressAppearances, MaxAddressesPerVolume>,
 }
 
 #[derive(Debug, Default, PartialEq, Clone, Encode, Decode)]
 pub struct RelicAddressAppearances {
     /// The address that appeared in a transaction.
-    pub address: FixedVector<u8, DEFAULT_BYTES_PER_ADDRESS>,
+    pub address: FixedVector<u8, DefaultBytesPerAddress>,
     /// The transactions where the address appeared.
-    pub appearances: VariableList<AAIAppearanceTx, MAX_TXS_PER_VOLUME>,
+    pub appearances: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
 }
 
 #[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, Serialize, Deserialize)]

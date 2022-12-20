@@ -27,39 +27,20 @@ pub const DEFAULT_BYTES_PER_ADDRESS: u32 = 20;
 /// Number of valid ASCII bytes a network name may use.
 pub const MAX_NETWORK_NAME_BYTES: u32 = 32;
 
-/// Specification major [version][1]
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
-pub const SPEC_VER_MAJOR: u32 = 0;
-
-/// Specification minor [version][1]
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
-pub const SPEC_VER_MINOR: u32 = 1;
-
-/// Specification patch [version][1]
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#indexmanifest
-pub const SPEC_VER_PATCH: u32 = 0;
 
 const HEX_BASE: u32 = 16;
 
 /// Number of chapters.
 pub const NUM_CHAPTERS: u32 = HEX_BASE.pow(ADDRESS_CHARS_SIMILARITY_DEPTH);
 
-/// String representing a location or address that can be used to obtain the
-/// address-appearance-index [specification][1].
+/// This type is defined in the [specification][1].
 ///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#indexspecificationschemas
-pub const SPEC_RESOURCE_LOCATION: &str =
-    "https://github.com/perama-v/address-appearance-index-specs";
-
-/// String prefix of the address-appearance-index manifest [publishing topic][1].
+/// # Typed Number
+/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
+/// for ssz operations.
 ///
-/// The network name must be concatenated (e.g., "address_appearance_index_mainnet").
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#indexpublishingidentifier
-pub const PUBLISHING_PREFIX: &str = "address_appearance_index_";
+/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
+pub type MaxAddressesPerVolume = U1073741824;
 
 /// This type is defined in the [specification][1].
 ///
@@ -68,7 +49,7 @@ pub const PUBLISHING_PREFIX: &str = "address_appearance_index_";
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_BYTES_PER_CID = U46;
+pub type DefaultBytesPerAddress = U20;
 
 /// This type is defined in the [specification][1].
 ///
@@ -77,7 +58,7 @@ pub type MAX_BYTES_PER_CID = U46;
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_VOLUMES = U65536;
+pub type MaxTxsPerVolume = U1073741824;
 
 /// This type is defined in the [specification][1].
 ///
@@ -86,76 +67,4 @@ pub type MAX_VOLUMES = U65536;
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_ADDRESSES_PER_VOLUME = U1073741824;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_NETWORK_NAME_BYTES = U32;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_SCHEMAS_RESOURCE_BYTES = U128;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type ADDRESS_CHARS_SIMILARITY_DEPTH = U2;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type DEFAULT_BYTES_PER_ADDRESS = U20;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_TXS_PER_VOLUME = U1073741824;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MAX_PUBLISH_ID_BYTES = U64;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type NUM_CHAPTERS = U256;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type NUM_COMMON_BYTES = U1;
+pub type NumCommonBytes = U1;
