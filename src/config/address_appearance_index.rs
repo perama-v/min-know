@@ -13,7 +13,7 @@ use crate::parameters::address_appearance_index::{
 /// ## Mainnet
 /// Addresses are 20 bytes long.
 /// ```
-/// use min_know::types::Network;
+/// use min_know::config::address_appearance_index::Network;
 ///
 /// let network = Network::default();
 /// // Equivalent to:
@@ -23,7 +23,7 @@ use crate::parameters::address_appearance_index::{
 /// Note that only ASCII characters are allowed for the name, otherwise
 /// and error will be returned.
 /// ```
-/// use min_know::types::Network;
+/// use min_know::config::address_appearance_index::Network;
 ///
 /// let bytes_per_address = 20;
 /// let network_name = String::from("goerli");

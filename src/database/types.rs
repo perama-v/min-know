@@ -440,32 +440,34 @@ impl<T: DataSpec> Todd<T> {
         info!("TODO: Downloaded data can now be pinned on IPFS to support the network.");
         Ok(())
     }
-    /// Obtains the sample data for the database.
-    ///
-    /// This includes processed (TODD-compliant) samples and raw samples
-    /// that can be used to create processed samples.
-    ///
-    /// Samples may be in the cross-platform path (Directories crate),
-    /// the local folder (if repo is cloned from GH) or may need
-    /// to be obtained from a custom source. This method tries each in that
-    /// order.
-    ///
-    /// The processed samples may need to be created from the raw samples, which
-    /// can be slow.
-    ///
-    /// ## Example
-    /// ```
-    /// # use anyhow::Result;
-    /// # use min_know::{
-    /// #    config::dirs::{DataKind, DirNature},
-    /// #    database::types::Todd,
-    /// #    specs::address_appearance_index::AAISpec,
-    /// # };
-    /// let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
-    /// db.get_sample_data()?;
-    /// # Ok::<(), anyhow::Error>(())
-    /// ```
-    pub fn get_sample_data(&mut self) -> Result<()> {
+    /**
+    Obtains the sample data for the database.
+
+    This includes processed (TODD-compliant) samples and raw samples
+    that can be used to create processed samples.
+
+    Samples may be in the cross-platform path (Directories crate),
+    the local folder (if repo is cloned from GH) or may need
+    to be obtained from a custom source. This method tries each in that
+    order.
+
+    The processed samples may need to be created from the raw samples, which
+    can be slow.
+
+    ## Example
+    ```
+    # use anyhow::Result;
+    # use min_know::{
+    #    config::choices::{DataKind, DirNature},
+    #    database::types::Todd,
+    #    specs::address_appearance_index::AAISpec,
+    # };
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    db.get_sample_data()?;
+    # Ok::<(), anyhow::Error>(())
+    ```
+    */
+    pub fn get_sample_data(&self) -> Result<()> {
         if let DirNature::Sample = self.config.dir_nature {
         } else {
             return Err(anyhow!("try to configure the db with DirNature::Sample"));
@@ -500,7 +502,7 @@ impl<T: DataSpec> Todd<T> {
     /// First looks in the expected location, then looks in the local
     /// directory (and copies if present), then attempts to processes from raw
     /// data.
-    fn handle_database_samples(&mut self) -> Result<()> {
+    fn handle_database_samples(&self) -> Result<()> {
         let example_dir_processed =
             PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
 

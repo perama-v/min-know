@@ -10,46 +10,57 @@ use super::{
     structure::{AddressData, AddressEntry, Body, Header, TransactionId},
 };
 
-/// Unchained Index .bin file read and tracker.
-///
-/// Is a helper used in the creation of the address-appearance-index.
-///
-/// # Example
-/// The following example reads specific chunk files, filtering by block
-/// and address.
-///
-/// Transaction data meets the following requirements:
-/// - Specific chunk files
-/// - Specific block heights
-/// - Specific addresses
-/// ```no_run
-/// use min_know::{
-///     types::{UnchainedPath, Network},
-///     unchained::{utils::{ChunkFile, ChunksDir}, types::{BlockRange, UnchainedFile}}
-/// };
-/// let path = UnchainedPath::Sample;
-/// let network = Network::default();
-/// let unchained_dir = path.chunks_dir(&network)?;
+/**
+Unchained Index .bin file read and tracker.
 
-/// let desired_blocks = BlockRange { old: 0, new: 16_000_000 };
-/// let chunk_files: ChunksDir = ChunksDir::new(&unchained_dir)?;
-/// let relevant_files: Vec<&ChunkFile> = chunk_files.for_range(&desired_blocks)?;
+Is a helper used in the creation of the address-appearance-index.
 
-/// let address_starts_with = String::from("4e");
+# Example
+The following example reads specific chunk files, filtering by block
+and address.
 
-/// // Counter for the appearances that match the description.
-/// let mut sum = 0;
-/// for chunk in relevant_files {
-///    let path = chunk.path.to_owned();
-///    let mut file = UnchainedFile::new(path, desired_blocks)?;
-///    // Read appearances that have correct leading char and are in desired range.
-///    file.with_parsed(&address_starts_with)?;
-///    sum += file.parsed.len();
-/// }
-/// // The sample dir has 6204 addresses that start with 0x4e.
-/// assert_eq!(sum, 6204);
-/// # Ok::<(), anyhow::Error>(())
-/// ```
+Transaction data meets the following requirements:
+- Specific chunk files
+- Specific block heights
+- Specific addresses
+
+```no_run
+use anyhow::bail;
+use min_know::{
+    config::choices::{DataKind, DirNature},
+    database::types::Todd,
+    specs::address_appearance_index::AAISpec,
+    utils::unchained::{
+        files::ChunksDir,
+        types::{BlockRange, UnchainedFile},
+    },
+};
+let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+
+let desired_blocks = BlockRange {
+    old: 0,
+    new: 16_000_000,
+};
+let chunk_files: ChunksDir = ChunksDir::new(&db.config.raw_source)?;
+let Some(relevant_files) = chunk_files.for_range(&desired_blocks) else {
+    bail!("No relevant files")};
+
+let address_starts_with = String::from("4e");
+
+// Counter for the appearances that match the description.
+let mut sum = 0;
+for chunk in relevant_files {
+    let path = chunk.path.to_owned();
+    let mut file = UnchainedFile::new(path, desired_blocks)?;
+    // Read appearances that have correct leading char and are in desired range.
+    file.with_parsed(&address_starts_with)?;
+    sum += file.parsed.len();
+}
+// The sample dir has 6204 addresses that start with 0x4e.
+assert_eq!(sum, 6204);
+# Ok::<(), anyhow::Error>(())
+```
+*/
 pub struct UnchainedFile {
     pub path: PathBuf,
     pub reader: BufReader<File>,

@@ -135,33 +135,40 @@ pub enum SpecId {
     FourByte,
 }
 
-/// Marker trait. Allows each db spec to define a struct
-/// for what a volume ID is, and mark it with this trait.
-///
-/// ## Example
-/// Specs can use any definition, as long as they mark
-/// it with the trait.
-///
-/// A volume defined using an SSZ fixed vector.
-/// ```
-/// # use ssz_types::{FixedVector, typenum::U2};
-/// # use min_know::specs::types::VolumeIdMethods;
-/// struct VolumeId1 {
-///     val: FixedVector<u8, U2>
-/// }
-/// impl VolumeIdMethods for VolumeId1 {}
-/// ```
-/// A volume defined using an integer.
-/// ```
-/// # use min_know::specs::types::VolumeIdMethods;
-/// struct VolumeId2 {
-///     detail: u32
-/// }
-/// impl VolumeIdMethods for VolumeId2 {}
-/// ```
-/// ## Rationale
-/// The generic functions in database/types.rs use a set of
-/// marker traits to define common functions.
+/**
+Allows each db spec to define a struct
+for what a volume ID is, and mark it with this trait.
+
+## Example
+Specs can use any definition, as long as they mark
+it with the trait.
+
+A volume defined using an SSZ fixed vector.
+```ignore
+# use ssz_types::{FixedVector, typenum::U2};
+# use min_know::specs::traits::VolumeIdMethods;
+struct VolumeIdOne {
+    val: FixedVector<u8, U2>
+}
+impl VolumeIdMethods<DataSpecOne> for VolumeIdOne {
+    todo!()
+}
+```
+A volume defined using an integer.
+```ignore
+# use ssz_types::{FixedVector, typenum::U2};
+# use min_know::specs::traits::VolumeIdMethods;
+struct VolumeIdTwo {
+    detail: u32
+}
+impl VolumeIdMethods<DataSpecTwo> for VolumeIdTwo {
+    todo!()
+}
+```
+## Rationale
+The generic functions in database/types.rs use a set of
+marker traits to define common functions.
+*/
 pub trait VolumeIdMethods<T: DataSpec>: Sized {
     /// Returns the VolumeId for the given interface id.
     fn from_interface_id(interface_id: &str) -> Result<Self>;

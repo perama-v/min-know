@@ -6,18 +6,36 @@ use log::{debug, info};
 use reqwest::Url;
 use tokio::{fs::File, io::AsyncWriteExt};
 
-/// Downloads files to a specified directory concurrently.
-///
-/// The urls and corresponding filenames must be in the correct order.
-/// ## Example
-/// The following can be executed within a non-async function.
-/// ```
-/// # use anyhow::Ok;
-/// let rt = Runtime::new()?;
-/// rt.block_on(download_files(&dir, urls_and_filenames))
-/// # Ok(())
-/// ```
-pub(crate) async fn download_files(urls_dirs_filenames: Vec<DownloadTask>) -> Result<()> {
+/**
+Downloads files to a specified directory concurrently.
+
+The urls and corresponding filenames must be in the correct order.
+## Example
+The following can be executed within a non-async function.
+```no_run
+use std::path::PathBuf;
+
+use min_know::utils::download::{download_files, DownloadTask};
+use reqwest::Url;
+use tokio::runtime::Runtime;
+
+let rt = Runtime::new()?;
+
+let url = Url::parse("http://www.example.com/file")?;
+let dest_dir = PathBuf::from("./example_dir");
+let filename = String::from("example_file");
+let task = DownloadTask {
+    url,
+    dest_dir,
+    filename,
+};
+
+rt.block_on(download_files(vec![task]))?;
+
+# Ok::<(), anyhow::Error>(())
+```
+*/
+pub async fn download_files(urls_dirs_filenames: Vec<DownloadTask>) -> Result<()> {
     let client = reqwest::Client::new();
     let mut download_handles = vec![];
 

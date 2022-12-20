@@ -64,7 +64,7 @@ Data can be turned into a TODD-compliant database by following the [specificatio
 
 Once those decisions are made, a new module can be added to this library.
 
-```
+```sh
 ./specs
     - address_appearance_index.rs (an existing spec for address appearances)
     - my_data_spec.rs
