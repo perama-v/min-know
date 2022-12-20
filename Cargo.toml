@@ -11,21 +11,22 @@ byteorder = "1.4.3"
 cbor = "0.4.1"
 cid = "0.8.6"
 directories = "4.0.1"
-futures-util = "0.3.25"
-hex = "0.4.3"
+eip55 = "0.3.0"
+env_logger = "0.10.0"
 eth2_ssz = "0.4.0"
 eth2_ssz_derive = "0.3.0"
 eth2_ssz_types = "0.2.1"
+futures-util = "0.3.25"
+hex = "0.4.3"
+log = { version = "0.4.17", features = ["max_level_debug", "release_max_level_info"] }
 regex = "1.6.0"
 reqwest = { version = "0.11.12", features = ["stream"] }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.87"
+sha3 = "0.10.6"
 snap = "1.0.5"
 tree_hash = "0.4.0"
 tree_hash_derive = "0.4.0"
 tokio = { version = "1.21.2", features = ["full"] }
-serde_json = "1.0.87"
-sha3 = "0.10.6"
 web3 = "0.18.0"
-
-[dev-dependencies]
-eip55 = { version = "0.3.0" }
+rayon = "1.6.1"

@@ -1,0 +1,21 @@
+use std::env;
+
+use anyhow::Result;
+
+use min_know::{
+    config::choices::{DataKind, DirNature},
+    database::types::Todd,
+    specs::address_appearance_index::AAISpec,
+};
+/// Creates the index using local data.
+fn main() -> Result<()> {
+    // For full error backtraces with anyhow.
+    env::set_var("RUST_BACKTRACE", "full");
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
+
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    db.full_transform()?;
+
+    Ok(())
+}

@@ -1,49 +1,60 @@
 # Min-know
 
 An implementation of the
-[address-appearance-index-spec](https://github.com/perama-v/address-appearance-index-specs).
+[ERC-time-ordered-distributable-database](https://github.com/perama-v/TODD) (TODD)
+as a generic library. It can be used to make data TODD-compliant to facilitate
+peer-to-peer distribution.
 
 > Status: prototype
+- [Min-know](#min-know)
+  - [Why does this library exist?](#why-does-this-library-exist)
+  - [Principles](#principles)
+  - [End Users](#end-users)
+  - [Examples](#examples)
+    - [Address appearances index](#address-appearances-index)
+  - [Database Maintainers](#database-maintainers)
+  - [Extend the library for your data](#extend-the-library-for-your-data)
+  - [Contributing](#contributing)
 
-## Purpose
+## Why does this library exist?
+
+To test out a new database design, where user participation makes the entire database
+more available.
+
+Questions for you:
+- Do you have data that grows over time and that you would like users
+to host?
+- Are you providing data as a public good and are wondering how to wean to community?
+
+Min-know makes data into an append-only structure that anyone can publish to.
+Distribution happens like a print publication where users obtain Volumes as they
+are released. A user becomes a distributer too.
+
+Volumes contain Chapters that can be obtained separately.
+This effectively divides the database, making large databases manageable for
+resource-constrained users.
+
+## Principles
 
 &#x1F4D8;&#x1F50D;&#x1F41F;
 
-What is the minimum knowledge that a small fish needs in order
-to play?
+To make any database TODD-compliant so that data-users become data-providers.
 
-Min-know can be used by user-facing software in post-EIP-4444 settings,
-where chain history is distributed among peers.
+TODD-compliance is about:
+1. Delivering a user the *min*imum *know*ledge that is useful to them.
+2. Delivering a user some extra data.
+3. Making it easy for a user to become a data provider for the next user.
 
-It solves the problem of "what data should I request?" by
-providing the transaction ids involved with the user's address.
-Those transactions start the chain of requests for meaningful data.
+A minnow is a small fish &#x1F41F; that can be part of a larger collective.
 
-## Mechanism
 
-Min-know administers the address-appearance-index, which is a derivative
-of the Unchained Index ([spec pdf](https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf)).
-
-Distribution and coordination may be achieved by using
-[ERC-generic-attributable-manifest-broadcaster](https://github.com/perama-v/GAMB)
-compliant contracts.
-
-The address-appearance-index has an
-[ERC-time-ordered-distributable-database](https://github.com/perama-v/TODD)
-compliant structure. Which means that disk requirements are small (<500MB) compared
-to the whole index (~80GB). Content is designed to be shared in peer to peer networks.
-
-As chain data grows, a new `Volume` containing recent transaction indices can be created
-and published/broadcast.
-
-&#x1F4DA; <- A `Volume` is published.
-
-Volumes are composed of different `Chapters` that can be obtained separately.
-
-## Index Users
+## End Users
 
 A user &#x1F41F; can check the manifest &#x1F50D; and find which `Chapter` is right for
-them by looking at what their address starts with:
+them.
+
+First, look at the key (query string) and match it to a `ChapterId`.
+
 - &#x1F4D5; `0x00...`
 - &#x1F4D7; `0x01...`
 - ...
@@ -51,86 +62,89 @@ them by looking at what their address starts with:
 - ...
 - &#x1F4D9; `0xff...`
 
-They add the latest `Chapter` to their existing collection of similar `Chapters` from old `Volumes`.
+Then download any `Chapter` that has that that `ChapterId`. This
+is automated (the library uses IPFS to get files using the CID in the manifest).
+
+This means obtaining a `Chapter` from every `Volume` that has ever been published.
 
 &#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; ... <--- &#x1F4D8;
 
-Then they can start asking their post-history node (E.g., Portal node) for
-those transactions.
+Once downloaded, the `Chapters` can be queried for useful information that
+the database contains.
 
-Users can search for published manifests by looking them up at the contract deployed at:
-```
-0x0c316b7042b419d07d343f2f4f5bd54ff731183d
-```
-They need provide a publisher's
-address, and the search topic: "address-appearance-index-mainnet"
-(defined in the spec). A publisher could be anyone, so it may be most thorough
-to scan the events in that contract looking for the desired topic and pulling
-any publisher addresses from there.
+Optionally, they can also pin their `Chapters` to IPFS, which makes the data
+available from more sources.
 
-Once a manifest CID has been found, they can fetch the manifest, find
-the index `Chapters` that are important for their address, and download them.
-
-Users may also pin any part that they have downloaded, and become
-"miniature maintainers" themselves.
-
-## Index Maintainers
-
-The address-appearance-index may be created and extended by different people.
-
-It is constructed by parsing the Unchained Index, which itself is constructed
-by constructed by tracing transactions using
-[trueblocks-core](https://github.com/TrueBlocks/trueblocks-core).
-Maintainers can either:
-- Run trueblocks' `chifra scrape`
-against their own `trace_`-enabled archive node to create a the Unchained Index,
-- Run trueblocks' `chifra init` to obtain it from peers over IPFS.
-
-Once the index has been made, it may be published by broadcasting the manifest
-IPFS CID at contract deployed at:
-```
-0x0c316b7042b419d07d343f2f4f5bd54ff731183d
-```
-This is an [ERC-generic-attributable-manifest-broadcaster](https://github.com/perama-v/GAMB).
-The topic "address-appearance-index-mainnet" is to be used for mainnet broadcasts.
 
 ## Examples
 
-Check out the [example readme](./examples/README.md) and the files in `./examples`.
+All examples can be seen with the following command:
 
-In general, the approach is to set up an IndexConfig based on the
-location of your data:
-
-```rust
-// let data_dir = AddressIndexPath::Default;
-let path = AddressIndexPath::Sample;
-
-// let unchained = UnchainedPath::Default;
-let unchained = UnchainedPath::Sample;
-let network = Network::default();
-
-let index = IndexConfig::new(&path, &network);
+```sh
+cargo run --example
 ```
 
-There is a method that sets up a sample data in
-standard platform-specific directories.
-```rust
-index.get_sample_data(&unchained_path).await?;
+See the [examples readme](./examples/README) for more information.
+
+### Address appearances index
+
+This is an index of which transactions an address was involved in.
+It is a derivative of the Unchained Index
+([spec pdf](https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf)).
+
+It can be used by user-facing software in post-EIP-4444 settings,
+where chain history is distributed among peers.
+
+It solves the problem of "what data should I request?" by
+providing the transaction ids involved with the user's address.
+Those transactions start the chain of requests for meaningful data.
+
+The examples below are the counterpart to an exploration into
+a tiny local wallet explorer. That exploration can be found in
+this [blog post series](https://perama-v.github.io/ethereum/protocol/poking).
+
+```sh
+cargo run --example wallet_1_transaction_receipt
+cargo run --example wallet_2_inspect_transaction_logs
+cargo run --example wallet_3_decode_via_apis
 ```
+The examples work toward delivering useful information about personal wallet
+history, without using APIs and without using more than 1GB. That solution
+starts by using chain data and a TODD-compliant address appearance database.
 
-Then call the main operations using `index.<command>`
-```rust
-// User
-let manifest = index.read_manifest()?;
-let appearances = index.find_transactions(address)?;
+It also points to next steps for making event signatures, contract source code and
+contract names and tags TODD-compliant.
 
-// Maintainer
-index.maintainer_create_index(&unchained_path)?;
-index.maintainer_extend_index(&unchained_path)?;
-```
+## Database Maintainers
 
-The `UnchainedPath::Default` path reads from
-existing Unchained Index data that has been created using trueblocks-core
-default settings and `chifra init`. The derived index data will
-be placed in a new, separate directory defined in
-`AddressIndexPath::Default`.
+The maintainer methods in the examples are used to create and extend a
+TODD-compliant database.
+
+This requires having a local "raw" source, which will be different for every
+data type. The library will use the methods in the `./extraction` module
+to convert the data.
+
+For example, the address-appearance-index is created and maintained by
+having locally available Unchained Index chunk files (produced by
+[trueblocks-core](https://github.com/TrueBlocks/trueblocks-core)).
+They are parsed and reorganised to form the TODD-compliant format.
+
+Other raw formats might be flat files containing data of various kinds.
+
+## Extend the library for your data
+
+See the [getting started guide](./GETTING_STARTED.md) for how to use min-know for
+a new database.
+
+## Contributing
+
+This is a very experimental library that is mostly an exploration for
+feasibility analysis.
+
+The library is not currently being used to deliver data to real end users.
+Though it is designed to be readily implemented for new data types
+(see [getting started](./GETTING_STARTED.md)) that can all share the
+same core of the library.
+
+Does the idea interest you? Are there data types you think this might be
+suited for? Raise an issue or get in touch :) @eth_worm
