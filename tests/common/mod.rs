@@ -1,5 +1,5 @@
 use min_know::{
-    config::dirs::{DataKind, DirNature},
+    config::choices::{DataKind, DirNature},
     database::types::Todd,
     specs::address_appearance_index::AAISpec,
 };

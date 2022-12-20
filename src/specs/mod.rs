@@ -20,4 +20,5 @@
 //! Then you should be able to use the examples, replacing the example data spec struct with
 //! your MyDatabaseSpec
 pub mod address_appearance_index;
+pub mod my_data_spec;
 pub mod traits;

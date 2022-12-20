@@ -13,7 +13,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::dirs::{ConfigStruct, DataKind, DirNature},
+    config::{dirs::{ConfigStruct}, choices::{DataKind, DirNature}},
     extraction::traits::Extractor,
     samples::traits::SampleObtainer,
     specs::traits::{

@@ -3,7 +3,7 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::dirs::{DataKind, DirNature},
+    config::choices::{DataKind, DirNature},
     database::types::Todd,
     specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
 };
@@ -17,7 +17,6 @@ fn main() -> Result<()> {
 
     let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
     println!("DB is {:#?}", db);
-
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
     let values = db.find(address)?;
@@ -26,5 +25,11 @@ fn main() -> Result<()> {
         appearances.extend(v.value.to_vec());
     }
     println!("{:?}", appearances);
+
+    DataKind::FourByte;
+    DirNature::Sample;
+
+
+
     Ok(())
 }

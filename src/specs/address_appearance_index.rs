@@ -100,16 +100,7 @@ impl DataSpec for AAISpec {
 }
 
 #[derive(
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    PartialOrd,
-    Hash,
-    Serialize,
-    Deserialize,
-    Encode,
-    Decode
+    Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize, Encode, Decode,
 )]
 pub struct AAIVolumeId {
     pub oldest_block: u32,

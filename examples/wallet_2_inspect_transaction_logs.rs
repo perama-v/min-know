@@ -2,7 +2,7 @@ use std::env;
 
 use anyhow::{anyhow, Result};
 use min_know::{
-    config::dirs::{DataKind, DirNature},
+    config::choices::{DataKind, DirNature},
     database::types::Todd,
     specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
     utils::contract::cid_from_runtime_bytecode,
