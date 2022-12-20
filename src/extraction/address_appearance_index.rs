@@ -1,6 +1,6 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    path::PathBuf,
+    path::Path,
 };
 
 use anyhow::{anyhow, bail, Result};
@@ -26,7 +26,7 @@ impl Extractor<AAISpec> for AAIExtractor {
     fn chapter_from_raw(
         chapter_id: &AAIChapterId,
         volume_id: &AAIVolumeId,
-        source_dir: &PathBuf,
+        source_dir: &Path,
     ) -> Result<Option<AAIChapter>> {
         // Get relevant raw files.
         let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
@@ -43,7 +43,7 @@ impl Extractor<AAISpec> for AAIExtractor {
         let chapter = AAIChapter::from_relic(relic_chapter);
         Ok(Some(chapter))
     }
-    fn latest_possible_volume(source_dir: &PathBuf) -> Result<AAIVolumeId> {
+    fn latest_possible_volume(source_dir: &Path) -> Result<AAIVolumeId> {
         let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
         Ok(AAIVolumeId {
             oldest_block: latest_full_volume(latest_block_in_chunks(&chunk_files)?)?,

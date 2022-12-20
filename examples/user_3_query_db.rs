@@ -25,11 +25,5 @@ fn main() -> Result<()> {
         appearances.extend(v.value.to_vec());
     }
     println!("{:?}", appearances);
-
-    DataKind::FourByte;
-    DirNature::Sample;
-
-
-
     Ok(())
 }

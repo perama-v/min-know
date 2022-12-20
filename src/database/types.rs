@@ -13,12 +13,14 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{dirs::{ConfigStruct}, choices::{DataKind, DirNature}},
+    config::{
+        choices::{DataKind, DirNature},
+        dirs::ConfigStruct,
+    },
     extraction::traits::Extractor,
     samples::traits::SampleObtainer,
     specs::traits::{
-        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods,
-        VolumeIdMethods,
+        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods,
     },
     utils::{
         download::{download_files, DownloadTask},
@@ -113,7 +115,7 @@ impl<T: DataSpec> Todd<T> {
     pub fn repair_from_raw(&self) -> Result<()> {
         let audit = self.check_completeness()?;
         let missing_chapters = audit.missing_chapters()?;
-        if missing_chapters.len() == 0 {
+        if missing_chapters.is_empty() {
             info!("Database is complete. No repairs needed.");
             return Ok(());
         }
@@ -158,7 +160,7 @@ impl<T: DataSpec> Todd<T> {
         let count = Arc::new(Mutex::new(0_u32));
 
         ids.par_iter().for_each(|(volume_id, chapter_id)| {
-            self.create_chapter(&volume_id, &chapter_id);
+            self.create_chapter(volume_id, chapter_id);
             log_count(
                 count.clone(),
                 total_chapters,
@@ -248,19 +250,19 @@ impl<T: DataSpec> Todd<T> {
         // VolumeIds with at least one valid file observed.
         let mut vols_seen: Vec<T::AssociatedVolumeId> = vec![];
 
-        for (manifest_cid, volume_id, chapter_id) in manifest.cids()? {
-            if audit.absent_chapter_ids.contains(&chapter_id) {
+        for m in manifest.cids()? {
+            if audit.absent_chapter_ids.contains(&m.chapter_id) {
                 // Skip file if its directory is known to be absent by its ChapterId.
                 continue;
             }
             // Try to read the file.
-            let chap_dir = self.config.chapter_dir_path(&chapter_id);
-            let filename = T::AssociatedChapter::new_empty(&volume_id, &chapter_id).filename();
+            let chap_dir = self.config.chapter_dir_path(&m.chapter_id);
+            let filename = T::AssociatedChapter::new_empty(&m.volume_id, &m.chapter_id).filename();
             let filepath = chap_dir.join(filename);
 
             // If it is absent, ::NoFile
             if !filepath.exists() {
-                let abs = AbsentFile::NoFile(volume_id, chapter_id);
+                let abs = AbsentFile::NoFile(m.volume_id, m.chapter_id);
                 audit.absent_individual_files.push(abs);
                 continue;
             }
@@ -268,16 +270,16 @@ impl<T: DataSpec> Todd<T> {
             // If it is wrong, ::DifferentHash
             let bytes = fs::read(filepath)?;
             let file_cid = cid_v0_string_from_bytes(&bytes)?;
-            if manifest_cid != file_cid {
-                let abs = AbsentFile::DifferentHash(volume_id, chapter_id);
+            if m.cid != file_cid {
+                let abs = AbsentFile::DifferentHash(m.volume_id, m.chapter_id);
                 audit.absent_individual_files.push(abs);
                 continue;
             }
 
             // If is is present, add to vols_seen (unless alread there).
-            if !vols_seen.contains(&volume_id) {
+            if !vols_seen.contains(&m.volume_id) {
                 // Record all volumes that are seen at least once.
-                vols_seen.push(volume_id)
+                vols_seen.push(m.volume_id)
             }
         }
 
@@ -317,7 +319,7 @@ impl<T: DataSpec> Todd<T> {
         chapter_id: &T::AssociatedChapterId,
     ) {
         let chapter_result = T::AssociatedExtractor::chapter_from_raw(
-            &chapter_id,
+            chapter_id,
             volume_id,
             &self.config.raw_source,
         );
@@ -414,17 +416,18 @@ impl<T: DataSpec> Todd<T> {
 
         let mut relevant_chapter_ids: Vec<T::AssociatedChapterId> = vec![];
         for k in keys {
-            let record_key = T::raw_key_as_record_key(&k)?;
+            let record_key = T::raw_key_as_record_key(k)?;
             let chapter_id = T::record_key_to_chapter_id(&record_key)?;
             relevant_chapter_ids.push(chapter_id);
         }
         let manifest = self.manifest()?;
         let mut tasks: Vec<DownloadTask> = vec![];
-        for (cid, vol_id, chap_id) in manifest.cids()? {
-            if relevant_chapter_ids.contains(&chap_id) {
-                let url = Url::parse(gateway)?.join(cid)?;
-                let dest_dir = self.config.chapter_dir_path(&chap_id);
-                let filename = T::AssociatedChapter::new_empty(&vol_id, &chap_id).filename();
+        for m in manifest.cids()? {
+            if relevant_chapter_ids.contains(&m.chapter_id) {
+                let url = Url::parse(gateway)?.join(&m.cid)?;
+                let dest_dir = self.config.chapter_dir_path(&m.chapter_id);
+                let filename =
+                    T::AssociatedChapter::new_empty(&m.volume_id, &m.chapter_id).filename();
                 tasks.push(DownloadTask {
                     url,
                     dest_dir,
@@ -485,10 +488,10 @@ impl<T: DataSpec> Todd<T> {
 
         if local_example_dir_raw.contains_files(&raw_sample_filenames)? {
             info!("Raw sample files found in local repository: moving to samples directory.");
-            local_example_dir_raw.copy_into_recursive(&raw_source_dir)?;
+            local_example_dir_raw.copy_into_recursive(raw_source_dir)?;
         } else {
             info!("Raw samples not found: downloading.");
-            T::AssociatedSampleObtainer::get_raw_samples(&raw_source_dir)?
+            T::AssociatedSampleObtainer::get_raw_samples(raw_source_dir)?
         }
         Ok(())
     }
@@ -536,9 +539,9 @@ impl<T: DataSpec> Todd<T> {
         // Check expected location.
         let mut data_dir_complete = true;
         for (dirname, filenames) in &dirnames_and_files {
-            let chap_dir = self.config.data_dir.join(&dirname);
+            let chap_dir = self.config.data_dir.join(dirname);
             // Detect if any of the sample files are missing.
-            if !chap_dir.contains_files(&filenames)? {
+            if !chap_dir.contains_files(filenames)? {
                 data_dir_complete = false
             }
         }
@@ -549,9 +552,9 @@ impl<T: DataSpec> Todd<T> {
         // Check local directory.
         let mut local_data_dir_complete = true;
         for (dirname, filenames) in &dirnames_and_files {
-            let chap_dir = example_dir_processed.join(&dirname);
+            let chap_dir = example_dir_processed.join(dirname);
             // Detect if any of the sample files are missing.
-            if !chap_dir.contains_files(&filenames)? {
+            if !chap_dir.contains_files(filenames)? {
                 local_data_dir_complete = false
             }
         }

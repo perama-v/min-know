@@ -1,4 +1,4 @@
-use std::path::{PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
 /// Gets samples for the given todd database.
@@ -21,5 +21,5 @@ pub trait SampleObtainer {
     /// The volumes created can then be inspected and included here.
     fn sample_volumes() -> Option<Vec<&'static str>>;
     /// Detects if processed samples are present at the given location.
-    fn get_raw_samples(dir: &PathBuf) -> Result<()>;
+    fn get_raw_samples(dir: &Path) -> Result<()>;
 }

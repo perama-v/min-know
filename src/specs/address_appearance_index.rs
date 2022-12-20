@@ -13,8 +13,7 @@ use ssz_types::{
 use crate::{
     extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
-        BLOCKS_PER_VOLUME,
-        NumCommonBytes, NUM_CHAPTERS, MaxAddressesPerVolume,
+        MaxAddressesPerVolume, NumCommonBytes, BLOCKS_PER_VOLUME, NUM_CHAPTERS,
     },
     samples::address_appearance_index::AAISampleObtainer,
     utils::unchained::types::BlockRange,
@@ -114,17 +113,14 @@ impl VolumeIdMethods<AAISpec> for AAIVolumeId {
     fn from_interface_id(interface_id: &str) -> Result<Self> {
         let oldest_block = interface_id
             .trim_start_matches("volume")
-            .replace("_", "")
+            .replace('_', "")
             .parse::<u32>()?;
         Ok(AAIVolumeId { oldest_block })
     }
 }
 impl AAIVolumeId {
     pub fn to_block_range(&self) -> Result<BlockRange> {
-        Ok(BlockRange::new(
-            self.oldest_block,
-            BLOCKS_PER_VOLUME - 1 + self.oldest_block,
-        )?)
+        BlockRange::new(self.oldest_block, BLOCKS_PER_VOLUME - 1 + self.oldest_block)
     }
 }
 
@@ -226,13 +222,14 @@ impl AAIChapter {
             oldest_block: data.identifier.oldest_block,
         };
         let mut records: Vec<AAIRecord> = vec![];
-        for item in data.addresses.to_vec() {
-            let mut r = AAIRecord::default();
-            r.key = AAIRecordKey {
-                key: <_>::from(item.address.to_vec()),
-            };
-            r.value = AAIRecordValue {
-                value: <_>::from(item.appearances.to_vec()),
+        for item in data.addresses.iter() {
+            let r = AAIRecord {
+                key: AAIRecordKey {
+                    key: <_>::from(item.address.to_vec()),
+                },
+                value: AAIRecordValue {
+                    value: <_>::from(item.appearances.to_vec()),
+                },
             };
             records.push(r)
         }
@@ -254,7 +251,7 @@ pub struct AAIRecord {
 }
 impl RecordMethods<AAISpec> for AAIRecord {
     fn get(&self) -> &Self {
-        &self
+        self
     }
 
     fn key(&self) -> &AAIRecordKey {
@@ -288,9 +285,9 @@ impl RecordValueMethods for AAIRecordValue {
         self
     }
     /// Return a String representation of the contents of the RecordValue.
-    fn as_strings(self) -> Vec<String> {
+    fn as_strings(&self) -> Vec<String> {
         let mut s: Vec<String> = vec![];
-        for v in self.value.to_vec() {
+        for v in self.value.iter() {
             let v_str = format!("Tx in block: {}, index: {}", v.block, v.index);
             s.push(v_str)
         }
@@ -388,12 +385,16 @@ impl ManifestMethods<AAISpec> for AAIManifest {
         self.latest_volume_identifier = volume_interface_id
     }
 
-    fn cids(&self) -> Result<Vec<(&str, AAIVolumeId, AAIChapterId)>> {
-        let mut result: Vec<(&str, AAIVolumeId, AAIChapterId)> = vec![];
+    fn cids(&self) -> Result<Vec<ManifestCids<AAISpec>>> {
+        let mut result: Vec<ManifestCids<AAISpec>> = vec![];
         for chapter in &self.chapter_cids {
             let volume_id = AAIVolumeId::from_interface_id(&chapter.volume_interface_id)?;
             let chapter_id = AAIChapterId::from_interface_id(&chapter.chapter_interface_id)?;
-            result.push((&chapter.cid_v0, volume_id, chapter_id))
+            result.push(ManifestCids {
+                cid: chapter.cid_v0.clone(),
+                volume_id,
+                chapter_id,
+            })
         }
         Ok(result)
     }

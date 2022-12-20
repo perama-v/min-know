@@ -1,10 +1,9 @@
 use anyhow::Result;
 
-
 use std::{
     fmt::Display,
     fs::{self},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 pub trait DirFunctions {
@@ -16,7 +15,7 @@ pub trait DirFunctions {
     /// Copies the source directory files into destination directory.
     ///
     /// source/file1 -> dest/file1
-    fn copy_into_recursive(&self, destination: &PathBuf) -> Result<()>;
+    fn copy_into_recursive(&self, destination: &Path) -> Result<()>;
 }
 impl DirFunctions for PathBuf {
     // test<T: AsRef<str>>(inp: &[T]) {
@@ -26,7 +25,6 @@ impl DirFunctions for PathBuf {
             .into_iter()
             .filter_map(|x| x.ok())
             .map(|x| x.file_name())
-            .map(|x| x.to_os_string())
             .filter_map(|x| x.into_string().ok())
             .collect();
         for desired in files {
@@ -37,8 +35,8 @@ impl DirFunctions for PathBuf {
         Ok(true)
     }
 
-    fn copy_into_recursive(&self, destination: &PathBuf) -> Result<()> {
-        fs::create_dir_all(&destination)?;
+    fn copy_into_recursive(&self, destination: &Path) -> Result<()> {
+        fs::create_dir_all(destination)?;
         println!(
             "Copying files within directory:\n\t{:?} into directory:\n\t{:?}",
             self, destination

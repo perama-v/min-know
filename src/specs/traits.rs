@@ -112,7 +112,7 @@ pub trait DataSpec: Sized {
         let latest_vol_position = Self::AssociatedVolumeId::is_nth(&latest_vol)?;
         // Loop and get nth_id
         (0..=latest_vol_position)
-            .map(|n| Self::AssociatedVolumeId::nth_id(n as u32))
+            .map(|n| Self::AssociatedVolumeId::nth_id(n))
             .collect()
     }
     fn record_key_to_chapter_id(
@@ -232,7 +232,7 @@ pub trait RecordValueMethods {
     /// Returns the value struct that implements this method.
     fn get(self) -> Self;
     /// Returns the value, with all elements as Strings in a vector.
-    fn as_strings(self) -> Vec<String>;
+    fn as_strings(&self) -> Vec<String>;
 }
 
 /// Marker trait.
@@ -316,7 +316,7 @@ pub trait ManifestMethods<T: DataSpec> {
     /// Sets the interface identifier of the latest volume.
     fn set_latest_volume_identifier(&mut self, volume_interface_id: String);
     /// Returns the CIDs for all Chapters.
-    fn cids(&self) -> Result<Vec<(&str, T::AssociatedVolumeId, T::AssociatedChapterId)>>;
+    fn cids(&self) -> Result<Vec<ManifestCids<T>>>;
     /// Sets the CIDs for all Chapters to the Manifest.
     ///
     /// CID: v0 IPFS Content Identifiers (CID). CIDs are all paired with
@@ -327,4 +327,10 @@ pub trait ManifestMethods<T: DataSpec> {
         &mut self,
         cids: &[(U, T::AssociatedVolumeId, T::AssociatedChapterId)],
     );
+}
+
+pub struct ManifestCids<T: DataSpec> {
+    pub cid: String,
+    pub volume_id: T::AssociatedVolumeId,
+    pub chapter_id: T::AssociatedChapterId,
 }

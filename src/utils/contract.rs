@@ -40,7 +40,7 @@ fn cid_from_metadata(metadata: &[u8]) -> Result<Option<MetadataSource>> {
         .ok_or_else(|| anyhow!("Couldn't decode contract metadata CBOR."))??;
     match cbor {
         Cbor::Map(m) => determine_source(m),
-        _ => return Ok(None),
+        _ => Ok(None),
     }
 }
 
@@ -52,23 +52,18 @@ fn determine_source(m: HashMap<String, Cbor>) -> Result<Option<MetadataSource>> 
         let Some(source) = m.get(key) else { continue };
         // Key exists
         if key.starts_with("ipfs") {
-            match source {
-                Cbor::Bytes(b) => {
-                    let bytes = &b.0;
-                    let cid = bs58::encode(bytes).into_string();
-                    return Ok(Some(MetadataSource::Ipfs(cid)));
-                }
-                _ => {}
+            if let Cbor::Bytes(b) = source {
+                let bytes = &b.0;
+                let cid = bs58::encode(bytes).into_string();
+                return Ok(Some(MetadataSource::Ipfs(cid)));
             }
         }
+
         if key.starts_with("bzz") {
-            match source {
-                Cbor::Bytes(b) => {
-                    let bytes = &b.0;
-                    let cid = hex::encode(bytes);
-                    return Ok(Some(MetadataSource::Swarm(cid)));
-                }
-                _ => {}
+            if let Cbor::Bytes(b) = source {
+                let bytes = &b.0;
+                let cid = hex::encode(bytes);
+                return Ok(Some(MetadataSource::Swarm(cid)));
             }
         }
     }

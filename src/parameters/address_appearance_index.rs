@@ -27,7 +27,6 @@ pub const DEFAULT_BYTES_PER_ADDRESS: u32 = 20;
 /// Number of valid ASCII bytes a network name may use.
 pub const MAX_NETWORK_NAME_BYTES: u32 = 32;
 
-
 const HEX_BASE: u32 = 16;
 
 /// Number of chapters.

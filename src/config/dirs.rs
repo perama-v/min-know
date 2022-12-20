@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
 
-use super::{ choices::{DirNature, DataKind}};
-
+use super::choices::{DataKind, DirNature};
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct ConfigStruct {
@@ -92,7 +91,7 @@ impl ConfigStruct {
             let without_chapter = filename.replace(&chapter_name, "");
             let Some((volume_str, _suffix)) = without_chapter.split_once("_.") else {
                 bail!("Filename could not be split by '_' and '.': {}", filename)};
-            let vol_id = T::AssociatedVolumeId::from_interface_id(&volume_str)?;
+            let vol_id = T::AssociatedVolumeId::from_interface_id(volume_str)?;
             all_files.push((file.path(), vol_id))
         }
         Ok(all_files)

@@ -230,17 +230,6 @@ fn h160_to_string(address: &H160) -> String {
     hex::encode(address)
 }
 
-/// Converts String to H160.
-fn string_to_h160(address: &str) -> Result<H160> {
-    let vector = hex::decode(address.trim_start_matches("0x"))?;
-    let tried: Result<[u8; 20], _> = vector.try_into();
-    let array = match tried {
-        Ok(a) => a,
-        Err(e) => return Err(anyhow!("Couldn't byte vector convert address: {:?}", e)),
-    };
-    Ok(H160(array))
-}
-
 #[test]
 fn address_conversions() {
     let input = "c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";

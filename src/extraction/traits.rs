@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Result;
 
@@ -20,7 +20,7 @@ pub trait Extractor<T: DataSpec> {
     fn chapter_from_raw(
         chapter_id: &T::AssociatedChapterId,
         volume_id: &T::AssociatedVolumeId,
-        source_dir: &PathBuf,
+        source_dir: &Path,
     ) -> Result<Option<T::AssociatedChapter>>;
     /// Returns the VolumeId of the latest possible volume that can be made from
     /// the available raw data.
@@ -29,5 +29,5 @@ pub trait Extractor<T: DataSpec> {
     /// If volumes are produce every 100 units of data (0-99, 100-199, ...),
     /// and the raw data has 340 units. Then the latest will exclude the
     /// incomplete 40 and return the id for volume 200-299.
-    fn latest_possible_volume(source_dir: &PathBuf) -> Result<T::AssociatedVolumeId>;
+    fn latest_possible_volume(source_dir: &Path) -> Result<T::AssociatedVolumeId>;
 }

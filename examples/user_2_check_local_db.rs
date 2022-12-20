@@ -1,6 +1,6 @@
 use std::env;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 
 use min_know::{
     config::choices::{DataKind, DirNature},

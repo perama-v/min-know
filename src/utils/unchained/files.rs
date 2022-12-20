@@ -1,6 +1,9 @@
 use anyhow::{anyhow, Context, Result};
 use regex::Regex;
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use super::{
     constants::{AD_ENTRY, AP_ENTRY, HEAD},
@@ -20,7 +23,7 @@ impl ChunksDir {
     /// # Example
     /// If the chunk files are in "xyz/trueblocks/unchained/mainnet/finalized",
     /// then this is the path passed in.
-    pub fn new(dir_path: &PathBuf) -> Result<Self> {
+    pub fn new(dir_path: &Path) -> Result<Self> {
         let files = fs::read_dir(dir_path)
             .with_context(|| format!("Failed to read dir from {:?}", dir_path))?;
         let mut paths: Vec<ChunkFile> = vec![];
@@ -47,7 +50,7 @@ impl ChunksDir {
                 relevant.push(chunk);
             }
         }
-        if relevant.len() == 0 {
+        if relevant.is_empty() {
             return None;
         }
         Some(relevant)

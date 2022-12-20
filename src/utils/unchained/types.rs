@@ -126,18 +126,15 @@ impl UnchainedFile {
                 // 4. to 7.
                 let potential_appearances: Option<Vec<TransactionId>> =
                     self.parse_appearances(&address_entry)?;
-                match potential_appearances {
-                    Some(appearances) => {
-                        let appearances_for_address = AddressData {
-                            address,
-                            appearances,
-                        };
-                        txs.push(appearances_for_address);
-                    }
-                    None => {
-                        // All transactions for this address were outside the desired range.
-                    }
+
+                if let Some(appearances) = potential_appearances {
+                    let appearances_for_address = AddressData {
+                        address,
+                        appearances,
+                    };
+                    txs.push(appearances_for_address);
                 }
+                // (else) All transactions for this address were outside the desired range.
             }
             // 8.
             self.body.addresses.current += AD_ENTRY;

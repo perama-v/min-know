@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::Result;
 use log::info;
@@ -12,7 +12,7 @@ pub struct AAISampleObtainer;
 
 impl SampleObtainer for AAISampleObtainer {
     fn raw_sample_filenames() -> Vec<&'static str> {
-        return SAMPLE_CHUNKS.to_vec();
+        SAMPLE_CHUNKS.to_vec()
     }
     fn sample_volumes() -> Option<Vec<&'static str>> {
         Some(SAMPLE_VOLUMES.to_vec())
@@ -21,7 +21,7 @@ impl SampleObtainer for AAISampleObtainer {
     /// Downloads the sample Unchained Index chunk files from IPFS.
     ///
     /// Saves five 25MB files locally in the sample directory.
-    fn get_raw_samples(dir: &PathBuf) -> Result<()> {
+    fn get_raw_samples(dir: &Path) -> Result<()> {
         let mut tasks: Vec<DownloadTask> = vec![];
         for (index, chunk_name) in SAMPLE_CHUNK_CIDS.iter().enumerate() {
             tasks.push(DownloadTask {
