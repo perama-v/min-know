@@ -5,6 +5,6 @@ use min_know::{
 };
 
 pub fn aai_db() -> Todd<AAISpec> {
-    let mut db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample).unwrap();
+    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample).unwrap();
     db
 }

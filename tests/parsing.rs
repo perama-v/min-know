@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 use anyhow::Context;
 use min_know::specs::{
     address_appearance_index::{AAIAppearanceTx, AAIChapterId, AAISpec, AAIVolumeId},
-    traits::{ChapterIdMethods, DataSpec, VolumeIdMethods},
+    traits::{ChapterIdMethods, VolumeIdMethods},
 };
 
 use crate::common::aai_db;

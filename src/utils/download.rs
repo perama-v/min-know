@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Ok, Result};
 use futures_util::{future::join_all, stream::StreamExt};
-use log::{debug, info, warn};
+use log::{debug, info};
 use reqwest::Url;
 use tokio::{fs::File, io::AsyncWriteExt};
 

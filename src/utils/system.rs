@@ -1,11 +1,10 @@
 use anyhow::Result;
 
-use log::info;
+
 use std::{
     fmt::Display,
     fs::{self},
     path::PathBuf,
-    sync::{Arc, Mutex},
 };
 
 pub trait DirFunctions {
