@@ -561,8 +561,8 @@ impl<T: DataSpec> Todd<T> {
         if local_data_dir_complete {
             info!("Local directory has sample files: copying to samples directory.");
             for (dirname, _filenames) in &dirnames_and_files {
-                let src_chap_dir = example_dir_processed.join(&dirname);
-                let dest_chap_dir = self.config.data_dir.join(&dirname);
+                let src_chap_dir = example_dir_processed.join(dirname);
+                let dest_chap_dir = self.config.data_dir.join(dirname);
                 src_chap_dir.copy_into_recursive(&dest_chap_dir)?;
             }
             return Ok(());

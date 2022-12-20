@@ -29,7 +29,7 @@ impl Extractor<AAISpec> for AAIExtractor {
         source_dir: &Path,
     ) -> Result<Option<AAIChapter>> {
         // Get relevant raw files.
-        let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
+        let chunk_files: ChunksDir = ChunksDir::new(source_dir)?;
         let block_range = volume_id.to_block_range()?;
         let Some(relevant_files) = chunk_files.for_range(&block_range) else {
             return Ok(None)
@@ -44,7 +44,7 @@ impl Extractor<AAISpec> for AAIExtractor {
         Ok(Some(chapter))
     }
     fn latest_possible_volume(source_dir: &Path) -> Result<AAIVolumeId> {
-        let chunk_files: ChunksDir = ChunksDir::new(&source_dir)?;
+        let chunk_files: ChunksDir = ChunksDir::new(source_dir)?;
         Ok(AAIVolumeId {
             oldest_block: latest_full_volume(latest_block_in_chunks(&chunk_files)?)?,
         })

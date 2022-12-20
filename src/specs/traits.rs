@@ -1,10 +1,9 @@
-use anyhow::{bail, Result};
-use serde::{Deserialize, Serialize};
-use ssz::{Decode, Encode};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
-use std::path::PathBuf;
-use tree_hash::TreeHash;
+use std::path::{Path, PathBuf};
+
+use anyhow::{bail, Result};
+use serde::{Deserialize, Serialize};
 
 use crate::extraction::traits::Extractor;
 use crate::samples::traits::SampleObtainer;
@@ -25,25 +24,31 @@ pub trait SszDecode {}
 /// - Send + Sync + Unpin
 /// - Eq + Ord
 pub trait UsefulTraits<'a>:
-    Clone + Debug + Default + PartialEq + PartialOrd + Hash + Serialize + Deserialize<'a>
+    Clone + Debug + Default + PartialEq + PartialOrd + Hash + Serialize + Deserialize<'a> + Send + Sync
 {
 }
 impl<'a, T> UsefulTraits<'a> for T where
-    T: Clone + Debug + Default + PartialEq + PartialOrd + Hash + Serialize + Deserialize<'a>
+    T: Clone
+        + Debug
+        + Default
+        + PartialEq
+        + PartialOrd
+        + Hash
+        + Serialize
+        + Deserialize<'a>
+        + Send
+        + Sync
 {
 }
 
-pub trait UsefulTraits2<'a>:
-    Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a>
+pub trait BasicUsefulTraits<'a>:
+    Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a> + Send + Sync
 {
 }
-impl<'a, T> UsefulTraits2<'a> for T where
-    T: Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a>
+impl<'a, T> BasicUsefulTraits<'a> for T where
+    T: Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a> + Send + Sync
 {
 }
-
-pub trait SszTraits: Encode + Decode + TreeHash {}
-impl<T> SszTraits for T where T: Encode + Decode + TreeHash {}
 
 /// A trait for specifying a new type of data.
 ///
@@ -70,18 +75,18 @@ pub trait DataSpec: Sized {
     const MAX_VOLUMES: usize;
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
 
-    type AssociatedChapter: ChapterMethods<Self> + for<'a> UsefulTraits2<'a> + Send + Sync;
-    type AssociatedChapterId: ChapterIdMethods<Self> + for<'a> UsefulTraits2<'a> + Send + Sync;
-    type AssociatedVolumeId: VolumeIdMethods<Self> + for<'a> UsefulTraits<'a> + Send + Sync;
+    type AssociatedChapter: ChapterMethods<Self> + for<'a> BasicUsefulTraits<'a>;
+    type AssociatedChapterId: ChapterIdMethods<Self> + for<'a> BasicUsefulTraits<'a>;
+    type AssociatedVolumeId: VolumeIdMethods<Self> + for<'a> UsefulTraits<'a>;
 
-    type AssociatedRecord: RecordMethods<Self> + for<'a> UsefulTraits2<'a>;
-    type AssociatedRecordKey: RecordKeyMethods + for<'a> UsefulTraits2<'a>;
-    type AssociatedRecordValue: RecordValueMethods + for<'a> UsefulTraits2<'a>;
+    type AssociatedRecord: RecordMethods<Self> + for<'a> BasicUsefulTraits<'a>;
+    type AssociatedRecordKey: RecordKeyMethods + for<'a> BasicUsefulTraits<'a>;
+    type AssociatedRecordValue: RecordValueMethods + for<'a> BasicUsefulTraits<'a>;
 
     type AssociatedExtractor: Extractor<Self>;
     type AssociatedSampleObtainer: SampleObtainer;
 
-    type AssociatedManifest: ManifestMethods<Self> + for<'a> UsefulTraits2<'a>;
+    type AssociatedManifest: ManifestMethods<Self> + for<'a> BasicUsefulTraits<'a>;
     /// Returns the enum variant that represents the spec for the database.
     ///
     /// This is used in coordinating platform-specific directories. It ensures
@@ -107,7 +112,7 @@ pub trait DataSpec: Sized {
             .collect()
     }
     /// Gets a vector of all the VolumeIds as defined by the available raw data.
-    fn get_all_volume_ids(raw_data_path: &PathBuf) -> Result<Vec<Self::AssociatedVolumeId>> {
+    fn get_all_volume_ids(raw_data_path: &Path) -> Result<Vec<Self::AssociatedVolumeId>> {
         let latest_vol = Self::AssociatedExtractor::latest_possible_volume(raw_data_path)?;
         let latest_vol_position = Self::AssociatedVolumeId::is_nth(&latest_vol)?;
         // Loop and get nth_id
