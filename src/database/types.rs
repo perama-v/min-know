@@ -18,7 +18,7 @@ use crate::{
     samples::traits::SampleObtainer,
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods,
-        RecordValueMethods, VolumeIdMethods,
+        VolumeIdMethods,
     },
     utils::{
         download::{download_files, DownloadTask},
@@ -304,30 +304,6 @@ impl<T: DataSpec> Todd<T> {
             chapters_present.push(chap_id);
         }
         Ok(chapters_present)
-    }
-    /// Prepares the mininum distributable Chapter
-    pub fn deprecated_get_one_chapter<V>(
-        &self,
-        vol: &T::AssociatedVolumeId,
-        chapter: &T::AssociatedChapterId,
-    ) -> Result<T::AssociatedChapter> {
-        let mut vals: Vec<T::AssociatedRecord> = vec![];
-        let source_data: Vec<(&str, V)> = self.deprecated_raw_pairs();
-        for (raw_key, raw_val) in source_data {
-            let record_key = T::raw_key_as_record_key(raw_key)?;
-            if T::record_key_matches_chapter(&record_key, &vol, &chapter) {
-                let record_value = T::raw_value_as_record_value(raw_val).get();
-                let rec: T::AssociatedRecord = T::AssociatedRecord::new(record_key, record_value);
-                vals.push(rec)
-            }
-        }
-        let chapter = todo!("(deprecated) previously: T::new_chapter()");
-        Ok(chapter)
-    }
-    pub fn deprecated_raw_pairs<V>(&self) -> Vec<(&str, V)> {
-        // A vector of generic key-value pairs.
-        // E.g., (address, appearances) or (address, ABIs)
-        todo!()
     }
     /// Creates then saves a single chapter.
     ///

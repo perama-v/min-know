@@ -4,7 +4,6 @@ use ssz::{Decode, Encode};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 use std::path::PathBuf;
-use std::str::FromStr;
 use tree_hash::TreeHash;
 
 use crate::extraction::traits::Extractor;
@@ -116,22 +115,11 @@ pub trait DataSpec: Sized {
             .map(|n| Self::AssociatedVolumeId::nth_id(n as u32))
             .collect()
     }
-    fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId;
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId>;
-    /// Used to check the key for a piece of raw data when creating new database.
-    fn record_key_matches_chapter(
-        record_key: &Self::AssociatedRecordKey,
-        vol: &Self::AssociatedVolumeId,
-        chapter: &Self::AssociatedChapterId,
-    ) -> bool;
     /// Coerces record_key into the type required for the spec.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>;
-    /// Some unformatted data that needs to be converted to an record_value
-    /// to then be appended to a Chapter.record_values vector.
-    fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue;
-    //fn new_chapter() -> Self::AssociatedChapter;
 }
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
@@ -251,7 +239,6 @@ pub trait RecordValueMethods {
 pub trait RecordMethods<T: DataSpec> {
     /// Returns the key struct that implements this method.
     fn get(&self) -> &Self;
-    fn new(key: T::AssociatedRecordKey, val: T::AssociatedRecordValue) -> T::AssociatedRecord;
     /// Get the RecordKey of the Record.
     fn key(&self) -> &T::AssociatedRecordKey;
     /// Get the RecordValue of the Record.
@@ -271,16 +258,6 @@ pub trait RecordMethods<T: DataSpec> {
 pub trait ChapterMethods<T: DataSpec> {
     /// Returns the key struct that implements this method.
     fn get(self) -> Self;
-    // An input that a user can provide to retrieve useful information.
-    //
-    // Each database is designed around the premise that a user has
-    // some information that they want to look up in the database.
-    //
-    // # Examples
-    // For an address apeparance database, the record_key is an address.
-    //
-    // For an ABI database, the record_key is a contract identifier.
-    fn find_record(&self, key: T::AssociatedRecordKey) -> T::AssociatedRecord;
     /// Get the VolumeId.
     ///
     /// The method likely just returns the relevant struct member, which is

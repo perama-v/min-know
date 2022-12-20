@@ -64,10 +64,6 @@ impl DataSpec for AAISpec {
     fn num_chapters() -> usize {
         Self::NUM_CHAPTERS
     }
-
-    fn record_key_to_volume_id(record_key: Self::AssociatedRecordKey) -> Self::AssociatedVolumeId {
-        todo!()
-    }
     /// Gets the ChapterIds relevant for a key.
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
@@ -77,24 +73,12 @@ impl DataSpec for AAISpec {
             val: <_>::from(bytes),
         })
     }
-
-    fn record_key_matches_chapter(
-        record_key: &Self::AssociatedRecordKey,
-        vol: &Self::AssociatedVolumeId,
-        chapter: &Self::AssociatedChapterId,
-    ) -> bool {
-        todo!()
-    }
     // Key is a hex string. Converts it to an ssz vector.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
         Ok(AAIRecordKey {
             key: <_>::from(raw_bytes),
         })
-    }
-
-    fn raw_value_as_record_value<T>(raw_data_value: T) -> Self::AssociatedRecordValue {
-        todo!()
     }
 }
 
@@ -181,10 +165,6 @@ pub struct AAIChapter {
 impl ChapterMethods<AAISpec> for AAIChapter {
     fn get(self) -> Self {
         self
-    }
-
-    fn find_record(&self, key: AAIRecordKey) -> AAIRecord {
-        todo!()
     }
 
     fn volume_id(&self) -> &AAIVolumeId {
@@ -275,10 +255,6 @@ pub struct AAIRecord {
 impl RecordMethods<AAISpec> for AAIRecord {
     fn get(&self) -> &Self {
         &self
-    }
-
-    fn new(key: AAIRecordKey, val: AAIRecordValue) -> Self {
-        todo!()
     }
 
     fn key(&self) -> &AAIRecordKey {
