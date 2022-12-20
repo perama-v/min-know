@@ -84,6 +84,8 @@ All examples can be seen with the following command:
 cargo run --example
 ```
 
+See the [examples readme](./examples/README) for more information.
+
 ### Address appearances index
 
 This is an index of which transactions an address was involved in.
