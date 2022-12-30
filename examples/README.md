@@ -8,7 +8,7 @@ They fall under the following categories:
   - [get_sample_data.rs](#get_sample_datars)
   - [user_*.rs](#user_rs)
   - [maintainter_*.rs](#maintainter_rs)
-  - [wallet_*.rs](#wallet_rs)
+  - [External](#external)
 
 
 ## get_sample_data.rs
@@ -46,18 +46,13 @@ cargo run --release --example maintainer_generate_manifest
 cargo run --release --example maintainer_repair_index
 ```
 
-## wallet_*.rs
+## External
 
-Use the sample data from the perspective of a Portal Node user who is trying
+[PSR_B0943+10](https://github.com/perama-v/PSR_B0943_10) is a small application that
+uses the sample data from the Address Appearance Index. It is
+from the perspective of a Portal Node user who is trying
 to get information about their wallet activity without using APIs.
 
 This involves a TODD-compliant address appearance index and identifies
 where APIs could be replaced with other TODD-compliant databases.
 
-If you run a local node, you can use that (pretend it is a Portal node)
-for the following examples:
-```sh
-cargo run --example wallet_1_transaction_receipt
-cargo run --example wallet_2_inspect_transaction_logs
-cargo run --example wallet_3_decode_via_apis
-```
