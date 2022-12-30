@@ -9,6 +9,7 @@ use ssz_types::{
     typenum::{U1073741824, U20},
     FixedVector, VariableList,
 };
+use web3::types::{BlockNumber, BlockId, TransactionId};
 
 use crate::{
     extraction::address_appearance_index::AAIExtractor,
@@ -295,6 +296,9 @@ impl RecordValueMethods for AAIRecordValue {
     }
 }
 
+/// An identifier for a single transaction.
+///
+/// Consists of block number and index within that block.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct AAIAppearanceTx {
     /// The Ethereum execution block number.
@@ -306,10 +310,10 @@ pub struct AAIAppearanceTx {
 impl AAIAppearanceTx {
     /// Converts to web3.rs transaction type.
     pub fn as_web3_tx_id(&self) -> web3::types::TransactionId {
-        let tx_block_id =
-            web3::types::BlockId::Number(web3::types::BlockNumber::Number(<_>::from(self.block)));
+        let block_num = BlockNumber::Number(<_>::from(self.block));
+        let tx_block_id = BlockId::Number(block_num);
         let tx_index = <_>::from(self.index);
-        web3::types::TransactionId::Block(tx_block_id, tx_index)
+        TransactionId::Block(tx_block_id, tx_index)
     }
 }
 
