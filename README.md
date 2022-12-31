@@ -93,7 +93,9 @@ See the [examples readme](./examples/README) for more information.
 
 This is an index of which transactions an address was involved in.
 It is a derivative of the Unchained Index
-([spec pdf](https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf)).
+([https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf](https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf)).
+That is to say, it is a reorganisation of the Unchained Index into
+a "Volumes and Chapters" publishing model.
 
 It can be used by user-facing software in post-EIP-4444 settings,
 where chain history is distributed among peers.
@@ -104,19 +106,11 @@ Those transactions start the chain of requests for meaningful data.
 
 The examples below are the counterpart to an exploration into
 a tiny local wallet explorer. That exploration can be found in
-this [blog post series](https://perama-v.github.io/ethereum/protocol/poking).
+this blog post series: [https://perama-v.github.io/ethereum/protocol/poking](https://perama-v.github.io/ethereum/protocol/poking).
 
-```sh
-cargo run --example wallet_1_transaction_receipt
-cargo run --example wallet_2_inspect_transaction_logs
-cargo run --example wallet_3_decode_via_apis
-```
-The examples work toward delivering useful information about personal wallet
-history, without using APIs and without using more than 1GB. That solution
-starts by using chain data and a TODD-compliant address appearance database.
+Use of the the index can be seen in a demo application here:
+https://github.com/perama-v/PSR_B0943_10
 
-It also points to next steps for making event signatures, contract source code and
-contract names and tags TODD-compliant.
 
 ## Database Maintainers
 
@@ -129,7 +123,7 @@ to convert the data.
 
 For example, the address-appearance-index is created and maintained by
 having locally available Unchained Index chunk files (produced by
-[trueblocks-core](https://github.com/TrueBlocks/trueblocks-core)).
+trueblocks-core [https://github.com/TrueBlocks/trueblocks-core)](https://github.com/TrueBlocks/trueblocks-core)).
 They are parsed and reorganised to form the TODD-compliant format.
 
 Other raw formats might be flat files containing data of various kinds.
@@ -153,7 +147,8 @@ After creating the manifest, that person can post it under their own
 who knows this IPNS can watch for new manifests to be published there.
 
 To broadcast that you are going to publish, you can perform a single transaction
-to a [broadcasting contract](https://github.com/perama-v/GAMB) to record your
+to a broadcasting contract ([https://github.com/perama-v/GAMB](https://github.com/perama-v/GAMB))
+to record your
 IPNS name with the topic you wish to publish (the name of the database you are
 publishing).
 
