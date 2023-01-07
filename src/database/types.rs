@@ -17,8 +17,8 @@ use crate::{
         choices::{DataKind, DirNature},
         dirs::ConfigStruct,
     },
-    extraction::traits::Extractor,
-    samples::traits::SampleObtainer,
+    extraction::traits::ExtractorMethods,
+    samples::traits::SampleObtainerMethods,
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods,
     },

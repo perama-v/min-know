@@ -9,7 +9,7 @@ use anyhow::Result;
 ///
 /// Each database has different samples, and must provide a
 /// type that implements this trait.
-pub trait SampleObtainer {
+pub trait SampleObtainerMethods {
     /// Returns the filenames that are raw samples.
     ///
     /// Used to check if the samples are present.

@@ -111,6 +111,40 @@ this blog post series: [https://perama-v.github.io/ethereum/protocol/poking](htt
 Use of the the index can be seen in a demo application here:
 https://github.com/perama-v/PSR_B0943_10
 
+### Nametags
+
+This is a database consisting of names and tags (collectively "nametags") for addresses.
+In the source/raw data, each address is a file containing JSON-encoded data. For example:
+
+```json
+# cat ./data/0xffff03817c70c99a3eba035c4f851b2be6faee44
+{
+  "tags": [
+    "contract-deployer"
+  ],
+  "name": "HitBTC Token: Deployer"
+}
+```
+
+The size of this database is 2.7GB (720,000 addresses) and is likely a subset of the total data
+available from the community.
+The purpose of TODD-ify-ing the database is to allow small parts (2700/256 = 10MB)
+to be individually accessed. Additionally to enable new names and tags to be added to the
+database by different parties.
+
+Publishers/maintainers can add additional nametags for addresses. This takes an existing manifest
+and a directory of raw nametag files. The extend method in min-know will check each file
+and if the nametag is not already present, adds it to the next Volume to be published.
+
+- What does a user start with? (define a `RecordKey`)
+    - A address.
+- What does a user get? (define a `RecordValue`)
+    - Names and Tags
+- How can a `Volume` be divided (define a `Chapter` definition)
+    - By address starting characters (0x00 - 0xff), which equates to 256 cChapters per Volume.
+- How often should `Volumes` be pulbished (define a `Volume` cadence)
+    - Every 10,000 new address additions (E.g., there would be ~72 editions to date). 
+    - This includes appending new nametags to addresses already in the database.
 
 ## Database Maintainers
 

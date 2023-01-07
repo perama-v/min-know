@@ -12,7 +12,7 @@ use crate::specs::traits::DataSpec;
 /// Each database has different algorithms for turning raw data into
 /// TODD-compliant data. Each database must provide a
 /// type that implements this trait.
-pub trait Extractor<T: DataSpec> {
+pub trait ExtractorMethods<T: DataSpec> {
     /// Returns a formed Chapter using raw data in the provided source directory.
     ///
     /// Returns `None` if the are no source files that match the provided IDs.

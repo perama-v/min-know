@@ -29,7 +29,7 @@ pub struct AAISpec {}
 impl DataSpec for AAISpec {
     const NUM_CHAPTERS: usize = NUM_CHAPTERS as usize;
 
-    const MAX_VOLUMES: usize = 1_000_000_000;
+    // const MAX_VOLUMES: usize = 1_000_000_000;
 
     type AssociatedVolumeId = AAIVolumeId;
 

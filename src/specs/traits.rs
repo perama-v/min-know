@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::extraction::traits::Extractor;
-use crate::samples::traits::SampleObtainer;
+use crate::extraction::traits::ExtractorMethods;
+use crate::samples::traits::SampleObtainerMethods;
 
 // Placeholder for the real trait.
 pub trait SszDecode {}
@@ -72,7 +72,7 @@ impl<'a, T> BasicUsefulTraits<'a> for T where
 /// - raw_value (unformatted record_value)
 pub trait DataSpec: Sized {
     const NUM_CHAPTERS: usize;
-    const MAX_VOLUMES: usize;
+
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
 
     type AssociatedChapter: ChapterMethods<Self> + for<'a> BasicUsefulTraits<'a>;
@@ -83,8 +83,8 @@ pub trait DataSpec: Sized {
     type AssociatedRecordKey: RecordKeyMethods + for<'a> BasicUsefulTraits<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> BasicUsefulTraits<'a>;
 
-    type AssociatedExtractor: Extractor<Self>;
-    type AssociatedSampleObtainer: SampleObtainer;
+    type AssociatedExtractor: ExtractorMethods<Self>;
+    type AssociatedSampleObtainer: SampleObtainerMethods;
 
     type AssociatedManifest: ManifestMethods<Self> + for<'a> BasicUsefulTraits<'a>;
     /// Returns the enum variant that represents the spec for the database.

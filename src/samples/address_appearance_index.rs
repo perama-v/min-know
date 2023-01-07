@@ -5,12 +5,12 @@ use log::info;
 use reqwest::Url;
 use tokio::runtime::Runtime;
 
-use crate::samples::traits::SampleObtainer;
+use crate::samples::traits::SampleObtainerMethods;
 use crate::utils::download::{download_files, DownloadTask};
 
 pub struct AAISampleObtainer;
 
-impl SampleObtainer for AAISampleObtainer {
+impl SampleObtainerMethods for AAISampleObtainer {
     fn raw_sample_filenames() -> Vec<&'static str> {
         SAMPLE_CHUNKS.to_vec()
     }
