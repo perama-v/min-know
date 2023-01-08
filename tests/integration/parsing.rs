@@ -1,14 +1,17 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::Context;
-use min_know::specs::{
-    address_appearance_index::{AAIAppearanceTx, AAIChapterId, AAISpec, AAIVolumeId},
-    traits::{ChapterIdMethods, VolumeIdMethods},
+use min_know::{
+    config::{
+        address_appearance_index::Network,
+        choices::{DataKind, DirNature},
+    },
+    database::types::Todd,
+    specs::{
+        address_appearance_index::{AAIAppearanceTx, AAIChapterId, AAISpec, AAIVolumeId},
+        traits::{ChapterIdMethods, VolumeIdMethods},
+    },
 };
-
-use crate::common::aai_db;
-
-mod common;
 
 #[test]
 fn index_dir_readable() {
@@ -73,4 +76,10 @@ fn detects_known_txs() {
         appearances.extend(v.value.to_vec());
     }
     assert_eq!(known_count, appearances.len());
+}
+
+pub fn aai_db() -> Todd<AAISpec> {
+    let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+    let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample).unwrap();
+    db
 }

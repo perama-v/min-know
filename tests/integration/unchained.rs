@@ -6,11 +6,11 @@ use cid::{
 };
 use min_know::utils::unchained::types::{BlockRange, UnchainedFile};
 
-mod common;
+use super::databases;
 
 #[test]
 fn sample_header_sample_ok() {
-    let db = common::aai_db();
+    let db = databases::aai_db();
     let index_path = db.config.raw_source.join("011283653-011286904.bin");
     let target = BlockRange {
         old: 11_200_000,
@@ -23,7 +23,7 @@ fn sample_header_sample_ok() {
 fn sample_header_local_ok() {
     println!("Env is: {:?}", std::env::current_dir());
     // Run test from this dir:
-    let db = common::aai_db();
+    let db = databases::aai_db();
     let local_example_dir_raw =
         PathBuf::from("./data/samples").join(db.config.data_kind.raw_source_dir_name());
     // Look for this file:
