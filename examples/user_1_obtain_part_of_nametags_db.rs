@@ -3,9 +3,9 @@ use std::env;
 use anyhow::{bail, Result};
 
 use min_know::{
-    config::choices::{DataKind, DirNature},
+    config::{choices::{DataKind, DirNature}, address_appearance_index::Network},
     database::types::Todd,
-    specs::nametags::NameTagSpec,
+    specs::nametags::NameTagsSpec,
 };
 
 /// Uses a manifest file to obtain data relevant for a user.
@@ -15,13 +15,13 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let db: Todd<NameTagSpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    let db: Todd<NameTagsSpec> = Todd::init(DataKind::AddressAppearanceIndex(Network::default()), DirNature::Sample)?;
     println!("DB is {:#?}", db);
 
     // Addresses important for a user (two random addresses).
     let addresses = [
         // Random address.
-        "0x846be97d3bf1e3865f3caf55d749864d39e54cb9",
+        // "0x846be97d3bf1e3865f3caf55d749864d39e54cb9",
         // EF dev wallet.
         "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
     ];

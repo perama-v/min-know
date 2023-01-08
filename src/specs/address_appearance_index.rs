@@ -9,7 +9,7 @@ use ssz_types::{
     typenum::{U1073741824, U20},
     FixedVector, VariableList,
 };
-use web3::types::{BlockNumber, BlockId, TransactionId};
+use web3::types::{BlockId, BlockNumber, TransactionId};
 
 use crate::{
     extraction::address_appearance_index::AAIExtractor,

@@ -30,7 +30,7 @@ use crate::{
 };
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Todd<T: DataSpec> {
     pub chapters: Vec<T::AssociatedChapter>,
     pub config: ConfigStruct,
@@ -458,11 +458,12 @@ impl<T: DataSpec> Todd<T> {
     ```
     # use anyhow::Result;
     # use min_know::{
-    #    config::choices::{DataKind, DirNature},
+    #    config::{address_appearance_index::Network, choices::{DataKind, DirNature}},
     #    database::types::Todd,
     #    specs::address_appearance_index::AAISpec,
     # };
-    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+    let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
     db.get_sample_data()?;
     # Ok::<(), anyhow::Error>(())
     ```

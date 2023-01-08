@@ -3,7 +3,10 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::choices::{DataKind, DirNature},
+    config::{
+        address_appearance_index::Network,
+        choices::{DataKind, DirNature},
+    },
     database::types::Todd,
     specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
 };
@@ -15,7 +18,8 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+    let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
     println!("DB is {:#?}", db);
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";

@@ -8,7 +8,7 @@ use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
 
 use super::choices::{DataKind, DirNature};
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct ConfigStruct {
     /// Which directory type is being configured. E.g., Real vs sample data.
     pub dir_nature: DirNature,
