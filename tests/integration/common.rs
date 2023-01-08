@@ -12,3 +12,9 @@ pub fn aai_db() -> Todd<AAISpec> {
     let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample).unwrap();
     db
 }
+
+pub fn nametags_db() -> Todd<AAISpec> {
+    let data_kind = DataKind::NameTags;
+    let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample).unwrap();
+    db
+}
