@@ -1,25 +1,25 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::Context;
-use min_know::{
-    specs::{
-        address_appearance_index::{AAIAppearanceTx, AAIChapterId, AAISpec, AAIVolumeId},
-        traits::{ChapterIdMethods, VolumeIdMethods},
-    },
+use min_know::specs::{
+    address_appearance_index::{AAIAppearanceTx, AAIChapterId, AAISpec, AAIVolumeId},
+    traits::{ChapterIdMethods, VolumeIdMethods},
 };
 
-use crate::common::{nametags_db};
+use crate::common::nametags_db;
 
 #[test]
 fn index_dir_readable() {
-    let dir = fs::read_dir(nametags_db().config.data_dir).unwrap();
+    let path = dbg!(nametags_db().config.data_dir);
+    let dir = fs::read_dir(path).unwrap();
     // 256 chapters.
     assert_eq!(dir.count(), 256);
 }
 
 #[test]
-fn uc_files_present() {
-    let dir = fs::read_dir(nametags_db().config.raw_source).unwrap();
+fn source_files_present() {
+    let path = dbg!(nametags_db().config.raw_source);
+    let dir = fs::read_dir(path).unwrap();
     // 5 Unchained Index sample files.
     assert_eq!(dir.count(), 5);
 }

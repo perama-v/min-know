@@ -25,7 +25,8 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+    // let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+    let data_kind = DataKind::NameTags;
     let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
     db.get_sample_data()?;
     Ok(())

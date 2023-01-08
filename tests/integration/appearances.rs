@@ -1,7 +1,10 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::Context;
-use cid::{multihash::{Code, MultihashDigest}, Cid};
+use cid::{
+    multihash::{Code, MultihashDigest},
+    Cid,
+};
 use min_know::{
     config::{
         address_appearance_index::Network,
@@ -11,10 +14,11 @@ use min_know::{
     specs::{
         address_appearance_index::{AAIAppearanceTx, AAIChapterId, AAISpec, AAIVolumeId},
         traits::{ChapterIdMethods, VolumeIdMethods},
-    }, utils::unchained::types::{BlockRange, UnchainedFile},
+    },
+    utils::unchained::types::{BlockRange, UnchainedFile},
 };
 
-use crate::common::{aai_db};
+use crate::common::aai_db;
 
 #[test]
 fn index_dir_readable() {
@@ -80,7 +84,6 @@ fn detects_known_txs() {
     }
     assert_eq!(known_count, appearances.len());
 }
-
 
 #[test]
 fn sample_header_sample_ok() {

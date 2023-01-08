@@ -480,8 +480,7 @@ impl<T: DataSpec> Todd<T> {
     /// Ensures that the unprocessed samples are either present or obtained.
     fn handle_raw_samples(&self) -> Result<()> {
         let raw_source_dir = &self.config.raw_source;
-        let local_example_dir_raw =
-            PathBuf::from("./data/samples").join(self.config.data_kind.raw_source_dir_name());
+        let local_example_dir_raw = self.config.local_sample_raw_source();
         let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
 
         if raw_source_dir.contains_files(&raw_sample_filenames)? {
@@ -504,8 +503,7 @@ impl<T: DataSpec> Todd<T> {
     /// directory (and copies if present), then attempts to processes from raw
     /// data.
     fn handle_database_samples(&self) -> Result<()> {
-        let example_dir_processed =
-            PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
+        let example_dir_processed = self.config.local_sample_data_dir();
 
         let volume_interface_ids = T::AssociatedSampleObtainer::sample_volumes();
 

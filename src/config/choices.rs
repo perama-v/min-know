@@ -40,6 +40,10 @@ impl DataKind {
             DataKind::NameTags => "nametags",
         }
     }
+    /// Returns the data kind as a stirng starting with "todd_".
+    pub fn as_todd_string(&self) -> String {
+        format!("todd_{}", self.as_string())
+    }
     /// The interface ID is the database kind in string form by default.
     /// Some databases may add additional parameters.
     pub fn interface_id(&self) -> String {
@@ -68,9 +72,7 @@ impl DataKind {
     /// This directory will contain the index directory (which contains chapter directories).
     /// Conforms to the `ProjectDirs.data_dir()` schema in the Directories crate.
     pub fn platform_directory(&self) -> Result<PathBuf> {
-        let proj_string = self.as_string();
-        let proj = format!("todd_{}", proj_string);
-        let proj = ProjectDirs::from("", "", &proj)
+        let proj = ProjectDirs::from("", "", &self.as_todd_string())
             .ok_or_else(|| anyhow!("Could not access env var (e.g., $HOME) to set up project."))?;
         Ok(proj.data_dir().to_path_buf())
     }
