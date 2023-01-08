@@ -1,15 +1,14 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{extraction::traits::ExtractorMethods, samples::traits::SampleObtainerMethods};
 
 use super::traits::*;
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagSpec {}
+pub struct NameTagsSpec {}
 
 // Uncomment the line below to start adding a new database to this library.
-impl DataSpec for NameTagSpec {
+impl DataSpec for NameTagsSpec {
     const NUM_CHAPTERS: usize = 256;
 
     type AssociatedChapter = NameTagChapter;
@@ -53,12 +52,10 @@ impl DataSpec for NameTagSpec {
     }
 }
 
-
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagChapter;
 
-impl ChapterMethods<NameTagSpec> for NameTagChapter {
+impl ChapterMethods<NameTagsSpec> for NameTagChapter {
     fn get(self) -> Self {
         todo!()
     }
@@ -81,7 +78,8 @@ impl ChapterMethods<NameTagSpec> for NameTagChapter {
 
     fn from_file(data: Vec<u8>) -> anyhow::Result<Self>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         todo!()
     }
 
@@ -94,11 +92,10 @@ impl ChapterMethods<NameTagSpec> for NameTagChapter {
     }
 }
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagChapterId;
 
-impl ChapterIdMethods<NameTagSpec> for NameTagChapterId {
+impl ChapterIdMethods<NameTagsSpec> for NameTagChapterId {
     fn from_interface_id(id_string: &str) -> anyhow::Result<Self> {
         todo!()
     }
@@ -112,11 +109,10 @@ impl ChapterIdMethods<NameTagSpec> for NameTagChapterId {
     }
 }
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd)]
 pub struct NameTagVolumeId;
 
-impl VolumeIdMethods<NameTagSpec> for NameTagVolumeId {
+impl VolumeIdMethods<NameTagsSpec> for NameTagVolumeId {
     fn from_interface_id(interface_id: &str) -> anyhow::Result<Self> {
         todo!()
     }
@@ -134,11 +130,10 @@ impl VolumeIdMethods<NameTagSpec> for NameTagVolumeId {
     }
 }
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagRecord;
 
-impl RecordMethods<NameTagSpec> for NameTagRecord {
+impl RecordMethods<NameTagsSpec> for NameTagRecord {
     fn get(&self) -> &Self {
         todo!()
     }
@@ -152,7 +147,6 @@ impl RecordMethods<NameTagSpec> for NameTagRecord {
     }
 }
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagRecordKey;
 
@@ -161,7 +155,6 @@ impl RecordKeyMethods for NameTagRecordKey {
         todo!()
     }
 }
-
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagRecordValue;
@@ -176,11 +169,10 @@ impl RecordValueMethods for NameTagRecordValue {
     }
 }
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagExtractor;
 
-impl ExtractorMethods<NameTagSpec> for NameTagExtractor {
+impl ExtractorMethods<NameTagsSpec> for NameTagExtractor {
     fn chapter_from_raw(
         chapter_id: &NameTagChapterId,
         volume_id: &NameTagVolumeId,
@@ -193,9 +185,6 @@ impl ExtractorMethods<NameTagSpec> for NameTagExtractor {
         todo!()
     }
 }
-
-
-
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagSampleObtainer;
@@ -214,11 +203,10 @@ impl SampleObtainerMethods for NameTagSampleObtainer {
     }
 }
 
-
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagManifest;
 
-impl ManifestMethods<NameTagSpec> for NameTagManifest {
+impl ManifestMethods<NameTagsSpec> for NameTagManifest {
     fn spec_version(&self) -> &str {
         todo!()
     }
@@ -251,7 +239,7 @@ impl ManifestMethods<NameTagSpec> for NameTagManifest {
         todo!()
     }
 
-    fn cids(&self) -> anyhow::Result<Vec<ManifestCids<NameTagSpec>>> {
+    fn cids(&self) -> anyhow::Result<Vec<ManifestCids<NameTagsSpec>>> {
         todo!()
     }
 
