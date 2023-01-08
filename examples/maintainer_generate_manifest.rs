@@ -3,7 +3,10 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{choices::{DataKind, DirNature}, address_appearance_index::Network},
+    config::{
+        address_appearance_index::Network,
+        choices::{DataKind, DirNature},
+    },
     database::types::Todd,
     specs::address_appearance_index::AAISpec,
 };

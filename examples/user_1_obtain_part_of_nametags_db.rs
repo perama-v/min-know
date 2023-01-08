@@ -3,7 +3,10 @@ use std::env;
 use anyhow::{bail, Result};
 
 use min_know::{
-    config::{choices::{DataKind, DirNature}, address_appearance_index::Network},
+    config::{
+        address_appearance_index::Network,
+        choices::{DataKind, DirNature},
+    },
     database::types::Todd,
     specs::nametags::NameTagsSpec,
 };
@@ -15,7 +18,10 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let db: Todd<NameTagsSpec> = Todd::init(DataKind::AddressAppearanceIndex(Network::default()), DirNature::Sample)?;
+    let db: Todd<NameTagsSpec> = Todd::init(
+        DataKind::AddressAppearanceIndex(Network::default()),
+        DirNature::Sample,
+    )?;
     println!("DB is {:#?}", db);
 
     // Addresses important for a user (two random addresses).

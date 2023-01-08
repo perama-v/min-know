@@ -179,8 +179,9 @@ impl ChapterMethods<MyDataSpec> for MyDataChapter {}
 Some `XyzMethods` impls require the "`<MyDataSpec>`", and rust analyzer will communicate this with
 the following phrase:  missing generics for trait `specs::traits::XyzMethods`"
 
-```rust
+```rs
 // Before: "Missing generics for trait specs::traits::ChapterMethods"
+use super::traits::ChapterMethods;
 impl ChapterMethods for MyDataChapter {}
 
 //After
