@@ -25,6 +25,8 @@ pub trait ExtractorMethods<T: DataSpec> {
     /// Returns the VolumeId of the latest possible volume that can be made from
     /// the available raw data.
     ///
+    /// Search the raw data and deduce the VolumeId for the last possible Volume.
+    ///
     /// ## Example
     /// If volumes are produce every 100 units of data (0-99, 100-199, ...),
     /// and the raw data has 340 units. Then the latest will exclude the

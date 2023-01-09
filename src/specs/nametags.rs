@@ -1,8 +1,12 @@
+use std::{fs, path::Path};
+
+use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     config::choices::DataKind,
-    extraction::traits::ExtractorMethods,
+    extraction::{traits::ExtractorMethods, nametags::NameTagsExtractor},
+    parameters::nametags::ENTRIES_PER_VOLUME,
     samples::{nametags::SAMPLE_FILENAMES, traits::SampleObtainerMethods},
 };
 
@@ -50,11 +54,11 @@ impl DataSpec for NameTagsSpec {
 
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
-    ) -> anyhow::Result<Self::AssociatedChapterId> {
+    ) -> Result<Self::AssociatedChapterId> {
         todo!()
     }
 
-    fn raw_key_as_record_key(key: &str) -> anyhow::Result<Self::AssociatedRecordKey> {
+    fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         todo!()
     }
 }
@@ -83,7 +87,7 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
         todo!()
     }
 
-    fn from_file(data: Vec<u8>) -> anyhow::Result<Self>
+    fn from_file(data: Vec<u8>) -> Result<Self>
     where
         Self: Sized,
     {
@@ -103,7 +107,7 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
 pub struct NameTagsChapterId;
 
 impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
-    fn from_interface_id(id_string: &str) -> anyhow::Result<Self> {
+    fn from_interface_id(id_string: &str) -> Result<Self> {
         todo!()
     }
 
@@ -111,16 +115,25 @@ impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
         todo!()
     }
 
-    fn nth_id(n: u32) -> anyhow::Result<NameTagsChapterId> {
+    fn nth_id(n: u32) -> Result<NameTagsChapterId> {
         todo!()
     }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd)]
-pub struct NameTagsVolumeId;
+pub struct NameTagsVolumeId {
+    /// Refers to the first address in the Volume. It is index of the address
+    /// where all volumes are ordered oldest to youngest.
+    ///
+    /// ## Example
+    ///
+    /// The first address in the first volume is 0, the first address in the
+    /// second volume is 10000 (ENTRIES_PER_VOLUME).
+    pub first_address: u32,
+}
 
 impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
-    fn from_interface_id(interface_id: &str) -> anyhow::Result<Self> {
+    fn from_interface_id(interface_id: &str) -> Result<Self> {
         todo!()
     }
 
@@ -128,11 +141,11 @@ impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
         todo!()
     }
 
-    fn nth_id(n: u32) -> anyhow::Result<NameTagsVolumeId> {
+    fn nth_id(n: u32) -> Result<NameTagsVolumeId> {
         todo!()
     }
 
-    fn is_nth(&self) -> anyhow::Result<u32> {
+    fn is_nth(&self) -> Result<u32> {
         todo!()
     }
 }
@@ -177,23 +190,6 @@ impl RecordValueMethods for NameTagsRecordValue {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsExtractor;
-
-impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
-    fn chapter_from_raw(
-        chapter_id: &NameTagsChapterId,
-        volume_id: &NameTagsVolumeId,
-        source_dir: &std::path::Path,
-    ) -> anyhow::Result<Option<NameTagsChapter>> {
-        todo!()
-    }
-
-    fn latest_possible_volume(source_dir: &std::path::Path) -> anyhow::Result<NameTagsVolumeId> {
-        todo!()
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagsSampleObtainer;
 
 impl SampleObtainerMethods for NameTagsSampleObtainer {
@@ -205,7 +201,7 @@ impl SampleObtainerMethods for NameTagsSampleObtainer {
         todo!()
     }
 
-    fn get_raw_samples(dir: &std::path::Path) -> anyhow::Result<()> {
+    fn get_raw_samples(dir: &Path) -> Result<()> {
         todo!()
     }
 }
@@ -246,7 +242,7 @@ impl ManifestMethods<NameTagsSpec> for NameTagsManifest {
         todo!()
     }
 
-    fn cids(&self) -> anyhow::Result<Vec<ManifestCids<NameTagsSpec>>> {
+    fn cids(&self) -> Result<Vec<ManifestCids<NameTagsSpec>>> {
         todo!()
     }
 
