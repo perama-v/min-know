@@ -184,11 +184,27 @@ pub trait VolumeIdMethods<T: DataSpec>: Sized {
     /// If there are 100 volumes, then:
     /// - n=0 returns the first VolumeId
     /// - n=99 returns the last VolumeId
+    /// ```sh
+    /// n=0, id=0
+    /// n=1, id=100_000
+    /// n=2, id=200_000
+    /// let oldest_block = n * BLOCKS_PER_VOLUME;
+    /// ```
     fn nth_id(n: u32) -> Result<T::AssociatedVolumeId>;
     /// The zero-based position for the given VolumeId.
     ///
     /// If volume ids are placed in lexicographical order, corresponds to
     /// the position in that sequence. First position is n=0.
+    ///
+    /// ## Example
+    /// Here the calculation is simply to divide by the number of blocks
+    /// per Volume:
+    /// ```sh
+    /// id=0, n=0
+    /// id=100_000, n=1
+    /// id=200_000, n=2
+    /// -> self.oldest_block / BLOCKS_PER_VOLUME
+    /// ```
     fn is_nth(&self) -> Result<u32>;
     /// Gets all the VolumeIds earlier than and including the given VolumeId.
     ///

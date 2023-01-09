@@ -18,7 +18,7 @@ use crate::{
         MaxAddressesPerVolume, NumCommonBytes, BLOCKS_PER_VOLUME, NUM_CHAPTERS,
     },
     samples::address_appearance_index::AAISampleObtainer,
-    utils::unchained::types::BlockRange,
+    utils::{unchained::types::BlockRange, self},
 };
 
 use super::traits::*;
@@ -94,11 +94,7 @@ pub struct AAIVolumeId {
 }
 impl VolumeIdMethods<AAISpec> for AAIVolumeId {
     fn interface_id(&self) -> String {
-        let mut name = format!("{:0>9}", self.oldest_block);
-        for i in [6, 3] {
-            name.insert(i, '_');
-        }
-        format!("volume_{}", name)
+        format!("volume_{}", utils::string::num_as_triplet(self.oldest_block))
     }
     fn nth_id(n: u32) -> Result<Self> {
         // n=0, id=0

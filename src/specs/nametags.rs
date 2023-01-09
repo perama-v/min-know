@@ -7,7 +7,7 @@ use crate::{
     config::choices::DataKind,
     extraction::{traits::ExtractorMethods, nametags::NameTagsExtractor},
     parameters::nametags::ENTRIES_PER_VOLUME,
-    samples::{nametags::SAMPLE_FILENAMES, traits::SampleObtainerMethods},
+    samples::{nametags::SAMPLE_FILENAMES, traits::SampleObtainerMethods}, utils,
 };
 
 use super::traits::*;
@@ -138,17 +138,20 @@ impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
     }
 
     fn interface_id(&self) -> String {
-        todo!()
+        // From the spec: "nametags_from_000_630_000"
+        format!("nametags_from_{}", utils::string::num_as_triplet(self.first_address))
     }
 
     fn nth_id(n: u32) -> Result<NameTagsVolumeId> {
-        todo!()
+        Ok( NameTagsVolumeId { first_address: n * ENTRIES_PER_VOLUME })
     }
 
     fn is_nth(&self) -> Result<u32> {
-        todo!()
+        Ok(self.first_address / ENTRIES_PER_VOLUME)
     }
 }
+
+
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagsRecord;
