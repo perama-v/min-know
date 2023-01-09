@@ -1,4 +1,3 @@
-
 /// The nametag files present in the ./data/samples/todd_nametags/raw_source_nametags dir.
 pub const SAMPLE_FILENAMES: [&str; 150] = [
     "0x0000000000000000000000000000000000000000",
@@ -150,5 +149,5 @@ pub const SAMPLE_FILENAMES: [&str; 150] = [
     "0xf47ea708b1be65d65d7a0227810f029e80852693",
     "0xf5970db24b12071491920365b139f346febe0434",
     "0xf9126867253503cc1c3bad58e180c260cbbbd329",
-    "0xfd37a5045a3e9e664aad313dce84403c3eb32b4f"
+    "0xfd37a5045a3e9e664aad313dce84403c3eb32b4f",
 ];

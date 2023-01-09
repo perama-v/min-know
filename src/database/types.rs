@@ -32,16 +32,21 @@ use crate::{
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Todd<T: DataSpec> {
-    pub chapters: Vec<T::AssociatedChapter>,
+    chapters: Vec<T::AssociatedChapter>,
     pub config: ConfigStruct,
 }
 
 /// Implement generic methods common to all databases.
 impl<T: DataSpec> Todd<T> {
     /// Initialise the database library with the given configuration.
-    pub fn init(specification: DataKind, directories: DirNature) -> Result<Self> {
+    pub fn init(data_kind: DataKind, directories: DirNature) -> Result<Self> {
+        assert!(
+            T::spec_matches_input(&data_kind),
+            "DataKind does not match Spec type"
+        );
+
         // Use the spec to then get the DataConfig.
-        let config = directories.to_config(specification)?;
+        let config = directories.to_config(data_kind)?;
         Ok(Self {
             chapters: vec![],
             config,

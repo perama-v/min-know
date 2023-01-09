@@ -12,6 +12,7 @@ use ssz_types::{
 use web3::types::{BlockId, BlockNumber, TransactionId};
 
 use crate::{
+    config::choices::DataKind,
     extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
         MaxAddressesPerVolume, NumCommonBytes, BLOCKS_PER_VOLUME, NUM_CHAPTERS,
@@ -49,8 +50,11 @@ impl DataSpec for AAISpec {
 
     type AssociatedManifest = AAIManifest;
 
-    fn spec_name() -> SpecId {
-        SpecId::AddressAppearanceIndex
+    fn spec_matches_input(data_kind: &DataKind) -> bool {
+        match data_kind {
+            DataKind::AddressAppearanceIndex(_) => true,
+            _ => false,
+        }
     }
 
     fn spec_version() -> String {

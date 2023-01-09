@@ -2,7 +2,11 @@ use std::env;
 
 use anyhow::Result;
 
-use min_know::{config::choices::{DataKind, DirNature}, database::types::Todd, specs::nametags::NameTagsSpec};
+use min_know::{
+    config::choices::{DataKind, DirNature},
+    database::types::Todd,
+    specs::nametags::NameTagsSpec,
+};
 
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.

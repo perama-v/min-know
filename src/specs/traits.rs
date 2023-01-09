@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::config::choices::DataKind;
 use crate::extraction::traits::ExtractorMethods;
 use crate::samples::traits::SampleObtainerMethods;
 
@@ -87,11 +88,11 @@ pub trait DataSpec: Sized {
     type AssociatedSampleObtainer: SampleObtainerMethods;
 
     type AssociatedManifest: ManifestMethods<Self> + for<'a> BasicUsefulTraits<'a>;
-    /// Returns the enum variant that represents the spec for the database.
+    /// Checks if the enum variant matches the spec for the database.
     ///
     /// This is used in coordinating platform-specific directories. It ensures
     /// that all implementations of the spec also create a new enum variant.
-    fn spec_name() -> SpecId;
+    fn spec_matches_input(data_kind: &DataKind) -> bool;
     /// Returns the version of the specification for the particular database.
     fn spec_version() -> String;
     /// Returns the number of Chapters that the spec defines.

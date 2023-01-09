@@ -112,7 +112,6 @@ impl ConfigStruct {
     }
 }
 
-
 #[test]
 fn config_local_paths_correct_for_nametags() {
     let config = DirNature::Sample.to_config(DataKind::NameTags).unwrap();
