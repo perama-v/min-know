@@ -1,8 +1,9 @@
 use std::{fs, path::Path};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use ssz::{Encode, Decode};
+use ssz_derive::{Encode, Decode};
 use ssz_types::{FixedVector, VariableList};
 
 use crate::{
@@ -72,7 +73,7 @@ impl DataSpec for NameTagsSpec {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsChapter {
     pub chapter_id: NameTagsChapterId,
     pub volume_id: NameTagsVolumeId,
@@ -80,24 +81,20 @@ pub struct NameTagsChapter {
 }
 
 impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
-    fn get(self) -> Self {
-        todo!()
-    }
-
     fn volume_id(&self) -> &NameTagsVolumeId {
-        todo!()
+        &self.volume_id
     }
 
     fn chapter_id(&self) -> &NameTagsChapterId {
-        todo!()
+        &self.chapter_id
     }
 
     fn records(&self) -> &Vec<NameTagsRecord> {
-        todo!()
+        &self.records
     }
 
     fn as_serialized_bytes(&self) -> Vec<u8> {
-        todo!()
+        self.as_ssz_bytes()
     }
 
     fn from_file(data: Vec<u8>) -> Result<Self>
@@ -116,7 +113,7 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsChapterId {
     pub val: FixedVector<u8, BytesForAddressChars>,
 }
@@ -158,7 +155,7 @@ impl NameTagsChapterId {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd, Encode, Decode)]
 pub struct NameTagsVolumeId {
     /// Refers to the first address in the Volume. It is index of the address
     /// where all volumes are ordered oldest to youngest.
@@ -201,7 +198,7 @@ impl NameTagsVolumeId {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsRecord {
     pub record_key: NameTagsRecordKey,
     pub record_value: NameTagsRecordValue,
@@ -221,7 +218,7 @@ impl RecordMethods<NameTagsSpec> for NameTagsRecord {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsRecordKey {
     key: FixedVector<u8, BytesPerAddress>,
 }
@@ -241,7 +238,7 @@ impl NameTagsRecordKey {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsRecordValue {
     pub names: VariableList<Name, MaxNamesPerRecord>,
     pub tags: VariableList<Tag, MaxTagsPerRecord>,
@@ -264,7 +261,7 @@ impl NameTagsRecordValue {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct Name {
     pub val: VariableList<u8, MaxBytesPerName>,
 }
@@ -277,7 +274,7 @@ impl Name {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct Tag {
     pub val: VariableList<u8, MaxBytesPerTag>,
 }
