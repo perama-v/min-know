@@ -12,7 +12,8 @@ use anyhow::Result;
 pub trait SampleObtainerMethods {
     /// Returns the filenames that are raw samples.
     ///
-    /// Used to check if the samples are present.
+    /// Used to check if the samples are present. These filenames
+    /// are known in advance and must be hard coded.
     fn raw_sample_filenames() -> Vec<&'static str>;
     /// Returns the volume interface ids for volumes that
     /// are represented in the samples.

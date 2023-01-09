@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{extraction::traits::ExtractorMethods, samples::traits::SampleObtainerMethods};
+use crate::{extraction::traits::ExtractorMethods, samples::{traits::SampleObtainerMethods, nametags::SAMPLE_FILENAMES}};
 
 use super::traits::*;
 
@@ -191,7 +191,7 @@ pub struct NameTagSampleObtainer;
 
 impl SampleObtainerMethods for NameTagSampleObtainer {
     fn raw_sample_filenames() -> Vec<&'static str> {
-        todo!()
+        SAMPLE_FILENAMES.to_vec()
     }
 
     fn sample_volumes() -> Option<Vec<&'static str>> {
