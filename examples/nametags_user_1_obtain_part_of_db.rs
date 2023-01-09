@@ -19,7 +19,7 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let db: Todd<NameTagsSpec> = Todd::init(
-        DataKind::AddressAppearanceIndex(Network::default()),
+        DataKind::NameTags,
         DirNature::Sample,
     )?;
     println!("DB is {:#?}", db);
