@@ -2,12 +2,21 @@ use std::{fs, path::Path};
 
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use ssz_types::{FixedVector, VariableList};
 
 use crate::{
     config::choices::DataKind,
-    extraction::{traits::ExtractorMethods, nametags::NameTagsExtractor},
-    parameters::nametags::ENTRIES_PER_VOLUME,
-    samples::{nametags::SAMPLE_FILENAMES, traits::SampleObtainerMethods}, utils,
+    extraction::{
+        nametags::{NameTagsExtractor, RawValue},
+        traits::ExtractorMethods,
+    },
+    parameters::nametags::{
+        BytesForAddressChars, BytesPerAddress, MaxBytesPerName, MaxBytesPerTag, MaxNamesPerRecord,
+        MaxTagsPerRecord, ENTRIES_PER_VOLUME,
+    },
+    samples::{nametags::SAMPLE_FILENAMES, traits::SampleObtainerMethods},
+    utils,
 };
 
 use super::traits::*;
@@ -64,7 +73,11 @@ impl DataSpec for NameTagsSpec {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsChapter;
+pub struct NameTagsChapter {
+    pub chapter_id: NameTagsChapterId,
+    pub volume_id: NameTagsVolumeId,
+    pub records: Vec<NameTagsRecord>,
+}
 
 impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
     fn get(self) -> Self {
@@ -104,19 +117,44 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsChapterId;
+pub struct NameTagsChapterId {
+    pub val: FixedVector<u8, BytesForAddressChars>,
+}
 
 impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
     fn from_interface_id(id_string: &str) -> Result<Self> {
-        todo!()
+        let string = id_string.trim_start_matches("addresses_0x");
+        let bytes = hex::decode(string)?;
+        Ok(NameTagsChapterId {
+            val: <_>::from(bytes),
+        })
     }
 
     fn interface_id(&self) -> String {
-        todo!()
+        format!("addresses_0x{}", self.as_str())
     }
 
     fn nth_id(n: u32) -> Result<NameTagsChapterId> {
-        todo!()
+        if n as usize >= NameTagsSpec::NUM_CHAPTERS {
+            bail!("'n' must be <= NUM_CHAPTERS")
+        }
+        let byte_vec = vec![n as u8];
+        let Ok(fv) = FixedVector::<u8, BytesForAddressChars>::new(byte_vec) else {
+            bail!("Provided vector is too long for Fixed Vector.")
+        };
+        Ok(NameTagsChapterId { val: fv })
+    }
+}
+
+impl NameTagsChapterId {
+    /// Returns the ChapterId as a hex string (no 0x prefix).
+    pub fn as_str(&self) -> String {
+        hex::encode(self.val.to_vec())
+    }
+    /// Determines if leading string matches the Chapter.
+    pub fn matches(&self, leading: &str) -> bool {
+        let s = self.as_str();
+        s.starts_with(&leading)
     }
 }
 
@@ -139,11 +177,16 @@ impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
 
     fn interface_id(&self) -> String {
         // From the spec: "nametags_from_000_630_000"
-        format!("nametags_from_{}", utils::string::num_as_triplet(self.first_address))
+        format!(
+            "nametags_from_{}",
+            utils::string::num_as_triplet(self.first_address)
+        )
     }
 
     fn nth_id(n: u32) -> Result<NameTagsVolumeId> {
-        Ok( NameTagsVolumeId { first_address: n * ENTRIES_PER_VOLUME })
+        Ok(NameTagsVolumeId {
+            first_address: n * ENTRIES_PER_VOLUME,
+        })
     }
 
     fn is_nth(&self) -> Result<u32> {
@@ -151,10 +194,18 @@ impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
     }
 }
 
-
+impl NameTagsVolumeId {
+    /// Determines if a globally-indexed entry is present in a volume.
+    pub fn contains_entry(&self, index: u32) -> bool {
+        index >= self.first_address && index < (self.first_address + ENTRIES_PER_VOLUME)
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsRecord;
+pub struct NameTagsRecord {
+    pub record_key: NameTagsRecordKey,
+    pub record_value: NameTagsRecordValue,
+}
 
 impl RecordMethods<NameTagsSpec> for NameTagsRecord {
     fn get(&self) -> &Self {
@@ -171,7 +222,9 @@ impl RecordMethods<NameTagsSpec> for NameTagsRecord {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsRecordKey;
+pub struct NameTagsRecordKey {
+    key: FixedVector<u8, BytesPerAddress>,
+}
 
 impl RecordKeyMethods for NameTagsRecordKey {
     fn get(self) -> Self {
@@ -179,8 +232,63 @@ impl RecordKeyMethods for NameTagsRecordKey {
     }
 }
 
+impl NameTagsRecordKey {
+    pub fn from_address(address: &str) -> Result<Self> {
+        let raw_bytes = hex::decode(address.trim_start_matches("0x"))?;
+        Ok(NameTagsRecordKey {
+            key: <_>::from(raw_bytes),
+        })
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsRecordValue;
+pub struct NameTagsRecordValue {
+    pub names: VariableList<Name, MaxNamesPerRecord>,
+    pub tags: VariableList<Tag, MaxTagsPerRecord>,
+}
+
+impl NameTagsRecordValue {
+    pub fn from_strings(names: Vec<String>, tags: Vec<String>) -> Self {
+        let mut name_vec = vec![];
+        for n in names {
+            name_vec.push(Name::from_string(&n))
+        }
+        let mut tag_vec = vec![];
+        for t in tags {
+            tag_vec.push(Tag::from_string(&t))
+        }
+        NameTagsRecordValue {
+            names: <_>::from(name_vec),
+            tags: <_>::from(tag_vec),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Name {
+    pub val: VariableList<u8, MaxBytesPerName>,
+}
+
+impl Name {
+    pub fn from_string(s: &str) -> Self {
+        Name {
+            val: <_>::from(s.as_bytes().to_vec()),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Tag {
+    pub val: VariableList<u8, MaxBytesPerTag>,
+}
+
+impl Tag {
+    pub fn from_string(s: &str) -> Self {
+        Tag {
+            val: <_>::from(s.as_bytes().to_vec()),
+        }
+    }
+}
 
 impl RecordValueMethods for NameTagsRecordValue {
     fn get(self) -> Self {

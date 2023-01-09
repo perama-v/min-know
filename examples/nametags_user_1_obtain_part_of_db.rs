@@ -18,10 +18,7 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let db: Todd<NameTagsSpec> = Todd::init(
-        DataKind::NameTags,
-        DirNature::Sample,
-    )?;
+    let db: Todd<NameTagsSpec> = Todd::init(DataKind::NameTags, DirNature::Sample)?;
     println!("DB is {:#?}", db);
 
     // Addresses important for a user (two random addresses).

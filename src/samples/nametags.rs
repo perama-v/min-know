@@ -2062,5 +2062,5 @@ pub const SAMPLE_FILENAMES: [&str; 2063] = [
     "0xfeea0bdd3d07eb6fe305938878c0cadbfa169042",
     "0xff116cd52a275265606296d3c1bdcdda540df116",
     "0xffb07ed8265cb3f566069e60a469c1b97a972a12",
-    "0xffebaf265d6653c40e635f5c7891089dc4c8e9be"
+    "0xffebaf265d6653c40e635f5c7891089dc4c8e9be",
 ];
