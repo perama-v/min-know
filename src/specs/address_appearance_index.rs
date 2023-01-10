@@ -65,10 +65,6 @@ impl DataSpec for AAISpec {
         String::from("https://github.com/perama-v/address-index/tree/main/address_appearance_index")
     }
 
-    fn num_chapters() -> usize {
-        Self::NUM_CHAPTERS
-    }
-    /// Gets the ChapterIds relevant for a key.
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId> {
@@ -77,7 +73,7 @@ impl DataSpec for AAISpec {
             val: <_>::from(bytes),
         })
     }
-    // Key is a hex string. Converts it to an ssz vector.
+
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
         Ok(AAIRecordKey {
@@ -250,7 +246,6 @@ pub struct AAIRecord {
     pub value: AAIRecordValue,
 }
 impl RecordMethods<AAISpec> for AAIRecord {
-
     fn key(&self) -> &AAIRecordKey {
         &self.key
     }
@@ -264,8 +259,7 @@ impl RecordMethods<AAISpec> for AAIRecord {
 pub struct AAIRecordKey {
     pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
-impl RecordKeyMethods for AAIRecordKey {
-}
+impl RecordKeyMethods for AAIRecordKey {}
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
@@ -343,7 +337,7 @@ pub struct AAIManifest {
     pub schemas: String,
     pub database_interface_id: String,
     pub latest_volume_identifier: String,
-    pub chapter_cids: Vec<AAIManifestChapter>,
+    pub chapter_metadata: Vec<AAIManifestChapter>,
 }
 
 impl ManifestMethods<AAISpec> for AAIManifest {
@@ -381,7 +375,7 @@ impl ManifestMethods<AAISpec> for AAIManifest {
 
     fn cids(&self) -> Result<Vec<ManifestCids<AAISpec>>> {
         let mut result: Vec<ManifestCids<AAISpec>> = vec![];
-        for chapter in &self.chapter_cids {
+        for chapter in &self.chapter_metadata {
             let volume_id = AAIVolumeId::from_interface_id(&chapter.volume_interface_id)?;
             let chapter_id = AAIChapterId::from_interface_id(&chapter.chapter_interface_id)?;
             result.push(ManifestCids {
@@ -393,17 +387,20 @@ impl ManifestMethods<AAISpec> for AAIManifest {
         Ok(result)
     }
 
-    fn set_cids<U: AsRef<str> + Display>(&mut self, cids: &[(U, AAIVolumeId, AAIChapterId)]) {
+    fn set_cids<C>(&mut self, cids: &[(C, AAIVolumeId, AAIChapterId)])
+    where
+        C: AsRef<str> + Display,
+    {
         for (cid, volume_id, chapter_id) in cids {
             let chapter = AAIManifestChapter {
                 volume_interface_id: volume_id.interface_id(),
                 chapter_interface_id: chapter_id.interface_id(),
                 cid_v0: cid.to_string(),
             };
-            self.chapter_cids.push(chapter)
+            self.chapter_metadata.push(chapter)
         }
         // Sort by VolumeId, then by ChapterId for ties.
-        self.chapter_cids.sort_by(|a, b| {
+        self.chapter_metadata.sort_by(|a, b| {
             a.volume_interface_id
                 .cmp(&b.volume_interface_id)
                 .then(a.chapter_interface_id.cmp(&b.chapter_interface_id))

@@ -1,9 +1,9 @@
-use std::{fs, path::Path};
+use std::{fmt::Display, fs, path::Path};
 
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
-use ssz::{Encode, Decode};
-use ssz_derive::{Encode, Decode};
+use ssz::{Decode, Encode};
+use ssz_derive::{Decode, Encode};
 use ssz_types::{FixedVector, VariableList};
 
 use crate::{
@@ -55,21 +55,27 @@ impl DataSpec for NameTagsSpec {
     }
 
     fn spec_version() -> String {
-        todo!()
+        String::from("0.1.0")
     }
 
     fn spec_schemas_resource() -> String {
-        todo!()
+        String::from("https://github.com/perama-v/TODD/blob/main/example_specs/nametag.md")
     }
 
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId> {
-        todo!()
+        let bytes = record_key.key[0..2].to_vec();
+        Ok(NameTagsChapterId {
+            val: <_>::from(bytes),
+        })
     }
 
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
-        todo!()
+        let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
+        Ok(NameTagsRecordKey {
+            key: <_>::from(raw_bytes),
+        })
     }
 }
 
@@ -101,15 +107,32 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
     where
         Self: Sized,
     {
-        todo!()
+        // Files are ssz encoded.
+        let chapter = match NameTagsChapter::from_ssz_bytes(&data) {
+            Ok(c) => c,
+            Err(e) => bail!(
+                "Could not decode the SSZ data. Check that the library
+            spec version matches the version in the manifest.  {:?}",
+                e
+            ),
+        };
+        Ok(chapter)
     }
 
     fn filename(&self) -> String {
-        todo!()
+        format!(
+            "{}_{}.ssz",
+            self.volume_id.interface_id(),
+            self.chapter_id.interface_id()
+        )
     }
 
     fn new_empty(volume_id: &NameTagsVolumeId, chapter_id: &NameTagsChapterId) -> Self {
-        todo!()
+        NameTagsChapter {
+            chapter_id: chapter_id.clone(),
+            volume_id: volume_id.clone(),
+            records: vec![],
+        }
     }
 }
 
@@ -155,7 +178,9 @@ impl NameTagsChapterId {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd, Encode, Decode)]
+#[derive(
+    Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd, Encode, Decode,
+)]
 pub struct NameTagsVolumeId {
     /// Refers to the first address in the Volume. It is index of the address
     /// where all volumes are ordered oldest to youngest.
@@ -169,7 +194,11 @@ pub struct NameTagsVolumeId {
 
 impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
     fn from_interface_id(interface_id: &str) -> Result<Self> {
-        todo!()
+        let first_address = interface_id
+            .trim_start_matches("nametags_from_")
+            .replace('_', "")
+            .parse::<u32>()?;
+        Ok(NameTagsVolumeId { first_address })
     }
 
     fn interface_id(&self) -> String {
@@ -200,18 +229,17 @@ impl NameTagsVolumeId {
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsRecord {
-    pub record_key: NameTagsRecordKey,
-    pub record_value: NameTagsRecordValue,
+    pub key: NameTagsRecordKey,
+    pub value: NameTagsRecordValue,
 }
 
 impl RecordMethods<NameTagsSpec> for NameTagsRecord {
-
     fn key(&self) -> &NameTagsRecordKey {
-        todo!()
+        &self.key
     }
 
     fn value(&self) -> &NameTagsRecordValue {
-        todo!()
+        &self.value
     }
 }
 
@@ -304,49 +332,85 @@ impl SampleObtainerMethods for NameTagsSampleObtainer {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsManifest;
+pub struct NameTagsManifest {
+    pub spec_version: String,
+    pub schemas: String,
+    pub database_interface_id: String,
+    pub latest_volume_identifier: String,
+    pub chapter_metadata: Vec<NameTagsManifestChapter>,
+}
 
 impl ManifestMethods<NameTagsSpec> for NameTagsManifest {
     fn spec_version(&self) -> &str {
-        todo!()
+        &self.spec_version
     }
 
     fn set_spec_version(&mut self, version: String) {
-        todo!()
+        self.spec_version = version
     }
 
     fn schemas(&self) -> &str {
-        todo!()
+        &self.schemas
     }
 
     fn set_schemas(&mut self, schemas: String) {
-        todo!()
+        self.schemas = schemas
     }
 
     fn database_interface_id(&self) -> &str {
-        todo!()
+        &self.database_interface_id
     }
 
     fn set_database_interface_id(&mut self, id: String) {
-        todo!()
+        self.database_interface_id = id;
     }
 
     fn latest_volume_identifier(&self) -> &str {
-        todo!()
+        &self.latest_volume_identifier
     }
 
     fn set_latest_volume_identifier(&mut self, volume_interface_id: String) {
-        todo!()
+        self.latest_volume_identifier = volume_interface_id
     }
 
     fn cids(&self) -> Result<Vec<ManifestCids<NameTagsSpec>>> {
-        todo!()
+        let mut result: Vec<ManifestCids<NameTagsSpec>> = vec![];
+        for chapter in &self.chapter_metadata {
+            let volume_id = NameTagsVolumeId::from_interface_id(&chapter.volume_interface_id)?;
+            let chapter_id = NameTagsChapterId::from_interface_id(&chapter.chapter_interface_id)?;
+            result.push(ManifestCids {
+                cid: chapter.cid_v0.clone(),
+                volume_id,
+                chapter_id,
+            })
+        }
+        Ok(result)
     }
 
-    fn set_cids<U: AsRef<str> + std::fmt::Display>(
+    fn set_cids<U: AsRef<str> + Display>(
         &mut self,
         cids: &[(U, NameTagsVolumeId, NameTagsChapterId)],
     ) {
-        todo!()
+        for (cid, volume_id, chapter_id) in cids {
+            let chapter = NameTagsManifestChapter {
+                volume_interface_id: volume_id.interface_id(),
+                chapter_interface_id: chapter_id.interface_id(),
+                cid_v0: cid.to_string(),
+            };
+            self.chapter_metadata.push(chapter)
+        }
+        // Sort by VolumeId, then by ChapterId for ties.
+        self.chapter_metadata.sort_by(|a, b| {
+            a.volume_interface_id
+                .cmp(&b.volume_interface_id)
+                .then(a.chapter_interface_id.cmp(&b.chapter_interface_id))
+        })
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct NameTagsManifestChapter {
+    pub volume_interface_id: String,
+    pub chapter_interface_id: String,
+    pub cid_v0: String,
 }

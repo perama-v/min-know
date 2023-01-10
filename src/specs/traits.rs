@@ -121,10 +121,19 @@ pub trait DataSpec: Sized {
             .map(|n| Self::AssociatedVolumeId::nth_id(n))
             .collect()
     }
+    /// Gets the ChapterId relevant for a key.
+    ///
+    /// ## Example
+    /// An address 0xabcd...1234 might return the ChapterId matching "ab"
+    ///
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId>;
-    /// Coerces record_key into the type required for the spec.
+    /// Coerces a key string into the RecordKey type required for the spec.
+    ///
+    /// ## Example
+    /// If the key is a hex string, it might convert that to
+    /// a struct capable of ssz encoding.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>;
 }
 
@@ -340,14 +349,18 @@ pub trait ManifestMethods<T: DataSpec> {
     fn cids(&self) -> Result<Vec<ManifestCids<T>>>;
     /// Sets the CIDs for all Chapters to the Manifest.
     ///
-    /// CID: v0 IPFS Content Identifiers (CID). CIDs are all paired with
+    /// ## Example
+    /// Pass a tuples of the form: (CID, volume_interface_id, chapter_interface_id).
+    /// These will be grouped together in the manifest.
+    ///
+    /// CID: v0 IPFS Content Identifiers (CID).
+    ///
+    /// CIDs are all paired with
     /// Volume and Chapter Ids so that their interface ids can be stored
-    /// alongside each CID. E.g., (CID, volume_interface_id, chapter_interface_id)
-    /// can be grouped in the manifest.
-    fn set_cids<U: AsRef<str> + Display>(
-        &mut self,
-        cids: &[(U, T::AssociatedVolumeId, T::AssociatedChapterId)],
-    );
+    /// alongside each CID.
+    fn set_cids<C>(&mut self, cids: &[(C, T::AssociatedVolumeId, T::AssociatedChapterId)])
+    where
+        C: AsRef<str> + Display;
 }
 
 pub struct ManifestCids<T: DataSpec> {

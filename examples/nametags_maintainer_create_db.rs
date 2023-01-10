@@ -3,9 +3,7 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{
-        choices::{DataKind, DirNature}
-    },
+    config::choices::{DataKind, DirNature},
     database::types::Todd,
     specs::nametags::NameTagsSpec,
 };

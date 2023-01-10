@@ -73,8 +73,8 @@ impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
                 let name = file.file_name();
                 let Some(address) = name.to_str() else {bail!("Couldn't read filename: {}", file.path().display())};
                 let record = NameTagsRecord {
-                    record_key: NameTagsRecordKey::from_address(address)?,
-                    record_value: data.into_record_value(),
+                    key: NameTagsRecordKey::from_address(address)?,
+                    value: data.into_record_value(),
                 };
                 records.push(record);
             }
