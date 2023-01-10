@@ -11,12 +11,14 @@ peer-to-peer distribution.
   - [Why does this library exist?](#why-does-this-library-exist)
   - [Principles](#principles)
   - [End Users](#end-users)
+  - [Architecture](#architecture)
   - [Examples](#examples)
-    - [Address appearances index](#address-appearances-index)
+  - [Databases](#databases)
   - [Database Maintainers](#database-maintainers)
   - [Extend the library for your data](#extend-the-library-for-your-data)
-  - [Manifest Coordination using a smart contract](#manifest-coordination-using-a-smart-contract)
+  - [Manifest coordination using a smart contract](#manifest-coordination-using-a-smart-contract)
   - [Pin by default to IPFS](#pin-by-default-to-ipfs)
+  - [Frequently Asked Questions](#frequently-asked-questions)
   - [Contributing](#contributing)
 
 ## Why does this library exist?
@@ -53,24 +55,45 @@ A minnow is a small fish &#x1F41F; that can be part of a larger collective.
 
 ## End Users
 
-A user &#x1F41F; can check the manifest &#x1F50D; and find which `Chapter` is right for
+Data is published in `Volumes`.
+
+&#x1F4D8; - A Volume
+
+Volumes are added over time:
+
+&#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; ... &#x1F4D8; <--- &#x1F4D8; - All Volumes (published so far).
+
+`Volumes` have `Chapters` for specific content. `Chapters` can be obtained individually.
+- &#x1F4D8; An example volume with 256 `Chapters`
+    - &#x1F4D5; `0x00` First chapter (1st)
+    - ...
+    - ...
+    - &#x1F4D9; `0xff` Last Chapter (256th)
+
+A `Manifest` &#x1F4DC; exists that lists all Chapters for all Volumes. A user can check the manifest and find which `Chapter` is right for
 them.
 
-First, look at the key (query string) and match it to a `ChapterId`.
+&#x1F4DC;&#x1F50D;&#x1F41F;
 
-- &#x1F4D5; `0x00...`
-- &#x1F4D7; `0x01...`
+The user starts with something they know (a key), for example, an address.
+For every key, only one Chapter will be important.
+- User (&#x1F41F;) key is an address: `0xf154...f00d`.
+- Data is divided into chapters using the first two characters of address (`Chapter` = `0xf1`)
+
+Visually:
+- &#x1F4D5; `0x00`
 - ...
-- &#x1F4D8; `0xf1...` <--- &#x1F41F; `0xf154...f00d` (only need this `Chapter`)
 - ...
-- &#x1F4D9; `0xff...`
+- &#x1F4D7; `0xf1` <--- &#x1F41F; `0xf154...f00d` (user only needs this `Chapter`)
+- ...
+- ...
+- &#x1F4D9; `0xff`
 
-Then download any `Chapter` that has that that `ChapterId`. This
-is automated (the library uses IPFS to get files using the CID in the manifest).
+For every published `Volume`, the user only downloads the right `Chapter` for their needs.
+The Min-know library automates this by using the CIDs in the manifest to find files on IPFS.
 
-This means obtaining a `Chapter` from every `Volume` that has ever been published.
-
-&#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; &#x1F4D8; ... <--- &#x1F4D8;
+This means obtaining one `Chapter` from every `Volume` that has ever been published.
+Hence, the user &#x1F41F; only needs 1/256th of the entire database.
 
 Once downloaded, the `Chapters` can be queried for useful information that
 the database contains.
@@ -78,6 +101,9 @@ the database contains.
 Optionally, they can also pin their `Chapters` to IPFS, which makes the data
 available from more sources.
 
+## Architecture
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ## Examples
 
@@ -87,64 +113,10 @@ All examples can be seen with the following command:
 cargo run --example
 ```
 
-See the [examples readme](./examples/README) for more information.
+See [./examples/README.md](./examples/README) for more information.
+## Databases
 
-### Address appearances index
-
-This is an index of which transactions an address was involved in.
-It is a derivative of the Unchained Index
-([https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf](https://trueblocks.io/papers/2022/file-format-spec-v0.40.0-beta.pdf)).
-That is to say, it is a reorganisation of the Unchained Index into
-a "Volumes and Chapters" publishing model.
-
-It can be used by user-facing software in post-EIP-4444 settings,
-where chain history is distributed among peers.
-
-It solves the problem of "what data should I request?" by
-providing the transaction ids involved with the user's address.
-Those transactions start the chain of requests for meaningful data.
-
-The examples below are the counterpart to an exploration into
-a tiny local wallet explorer. That exploration can be found in
-this blog post series: [https://perama-v.github.io/ethereum/protocol/poking](https://perama-v.github.io/ethereum/protocol/poking).
-
-Use of the the index can be seen in a demo application here:
-https://github.com/perama-v/PSR_B0943_10
-
-### Nametags
-
-This is a database consisting of names and tags (collectively "nametags") for addresses.
-In the source/raw data, each address is a file containing JSON-encoded data. For example:
-
-```json
-# cat ./data/0xffff03817c70c99a3eba035c4f851b2be6faee44
-{
-  "tags": [
-    "contract-deployer"
-  ],
-  "name": "HitBTC Token: Deployer"
-}
-```
-
-The size of this database is 2.7GB (720,000 addresses) and is likely a subset of the total data
-available from the community.
-The purpose of TODD-ify-ing the database is to allow small parts (2700/256 = 10MB)
-to be individually accessed. Additionally to enable new names and tags to be added to the
-database by different parties.
-
-Publishers/maintainers can add additional nametags for addresses. This takes an existing manifest
-and a directory of raw nametag files. The extend method in min-know will check each file
-and if the nametag is not already present, adds it to the next Volume to be published.
-
-- What does a user start with? (define a `RecordKey`)
-    - A address.
-- What does a user get? (define a `RecordValue`)
-    - Names and Tags
-- How can a `Volume` be divided (define a `Chapter` definition)
-    - By address starting characters (0x00 - 0xff), which equates to 256 cChapters per Volume.
-- How often should `Volumes` be pulbished (define a `Volume` cadence)
-    - Every 10,000 new address additions (E.g., there would be ~72 editions to date). 
-    - This includes appending new nametags to addresses already in the database.
+See [DATABASES.md](./DATABASES.md)
 
 ## Database Maintainers
 
@@ -155,19 +127,22 @@ This requires having a local "raw" source, which will be different for every
 data type. The library will use the methods in the `./extraction` module
 to convert the data.
 
-For example, the address-appearance-index is created and maintained by
+For example:
+- The address-appearance-index is created and maintained by
 having locally available Unchained Index chunk files (produced by
 trueblocks-core [https://github.com/TrueBlocks/trueblocks-core)](https://github.com/TrueBlocks/trueblocks-core)).
 They are parsed and reorganised to form the TODD-compliant format.
+- The nametags database is created and maintained by having individual files (one per address)
+that contain JSON-encoded names and tags.
 
 Other raw formats might be flat files containing data of various kinds.
 
 ## Extend the library for your data
 
-See the [getting started guide](./GETTING_STARTED.md) for how to use min-know for
+See [GETTING_STARTED.md](./GETTING_STARTED.md) for how to use min-know for
 a new database.
 
-## Manifest Coordination using a smart contract
+## Manifest coordination using a smart contract
 
 TODD-compilance is about coordination by default (e.g., having a Schelling point for
 a distributed database)
@@ -201,6 +176,10 @@ diatabase could automatically pin any Chapters they download. This could be an
 opt out process and could result in most users contributing significantly to the
 long term availability of data.
 
+## Frequently Asked Questions
+
+See [FAQ.md](./FAQ.md)
+
 ## Contributing
 
 This is a very experimental library that is mostly an exploration for
@@ -208,8 +187,13 @@ feasibility analysis.
 
 The library is not currently being used to deliver data to real end users.
 Though it is designed to be readily implemented for new data types
-(see [getting started](./GETTING_STARTED.md)) that can all share the
+(see [GETTING_STARTED.md](./GETTING_STARTED.md)) that can all share the
 same core of the library.
 
 Does the idea interest you? Are there data types you think this might be
-suited for? Raise an issue or get in touch :) @eth_worm
+suited for?
+
+- twitter: @eth_worm
+- github @perama-v
+
+Raise an issue or say hi &#x2764;
