@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs, path::Path};
+use std::{fmt::Display, fs, path::Path, str::from_utf8};
 
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
@@ -280,6 +280,22 @@ impl NameTagsRecordValue {
             tags: <_>::from(tag_vec),
         }
     }
+    /// Turns SSZ bytes into a vector of readable strings.
+    pub fn names_as_strings(&self) -> Result<Vec<String>> {
+        let mut s = vec![];
+        for n in self.names.to_vec() {
+            s.push(n.to_utf8_string()?)
+        }
+        Ok(s)
+    }
+    /// Turns SSZ bytes into a vector of readable strings.
+    pub fn tags_as_strings(&self) -> Result<Vec<String>> {
+        let mut s = vec![];
+        for t in self.tags.to_vec() {
+            s.push(t.to_utf8_string()?)
+        }
+        Ok(s)
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
@@ -293,6 +309,11 @@ impl Name {
             val: <_>::from(s.as_bytes().to_vec()),
         }
     }
+    pub fn to_utf8_string(&self) -> Result<String> {
+        let v = self.val.to_vec();
+        let s = from_utf8(&v)?;
+        Ok(s.to_string())
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
@@ -305,6 +326,11 @@ impl Tag {
         Tag {
             val: <_>::from(s.as_bytes().to_vec()),
         }
+    }
+    pub fn to_utf8_string(&self) -> Result<String> {
+        let v = self.val.to_vec();
+        let s = from_utf8(&v)?;
+        Ok(s.to_string())
     }
 }
 
