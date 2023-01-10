@@ -20,8 +20,8 @@ fn index_dir_readable() {
 fn source_files_present() {
     let path = dbg!(nametags_db().config.raw_source);
     let dir = fs::read_dir(path).unwrap();
-    // 5 Unchained Index sample files.
-    assert_eq!(dir.count(), 5);
+    // 2063 raw nametag sample files expected.
+    assert_eq!(dir.count(), 2063);
 }
 
 #[test]
@@ -53,14 +53,18 @@ fn sample_manifest_readable() {
 
 #[test]
 fn detects_known_nametags() {
-    // EF dev wallet with known txs in the sample data.
-    let known_count = 53;
+    // EF dev wallet with known tags in the sample data.
     let address = "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae";
     let db = nametags_db();
     let values = db.find(address).unwrap();
-    let mut appearances = vec![];
+    let mut names = vec![];
+    let mut tags = vec![];
     for v in values {
-        appearances.extend(v.value.to_vec());
+        names.extend(v.names_as_strings().unwrap());
+        tags.extend(v.tags_as_strings().unwrap());
     }
-    assert_eq!(known_count, appearances.len());
+    let expected_names = vec!["EthDev"];
+    assert_eq!(expected_names, names);
+    let expected_tags = vec!["ethereum-foundation"];
+    assert_eq!(expected_tags, tags);
 }
