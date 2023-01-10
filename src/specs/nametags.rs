@@ -16,7 +16,7 @@ use crate::{
         BytesForAddressChars, BytesPerAddress, MaxBytesPerName, MaxBytesPerTag, MaxNamesPerRecord,
         MaxTagsPerRecord, ENTRIES_PER_VOLUME,
     },
-    samples::{nametags::SAMPLE_FILENAMES, traits::SampleObtainerMethods},
+    samples::{nametags::{SAMPLE_FILENAMES, NameTagsSampleObtainer}, traits::SampleObtainerMethods},
     utils,
 };
 
@@ -336,23 +336,6 @@ impl Tag {
 
 impl RecordValueMethods for NameTagsRecordValue {
     fn as_strings(&self) -> Vec<String> {
-        todo!()
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsSampleObtainer;
-
-impl SampleObtainerMethods for NameTagsSampleObtainer {
-    fn raw_sample_filenames() -> Vec<&'static str> {
-        SAMPLE_FILENAMES.to_vec()
-    }
-
-    fn sample_volumes() -> Option<Vec<&'static str>> {
-        todo!()
-    }
-
-    fn get_raw_samples(dir: &Path) -> Result<()> {
         todo!()
     }
 }

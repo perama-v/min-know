@@ -1,3 +1,36 @@
+use std::path::Path;
+
+use serde::{Serialize, Deserialize};
+
+use anyhow::Result;
+
+use super::traits::SampleObtainerMethods;
+
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct NameTagsSampleObtainer;
+
+impl SampleObtainerMethods for NameTagsSampleObtainer {
+    fn raw_sample_filenames() -> Vec<&'static str> {
+        SAMPLE_FILENAMES.to_vec()
+    }
+
+    fn sample_volumes() -> Option<Vec<&'static str>> {
+        Some(SAMPLE_VOLUMES.to_vec())
+    }
+
+    fn get_raw_samples(dir: &Path) -> Result<()> {
+        todo!()
+    }
+}
+
+
+static SAMPLE_VOLUMES: [&str; 2] = [
+    "volume_000_000_000",
+    "volume_000_100_000"
+];
+
+
 /// The nametag files present in the ./data/samples/todd_nametags/raw_source_nametags dir.
 pub const SAMPLE_FILENAMES: [&str; 2063] = [
     "0x0000000000000000000000000000000000000000",
