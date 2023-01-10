@@ -23,7 +23,7 @@ impl SampleObtainerMethods for NameTagsSampleObtainer {
     }
 }
 
-static SAMPLE_VOLUMES: [&str; 2] = ["volume_000_000_000", "volume_000_100_000"];
+static SAMPLE_VOLUMES: [&str; 2] = ["nametags_from_000_000_000", "nametags_from_000_001_000"];
 
 /// The nametag files present in the ./data/samples/todd_nametags/raw_source_nametags dir.
 pub const SAMPLE_FILENAMES: [&str; 2063] = [

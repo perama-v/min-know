@@ -4,7 +4,7 @@ use ssz_types::typenum::{U1, U20, U256, U32};
 ///
 /// This is a count of addresses, and includes additions to
 /// addresses already present in the database.
-pub const ENTRIES_PER_VOLUME: u32 = 1000;
+pub const ENTRIES_PER_VOLUME: u32 = 1_000;
 
 /// Number of bytes required to describe a chapter. As defined in the spec.
 ///

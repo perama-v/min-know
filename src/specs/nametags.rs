@@ -182,16 +182,19 @@ pub struct NameTagsVolumeId {
     /// ## Example
     ///
     /// The first address in the first volume is 0, the first address in the
-    /// second volume is 10000 (ENTRIES_PER_VOLUME).
+    /// second volume is 1000 (ENTRIES_PER_VOLUME).
     pub first_address: u32,
 }
 
 impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
     fn from_interface_id(interface_id: &str) -> Result<Self> {
-        let first_address = interface_id
+        let Ok(first_address) = interface_id
             .trim_start_matches("nametags_from_")
             .replace('_', "")
-            .parse::<u32>()?;
+            .parse::<u32>()
+            else {
+                bail!("The string: {} was not formatted as expected.", interface_id)};
+
         Ok(NameTagsVolumeId { first_address })
     }
 

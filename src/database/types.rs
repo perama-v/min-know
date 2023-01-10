@@ -531,7 +531,7 @@ impl<T: DataSpec> Todd<T> {
                 self.full_transform()?;
                 return Ok(())
             };
-        // Chapter directories as (directory_name, filenames)
+        // Prepare an ID for every chapter (directory_name, filenames)
         let mut dirnames_and_files: Vec<(String, Vec<String>)> = vec![];
         for i in 0..T::NUM_CHAPTERS {
             let Ok(chapter_id) = T::AssociatedChapterId::nth_id(i as u32) else {
@@ -552,6 +552,11 @@ impl<T: DataSpec> Todd<T> {
             let chap_dir = self.config.data_dir.join(dirname);
             // Detect if any of the sample files are missing.
             if !chap_dir.contains_files(filenames)? {
+                info!(
+                    "The {} dir was missing one of: {:?}",
+                    chap_dir.display(),
+                    filenames
+                );
                 data_dir_complete = false
             }
         }
