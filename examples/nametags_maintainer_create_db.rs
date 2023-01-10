@@ -7,7 +7,7 @@ use min_know::{
     database::types::Todd,
     specs::nametags::NameTagsSpec,
 };
-/// Creates the index using local data.
+/// Creates the database using local data.
 fn main() -> Result<()> {
     // For full error backtraces with anyhow.
     env::set_var("RUST_BACKTRACE", "0");
