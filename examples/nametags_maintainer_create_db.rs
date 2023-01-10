@@ -16,7 +16,7 @@ fn main() -> Result<()> {
 
     let data_kind = DataKind::NameTags;
     let db: Todd<NameTagsSpec> = Todd::init(data_kind, DirNature::Sample)?;
-    db.full_transform()?;
+    db.full_transformation()?;
 
     Ok(())
 }

@@ -52,7 +52,6 @@ TODD-compliance is about:
 
 A minnow is a small fish &#x1F41F; that can be part of a larger collective.
 
-
 ## End Users
 
 Data is published in `Volumes`.
@@ -101,9 +100,25 @@ the database contains.
 Optionally, they can also pin their `Chapters` to IPFS, which makes the data
 available from more sources.
 
+## Interface
+
+Iteraction with the library occurs the `Todd` struct ([`database::types::Todd`]) through the methods:
+
+- For users:
+    - `obtain_relevant_data()`
+    - `check_completeness()`
+    - `find()`
+- For maintainers:
+    - `full_transformation()`
+    - `extend()`
+    - `repair_from_raw()`
+    - `generate_manifest()`
+    - `manifest()`
+
 ## Architecture
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md)
+See [./ARCHITECTURE.md](https://github.com/perama-v/min-know/blob/main/ARCHITECTURE.md)
+for how this library is structured.
 
 ## Examples
 
@@ -113,10 +128,12 @@ All examples can be seen with the following command:
 cargo run --example
 ```
 
-See [./examples/README.md](./examples/README) for more information.
+See [./examples/README.md](https://github.com/perama-v/min-know/blob/main/examples/README.md) for more information.
+
 ## Databases
 
-See [DATABASES.md](./DATABASES.md)
+See [./DATABASES.md](https://github.com/perama-v/min-know/blob/main/DATABASES.md) for
+different databases that have been implmemented in this library.
 
 ## Database Maintainers
 
@@ -139,7 +156,7 @@ Other raw formats might be flat files containing data of various kinds.
 
 ## Extend the library for your data
 
-See [GETTING_STARTED.md](./GETTING_STARTED.md) for how to use min-know for
+See [./GETTING_STARTED.md](https://github.com/perama-v/min-know/blob/main/GETTING_STARTED.md) for how to use min-know for
 a new database.
 
 ## Manifest coordination using a smart contract
@@ -178,7 +195,7 @@ long term availability of data.
 
 ## Frequently Asked Questions
 
-See [FAQ.md](./FAQ.md)
+See [./FAQ.md](https://github.com/perama-v/min-know/blob/main/FAQ.md)
 
 ## Contributing
 
@@ -186,11 +203,11 @@ This is a very experimental library that is mostly an exploration for
 feasibility analysis.
 
 The library is not currently being used to deliver data to real end users.
-Though it is designed to be readily implemented for new data types
-(see [GETTING_STARTED.md](./GETTING_STARTED.md)) that can all share the
+Though it is designed to be readily implemented f
+(see [./GETTING_STARTED.md](https://github.com/perama-v/min-know/blob/main/GETTING_STARTED.md)) that can all share the
 same core of the library.
 
-Does the idea interest you? Are there data types you think this might be
+Does the idea interest you? A
 suited for?
 
 - twitter: @eth_worm

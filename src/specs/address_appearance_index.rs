@@ -116,7 +116,7 @@ impl VolumeIdMethods<AAISpec> for AAIVolumeId {
     }
 }
 impl AAIVolumeId {
-    pub fn to_block_range(&self) -> Result<BlockRange> {
+    pub(crate) fn to_block_range(&self) -> Result<BlockRange> {
         BlockRange::new(self.oldest_block, BLOCKS_PER_VOLUME - 1 + self.oldest_block)
     }
 }
@@ -207,7 +207,7 @@ impl AAIChapter {
     ///
     /// This is used to minimise changes to the transformation/exctraction code during
     /// the move to generics and can replaced eventually.
-    pub fn from_relic(data: RelicChapter) -> Self {
+    pub(crate) fn from_relic(data: RelicChapter) -> Self {
         let chapter_id = AAIChapterId {
             val: <_>::from(data.address_prefix.to_vec()),
         };

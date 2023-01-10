@@ -62,7 +62,7 @@ impl Network {
         Ok(params)
     }
     /// Returns the name of the network.
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         match &self {
             Network::Mainnet(x) => &x.network_name,
             Network::Other(x) => &x.network_name,

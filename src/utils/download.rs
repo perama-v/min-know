@@ -12,7 +12,7 @@ Downloads files to a specified directory concurrently.
 The urls and corresponding filenames must be in the correct order.
 ## Example
 The following can be executed within a non-async function.
-```no_run
+```ignore
 use std::path::PathBuf;
 
 use min_know::utils::download::{download_files, DownloadTask};

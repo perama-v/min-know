@@ -84,10 +84,7 @@ fn detects_known_txs() {
 fn sample_header_sample_ok() {
     let db = aai_db();
     let index_path = db.config.raw_source.join("011283653-011286904.bin");
-    let target = BlockRange {
-        old: 11_200_000,
-        new: 11_300_000,
-    };
+    let target = BlockRange::new(11_200_000, 11_300_000).unwrap();
     let _uf = UnchainedFile::new(index_path, target).unwrap();
 }
 
@@ -99,10 +96,7 @@ fn sample_header_local_ok() {
     let local_example_dir_raw = db.config.local_sample_raw_source();
     // Look for this file:
     let index_path = local_example_dir_raw.join("011283653-011286904.bin");
-    let target = BlockRange {
-        old: 11_200_000,
-        new: 11_300_000,
-    };
+    let target = BlockRange::new(11_200_000, 11_300_000).unwrap();
     let _uf = UnchainedFile::new(index_path, target).unwrap();
 }
 

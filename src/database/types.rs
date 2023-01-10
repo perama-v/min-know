@@ -1,16 +1,16 @@
-use anyhow::{anyhow, Context, Result};
-use reqwest::Url;
 use std::{
     fmt::Debug,
     fs,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-use tokio::runtime::Runtime;
 
+use anyhow::{anyhow, Context, Result};
 use log::{debug, error, info, warn};
 use rayon::prelude::*;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Runtime;
 
 use crate::{
     config::{
@@ -58,7 +58,7 @@ impl<T: DataSpec> Todd<T> {
     /// ## Example
     /// ```ignore
     /// let mut db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
-    /// db.full_transform()?;
+    /// db.full_transformation()?;
     /// ```
     /// ## Algorithm
     /// Relies on the existence of an Extractor method that each database must implement.
@@ -68,7 +68,7 @@ impl<T: DataSpec> Todd<T> {
     /// The returned Chapter is then saved.
     /// This is repeated for all possible Chapters and may occur in parallel.
     ///
-    pub fn full_transform(&self) -> Result<()> {
+    pub fn full_transformation(&self) -> Result<()> {
         let volume_ids = &T::get_all_volume_ids(&self.config.raw_source)?;
         let chapter_ids = &T::get_all_chapter_ids()?;
         self.create_chapter_combinations(volume_ids, chapter_ids)?;
@@ -137,7 +137,7 @@ impl<T: DataSpec> Todd<T> {
     ///
     /// Every combination of is created.
     ///
-    /// Used by self.full_transform() and self.extend().
+    /// Used by self.full_transformation() and self.extend().
     fn create_chapter_combinations(
         &self,
         volume_ids: &[T::AssociatedVolumeId],
@@ -159,7 +159,7 @@ impl<T: DataSpec> Todd<T> {
     }
     /// Creates specific Chapters using the VolumeIds/ChapterIds provided.
     ///
-    /// Used by self.repair() and indirectly by self.full_transform() and self.extend().
+    /// Used by self.repair() and indirectly by self.full_transformation() and self.extend().
     fn create_specific_chapters(
         &self,
         ids: &[(&T::AssociatedVolumeId, &T::AssociatedChapterId)],
@@ -518,7 +518,7 @@ impl<T: DataSpec> Todd<T> {
 
         let Some(volume_interface_ids) = volume_interface_ids else {
             info!("No sample filenames provided: creating samples from raw data.");
-            self.full_transform()?;
+            self.full_transformation()?;
             return Ok(())
         };
         let volume_ids = volume_interface_ids
@@ -528,7 +528,7 @@ impl<T: DataSpec> Todd<T> {
 
         let Ok(volume_ids) = volume_ids else {
                 warn!("Couldn't derive VolumeId from provided interface id: skipping check for existing samples.");
-                self.full_transform()?;
+                self.full_transformation()?;
                 return Ok(())
             };
         // Prepare an ID for every chapter (directory_name, filenames)
@@ -536,7 +536,7 @@ impl<T: DataSpec> Todd<T> {
         for i in 0..T::NUM_CHAPTERS {
             let Ok(chapter_id) = T::AssociatedChapterId::nth_id(i as u32) else {
                 warn!("Couldn't derive nth ChapterId: skipping check for existing samples.");
-                self.full_transform()?;
+                self.full_transformation()?;
                 return Ok(())
             };
             let mut filenames: Vec<String> = vec![];
@@ -583,7 +583,7 @@ impl<T: DataSpec> Todd<T> {
             return Ok(());
         } else {
             info!("Local directory does not contain sample files: creating from raw data.");
-            self.full_transform()?;
+            self.full_transformation()?;
         }
         Ok(())
     }

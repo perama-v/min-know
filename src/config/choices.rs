@@ -32,7 +32,7 @@ pub struct PathPair {
 }
 
 impl DataKind {
-    pub fn as_string(&self) -> &str {
+    pub(crate) fn as_string(&self) -> &str {
         match self {
             DataKind::AddressAppearanceIndex(_) => "address_appearance_index",
             DataKind::Sourcify => "sourcify",
@@ -41,12 +41,12 @@ impl DataKind {
         }
     }
     /// Returns the data kind as a stirng starting with "todd_".
-    pub fn as_todd_string(&self) -> String {
+    pub(crate) fn as_todd_string(&self) -> String {
         format!("todd_{}", self.as_string())
     }
     /// The interface ID is the database kind in string form by default.
     /// Some databases may add additional parameters.
-    pub fn interface_id(&self) -> String {
+    pub(crate) fn interface_id(&self) -> String {
         let db_name = self.as_string();
         match self {
             DataKind::AddressAppearanceIndex(network) => {
@@ -55,13 +55,13 @@ impl DataKind {
             _ => db_name.to_string(),
         }
     }
-    pub fn raw_source_dir_name(&self) -> String {
+    pub(crate) fn raw_source_dir_name(&self) -> String {
         format!("raw_source_{}", self.interface_id())
     }
     /// Returns the inner parameter within DataKind (if present) as a string.
     ///
     /// E.g., AddressAppearanceIndex("mainnet") returns "mainnet".
-    pub fn params_as_string(&self) -> Option<&str> {
+    pub(crate) fn params_as_string(&self) -> Option<&str> {
         match self {
             DataKind::AddressAppearanceIndex(network) => Some(network.name()),
             _ => None,
@@ -71,7 +71,7 @@ impl DataKind {
     ///
     /// This directory will contain the index directory (which contains chapter directories).
     /// Conforms to the `ProjectDirs.data_dir()` schema in the Directories crate.
-    pub fn platform_directory(&self) -> Result<PathBuf> {
+    pub(crate) fn platform_directory(&self) -> Result<PathBuf> {
         let proj = ProjectDirs::from("", "", &self.as_todd_string())
             .ok_or_else(|| anyhow!("Could not access env var (e.g., $HOME) to set up project."))?;
         Ok(proj.data_dir().to_path_buf())
@@ -82,7 +82,7 @@ impl DirNature {
     /// Creates a config, according to the database kind.
     ///
     /// Combines the DataKind and DirNature enums to get specific dir paths and settings.
-    pub fn to_config(self, data_kind: DataKind) -> Result<ConfigStruct> {
+    pub(crate) fn to_config(self, data_kind: DataKind) -> Result<ConfigStruct> {
         let config = match self {
             DirNature::Sample => self.sample_config(data_kind)?,
             DirNature::Default => self.default_config(data_kind)?,

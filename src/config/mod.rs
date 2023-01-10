@@ -5,4 +5,4 @@
 //! placed here.
 pub mod address_appearance_index;
 pub mod choices;
-pub mod dirs;
+pub(crate) mod dirs;

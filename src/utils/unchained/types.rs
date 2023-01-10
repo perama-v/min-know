@@ -1,8 +1,9 @@
-use anyhow::{anyhow, Result};
-use log::debug;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
+
+use anyhow::{anyhow, Result};
+use log::debug;
 
 use super::{
     constants::{AD_ENTRY, AP_ENTRY},
@@ -38,10 +39,7 @@ use min_know::{
 let data_kind = DataKind::AddressAppearanceIndex(Network::default());
 let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
 
-let desired_blocks = BlockRange {
-    old: 0,
-    new: 16_000_000,
-};
+let desired_blocks = BlockRange::new(0, 16_000_000)?;
 let chunk_files: ChunksDir = ChunksDir::new(&db.config.raw_source)?;
 let Some(relevant_files) = chunk_files.for_range(&desired_blocks) else {
     bail!("No relevant files")};
@@ -63,13 +61,13 @@ assert_eq!(sum, 6204);
 ```
 */
 pub struct UnchainedFile {
-    pub path: PathBuf,
-    pub reader: BufReader<File>,
-    pub header: Header,
-    pub body: Body,
-    pub present: BlockRange,
-    pub desired: BlockRange,
-    pub contains_unwanted_blocks: bool,
+    pub(crate) path: PathBuf,
+    pub(crate) reader: BufReader<File>,
+    pub(crate) header: Header,
+    pub(crate) body: Body,
+    pub(crate) present: BlockRange,
+    pub(crate) desired: BlockRange,
+    pub(crate) contains_unwanted_blocks: bool,
     pub parsed: Vec<AddressData>,
 }
 
@@ -224,7 +222,7 @@ impl BlockRange {
     }
 
     /// True if there are any common blocks for two ranges.
-    pub fn intersection_exists(&self, other: &BlockRange) -> bool {
+    pub(crate) fn intersection_exists(&self, other: &BlockRange) -> bool {
         /*
         Start can't come after end of other.
         End can't come after start of other.End can't comex1 <= y2 && y1 <= x2

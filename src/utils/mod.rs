@@ -1,5 +1,5 @@
-pub mod download;
-pub mod ipfs;
-pub mod string;
-pub mod system;
+pub(crate) mod download;
+pub(crate) mod ipfs;
+pub(crate) mod string;
+pub(crate) mod system;
 pub mod unchained;

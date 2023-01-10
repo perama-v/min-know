@@ -138,7 +138,7 @@ pub trait DataSpec: Sized {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
-pub enum SpecId {
+pub(crate) enum SpecId {
     #[default]
     AddressAppearanceIndex,
     Sourcify,
@@ -364,7 +364,7 @@ pub trait ManifestMethods<T: DataSpec> {
 }
 
 pub struct ManifestCids<T: DataSpec> {
-    pub cid: String,
-    pub volume_id: T::AssociatedVolumeId,
-    pub chapter_id: T::AssociatedChapterId,
+    pub(crate) cid: String,
+    pub(crate) volume_id: T::AssociatedVolumeId,
+    pub(crate) chapter_id: T::AssociatedChapterId,
 }

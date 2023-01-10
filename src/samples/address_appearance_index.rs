@@ -5,8 +5,10 @@ use log::info;
 use reqwest::Url;
 use tokio::runtime::Runtime;
 
-use crate::samples::traits::SampleObtainerMethods;
-use crate::utils::download::{download_files, DownloadTask};
+use crate::{
+    samples::traits::SampleObtainerMethods,
+    utils::download::{download_files, DownloadTask},
+};
 
 pub struct AAISampleObtainer;
 
