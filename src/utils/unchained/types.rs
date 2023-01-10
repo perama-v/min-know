@@ -27,7 +27,7 @@ Transaction data meets the following requirements:
 ```no_run
 use anyhow::bail;
 use min_know::{
-    config::choices::{DataKind, DirNature},
+    config::{address_appearance_index::Network, choices::{DataKind, DirNature}},
     database::types::Todd,
     specs::address_appearance_index::AAISpec,
     utils::unchained::{
@@ -35,7 +35,8 @@ use min_know::{
         types::{BlockRange, UnchainedFile},
     },
 };
-let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
 
 let desired_blocks = BlockRange {
     old: 0,

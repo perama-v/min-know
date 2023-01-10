@@ -12,7 +12,7 @@ use crate::specs::traits::DataSpec;
 /// Each database has different algorithms for turning raw data into
 /// TODD-compliant data. Each database must provide a
 /// type that implements this trait.
-pub trait Extractor<T: DataSpec> {
+pub trait ExtractorMethods<T: DataSpec> {
     /// Returns a formed Chapter using raw data in the provided source directory.
     ///
     /// Returns `None` if the are no source files that match the provided IDs.
@@ -24,6 +24,8 @@ pub trait Extractor<T: DataSpec> {
     ) -> Result<Option<T::AssociatedChapter>>;
     /// Returns the VolumeId of the latest possible volume that can be made from
     /// the available raw data.
+    ///
+    /// Search the raw data and deduce the VolumeId for the last possible Volume.
     ///
     /// ## Example
     /// If volumes are produce every 100 units of data (0-99, 100-199, ...),

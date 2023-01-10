@@ -17,8 +17,8 @@ use crate::{
         choices::{DataKind, DirNature},
         dirs::ConfigStruct,
     },
-    extraction::traits::Extractor,
-    samples::traits::SampleObtainer,
+    extraction::traits::ExtractorMethods,
+    samples::traits::SampleObtainerMethods,
     specs::traits::{
         ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods,
     },
@@ -30,18 +30,23 @@ use crate::{
 };
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Todd<T: DataSpec> {
-    pub chapters: Vec<T::AssociatedChapter>,
+    chapters: Vec<T::AssociatedChapter>,
     pub config: ConfigStruct,
 }
 
 /// Implement generic methods common to all databases.
 impl<T: DataSpec> Todd<T> {
     /// Initialise the database library with the given configuration.
-    pub fn init(specification: DataKind, directories: DirNature) -> Result<Self> {
+    pub fn init(data_kind: DataKind, directories: DirNature) -> Result<Self> {
+        assert!(
+            T::spec_matches_input(&data_kind),
+            "DataKind does not match Spec type"
+        );
+
         // Use the spec to then get the DataConfig.
-        let config = directories.to_config(specification)?;
+        let config = directories.to_config(data_kind)?;
         Ok(Self {
             chapters: vec![],
             config,
@@ -143,8 +148,12 @@ impl<T: DataSpec> Todd<T> {
             volume_ids.len(),
             chapter_ids.len()
         );
-        let ids: Vec<(&T::AssociatedVolumeId, &T::AssociatedChapterId)> =
-            volume_ids.iter().zip(chapter_ids.iter()).collect();
+        let mut ids: Vec<(&T::AssociatedVolumeId, &T::AssociatedChapterId)> = vec![];
+        for v in volume_ids {
+            for c in chapter_ids {
+                ids.push((v, c))
+            }
+        }
         self.create_specific_chapters(&ids)?;
         Ok(())
     }
@@ -458,11 +467,12 @@ impl<T: DataSpec> Todd<T> {
     ```
     # use anyhow::Result;
     # use min_know::{
-    #    config::choices::{DataKind, DirNature},
+    #    config::{address_appearance_index::Network, choices::{DataKind, DirNature}},
     #    database::types::Todd,
     #    specs::address_appearance_index::AAISpec,
     # };
-    let db: Todd<AAISpec> = Todd::init(DataKind::default(), DirNature::Sample)?;
+    let data_kind = DataKind::AddressAppearanceIndex(Network::default());
+    let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
     db.get_sample_data()?;
     # Ok::<(), anyhow::Error>(())
     ```
@@ -479,8 +489,7 @@ impl<T: DataSpec> Todd<T> {
     /// Ensures that the unprocessed samples are either present or obtained.
     fn handle_raw_samples(&self) -> Result<()> {
         let raw_source_dir = &self.config.raw_source;
-        let local_example_dir_raw =
-            PathBuf::from("./data/samples").join(self.config.data_kind.raw_source_dir_name());
+        let local_example_dir_raw = self.config.local_sample_raw_source();
         let raw_sample_filenames = T::AssociatedSampleObtainer::raw_sample_filenames();
 
         if raw_source_dir.contains_files(&raw_sample_filenames)? {
@@ -503,8 +512,7 @@ impl<T: DataSpec> Todd<T> {
     /// directory (and copies if present), then attempts to processes from raw
     /// data.
     fn handle_database_samples(&self) -> Result<()> {
-        let example_dir_processed =
-            PathBuf::from("./data/samples").join(self.config.data_kind.interface_id());
+        let example_dir_processed = self.config.local_sample_data_dir();
 
         let volume_interface_ids = T::AssociatedSampleObtainer::sample_volumes();
 
@@ -523,7 +531,7 @@ impl<T: DataSpec> Todd<T> {
                 self.full_transform()?;
                 return Ok(())
             };
-        // Chapter directories as (directory_name, filenames)
+        // Prepare an ID for every chapter (directory_name, filenames)
         let mut dirnames_and_files: Vec<(String, Vec<String>)> = vec![];
         for i in 0..T::NUM_CHAPTERS {
             let Ok(chapter_id) = T::AssociatedChapterId::nth_id(i as u32) else {
@@ -544,6 +552,11 @@ impl<T: DataSpec> Todd<T> {
             let chap_dir = self.config.data_dir.join(dirname);
             // Detect if any of the sample files are missing.
             if !chap_dir.contains_files(filenames)? {
+                info!(
+                    "The {} dir was missing one of: {:?}",
+                    chap_dir.display(),
+                    filenames
+                );
                 data_dir_complete = false
             }
         }

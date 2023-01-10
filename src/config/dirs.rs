@@ -8,7 +8,7 @@ use crate::specs::traits::{ChapterIdMethods, DataSpec, VolumeIdMethods};
 
 use super::choices::{DataKind, DirNature};
 
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct ConfigStruct {
     /// Which directory type is being configured. E.g., Real vs sample data.
     pub dir_nature: DirNature,
@@ -96,4 +96,29 @@ impl ConfigStruct {
         }
         Ok(all_files)
     }
+    /// Gets the path of the local repository sample data.
+    fn local_sample_base_dir(&self) -> PathBuf {
+        PathBuf::from("./data/samples").join(self.data_kind.as_todd_string())
+    }
+    /// Gets the path of the local repository processed sample data.
+    pub fn local_sample_data_dir(&self) -> PathBuf {
+        self.local_sample_base_dir()
+            .join(self.data_kind.as_string())
+    }
+    /// Gets the path of the local repository raw sample data.
+    pub fn local_sample_raw_source(&self) -> PathBuf {
+        self.local_sample_base_dir()
+            .join(self.data_kind.raw_source_dir_name())
+    }
+}
+
+#[test]
+fn config_local_paths_correct_for_nametags() {
+    let config = DirNature::Sample.to_config(DataKind::NameTags).unwrap();
+    let raw = "/data/samples/todd_nametags/raw_source_nametags";
+    let path = dbg!(config.local_sample_raw_source());
+    assert!(path.to_str().unwrap().ends_with(raw));
+    let data = "/data/samples/todd_nametags/nametags";
+    let path = dbg!(config.local_sample_data_dir());
+    assert!(path.to_str().unwrap().ends_with(data));
 }

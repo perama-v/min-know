@@ -9,15 +9,16 @@ use ssz_types::{
     typenum::{U1073741824, U20},
     FixedVector, VariableList,
 };
-use web3::types::{BlockNumber, BlockId, TransactionId};
+use web3::types::{BlockId, BlockNumber, TransactionId};
 
 use crate::{
+    config::choices::DataKind,
     extraction::address_appearance_index::AAIExtractor,
     parameters::address_appearance_index::{
         MaxAddressesPerVolume, NumCommonBytes, BLOCKS_PER_VOLUME, NUM_CHAPTERS,
     },
     samples::address_appearance_index::AAISampleObtainer,
-    utils::unchained::types::BlockRange,
+    utils::{self, unchained::types::BlockRange},
 };
 
 use super::traits::*;
@@ -29,7 +30,7 @@ pub struct AAISpec {}
 impl DataSpec for AAISpec {
     const NUM_CHAPTERS: usize = NUM_CHAPTERS as usize;
 
-    const MAX_VOLUMES: usize = 1_000_000_000;
+    // const MAX_VOLUMES: usize = 1_000_000_000;
 
     type AssociatedVolumeId = AAIVolumeId;
 
@@ -49,8 +50,8 @@ impl DataSpec for AAISpec {
 
     type AssociatedManifest = AAIManifest;
 
-    fn spec_name() -> SpecId {
-        SpecId::AddressAppearanceIndex
+    fn spec_matches_input(data_kind: &DataKind) -> bool {
+        matches!(data_kind, DataKind::AddressAppearanceIndex(_))
     }
 
     fn spec_version() -> String {
@@ -61,10 +62,6 @@ impl DataSpec for AAISpec {
         String::from("https://github.com/perama-v/address-index/tree/main/address_appearance_index")
     }
 
-    fn num_chapters() -> usize {
-        Self::NUM_CHAPTERS
-    }
-    /// Gets the ChapterIds relevant for a key.
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId> {
@@ -73,7 +70,7 @@ impl DataSpec for AAISpec {
             val: <_>::from(bytes),
         })
     }
-    // Key is a hex string. Converts it to an ssz vector.
+
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
         Ok(AAIRecordKey {
@@ -90,11 +87,10 @@ pub struct AAIVolumeId {
 }
 impl VolumeIdMethods<AAISpec> for AAIVolumeId {
     fn interface_id(&self) -> String {
-        let mut name = format!("{:0>9}", self.oldest_block);
-        for i in [6, 3] {
-            name.insert(i, '_');
-        }
-        format!("volume_{}", name)
+        format!(
+            "volume_{}",
+            utils::string::num_as_triplet(self.oldest_block)
+        )
     }
     fn nth_id(n: u32) -> Result<Self> {
         // n=0, id=0
@@ -160,10 +156,6 @@ pub struct AAIChapter {
     pub records: Vec<AAIRecord>,
 }
 impl ChapterMethods<AAISpec> for AAIChapter {
-    fn get(self) -> Self {
-        self
-    }
-
     fn volume_id(&self) -> &AAIVolumeId {
         &self.volume_id
     }
@@ -195,8 +187,8 @@ impl ChapterMethods<AAISpec> for AAIChapter {
     fn filename(&self) -> String {
         format!(
             "{}_{}.ssz",
-            self.volume_id().interface_id(),
-            self.chapter_id().interface_id()
+            self.volume_id.interface_id(),
+            self.chapter_id.interface_id()
         )
     }
 
@@ -251,10 +243,6 @@ pub struct AAIRecord {
     pub value: AAIRecordValue,
 }
 impl RecordMethods<AAISpec> for AAIRecord {
-    fn get(&self) -> &Self {
-        self
-    }
-
     fn key(&self) -> &AAIRecordKey {
         &self.key
     }
@@ -268,11 +256,7 @@ impl RecordMethods<AAISpec> for AAIRecord {
 pub struct AAIRecordKey {
     pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
-impl RecordKeyMethods for AAIRecordKey {
-    fn get(self) -> Self {
-        self
-    }
-}
+impl RecordKeyMethods for AAIRecordKey {}
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
@@ -282,9 +266,6 @@ pub struct AAIRecordValue {
     pub value: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
 }
 impl RecordValueMethods for AAIRecordValue {
-    fn get(self) -> Self {
-        self
-    }
     /// Return a String representation of the contents of the RecordValue.
     fn as_strings(&self) -> Vec<String> {
         let mut s: Vec<String> = vec![];
@@ -403,7 +384,10 @@ impl ManifestMethods<AAISpec> for AAIManifest {
         Ok(result)
     }
 
-    fn set_cids<U: AsRef<str> + Display>(&mut self, cids: &[(U, AAIVolumeId, AAIChapterId)]) {
+    fn set_cids<C>(&mut self, cids: &[(C, AAIVolumeId, AAIChapterId)])
+    where
+        C: AsRef<str> + Display,
+    {
         for (cid, volume_id, chapter_id) in cids {
             let chapter = AAIManifestChapter {
                 volume_interface_id: volume_id.interface_id(),

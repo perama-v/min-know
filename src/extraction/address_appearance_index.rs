@@ -18,11 +18,11 @@ use crate::{
     },
 };
 
-use super::traits::Extractor;
+use super::traits::ExtractorMethods;
 
 pub struct AAIExtractor {}
 
-impl Extractor<AAISpec> for AAIExtractor {
+impl ExtractorMethods<AAISpec> for AAIExtractor {
     fn chapter_from_raw(
         chapter_id: &AAIChapterId,
         volume_id: &AAIVolumeId,

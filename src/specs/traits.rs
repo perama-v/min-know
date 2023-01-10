@@ -5,8 +5,9 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::extraction::traits::Extractor;
-use crate::samples::traits::SampleObtainer;
+use crate::config::choices::DataKind;
+use crate::extraction::traits::ExtractorMethods;
+use crate::samples::traits::SampleObtainerMethods;
 
 // Placeholder for the real trait.
 pub trait SszDecode {}
@@ -72,7 +73,7 @@ impl<'a, T> BasicUsefulTraits<'a> for T where
 /// - raw_value (unformatted record_value)
 pub trait DataSpec: Sized {
     const NUM_CHAPTERS: usize;
-    const MAX_VOLUMES: usize;
+
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
 
     type AssociatedChapter: ChapterMethods<Self> + for<'a> BasicUsefulTraits<'a>;
@@ -83,15 +84,15 @@ pub trait DataSpec: Sized {
     type AssociatedRecordKey: RecordKeyMethods + for<'a> BasicUsefulTraits<'a>;
     type AssociatedRecordValue: RecordValueMethods + for<'a> BasicUsefulTraits<'a>;
 
-    type AssociatedExtractor: Extractor<Self>;
-    type AssociatedSampleObtainer: SampleObtainer;
+    type AssociatedExtractor: ExtractorMethods<Self>;
+    type AssociatedSampleObtainer: SampleObtainerMethods;
 
     type AssociatedManifest: ManifestMethods<Self> + for<'a> BasicUsefulTraits<'a>;
-    /// Returns the enum variant that represents the spec for the database.
+    /// Checks if the enum variant matches the spec for the database.
     ///
     /// This is used in coordinating platform-specific directories. It ensures
     /// that all implementations of the spec also create a new enum variant.
-    fn spec_name() -> SpecId;
+    fn spec_matches_input(data_kind: &DataKind) -> bool;
     /// Returns the version of the specification for the particular database.
     fn spec_version() -> String;
     /// Returns the number of Chapters that the spec defines.
@@ -120,10 +121,19 @@ pub trait DataSpec: Sized {
             .map(|n| Self::AssociatedVolumeId::nth_id(n))
             .collect()
     }
+    /// Gets the ChapterId relevant for a key.
+    ///
+    /// ## Example
+    /// An address 0xabcd...1234 might return the ChapterId matching "ab"
+    ///
     fn record_key_to_chapter_id(
         record_key: &Self::AssociatedRecordKey,
     ) -> Result<Self::AssociatedChapterId>;
-    /// Coerces record_key into the type required for the spec.
+    /// Coerces a key string into the RecordKey type required for the spec.
+    ///
+    /// ## Example
+    /// If the key is a hex string, it might convert that to
+    /// a struct capable of ssz encoding.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>;
 }
 
@@ -183,11 +193,27 @@ pub trait VolumeIdMethods<T: DataSpec>: Sized {
     /// If there are 100 volumes, then:
     /// - n=0 returns the first VolumeId
     /// - n=99 returns the last VolumeId
+    /// ```sh
+    /// n=0, id=0
+    /// n=1, id=100_000
+    /// n=2, id=200_000
+    /// let oldest_block = n * BLOCKS_PER_VOLUME;
+    /// ```
     fn nth_id(n: u32) -> Result<T::AssociatedVolumeId>;
     /// The zero-based position for the given VolumeId.
     ///
     /// If volume ids are placed in lexicographical order, corresponds to
     /// the position in that sequence. First position is n=0.
+    ///
+    /// ## Example
+    /// Here the calculation is simply to divide by the number of blocks
+    /// per Volume:
+    /// ```sh
+    /// id=0, n=0
+    /// id=100_000, n=1
+    /// id=200_000, n=2
+    /// -> self.oldest_block / BLOCKS_PER_VOLUME
+    /// ```
     fn is_nth(&self) -> Result<u32>;
     /// Gets all the VolumeIds earlier than and including the given VolumeId.
     ///
@@ -235,22 +261,16 @@ pub trait ChapterIdMethods<T: DataSpec>: Sized {
 }
 
 /// Methods that RecordKeys must implement.
-pub trait RecordKeyMethods {
-    /// Returns the key struct that implements this method.
-    fn get(self) -> Self;
-}
+pub trait RecordKeyMethods {}
+
 /// Methods that RecordValues must implement.
 pub trait RecordValueMethods {
-    /// Returns the value struct that implements this method.
-    fn get(self) -> Self;
     /// Returns the value, with all elements as Strings in a vector.
     fn as_strings(&self) -> Vec<String>;
 }
 
 /// Marker trait.
 pub trait RecordMethods<T: DataSpec> {
-    /// Returns the key struct that implements this method.
-    fn get(&self) -> &Self;
     /// Get the RecordKey of the Record.
     fn key(&self) -> &T::AssociatedRecordKey;
     /// Get the RecordValue of the Record.
@@ -268,8 +288,6 @@ pub trait RecordMethods<T: DataSpec> {
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
 pub trait ChapterMethods<T: DataSpec> {
-    /// Returns the key struct that implements this method.
-    fn get(self) -> Self;
     /// Get the VolumeId.
     ///
     /// The method likely just returns the relevant struct member, which is
@@ -331,14 +349,18 @@ pub trait ManifestMethods<T: DataSpec> {
     fn cids(&self) -> Result<Vec<ManifestCids<T>>>;
     /// Sets the CIDs for all Chapters to the Manifest.
     ///
-    /// CID: v0 IPFS Content Identifiers (CID). CIDs are all paired with
+    /// ## Example
+    /// Pass a tuples of the form: (CID, volume_interface_id, chapter_interface_id).
+    /// These will be grouped together in the manifest.
+    ///
+    /// CID: v0 IPFS Content Identifiers (CID).
+    ///
+    /// CIDs are all paired with
     /// Volume and Chapter Ids so that their interface ids can be stored
-    /// alongside each CID. E.g., (CID, volume_interface_id, chapter_interface_id)
-    /// can be grouped in the manifest.
-    fn set_cids<U: AsRef<str> + Display>(
-        &mut self,
-        cids: &[(U, T::AssociatedVolumeId, T::AssociatedChapterId)],
-    );
+    /// alongside each CID.
+    fn set_cids<C>(&mut self, cids: &[(C, T::AssociatedVolumeId, T::AssociatedChapterId)])
+    where
+        C: AsRef<str> + Display;
 }
 
 pub struct ManifestCids<T: DataSpec> {

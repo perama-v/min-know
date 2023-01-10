@@ -153,6 +153,10 @@ impl DataSpec for MyDataSpec {
     /* snip */
 }
 ```
+
+The easiest way to do this is to replace "`Associated`" with "`MyData`", where MyData
+will be unique to your database.
+
 ## Provide implementations for types
 
 Then continue to be guided as to what each struct requires. Here we are told
@@ -160,7 +164,7 @@ that `MyDataChapter` needs `ChapterMethods`.
 ```sh
 the trait `specs::traits::ChapterMethods<MyDataSpec>` is not implemented for `MyDataChapter`
 ```
-Provide the implementation:
+Provide the implementation by using QuickFix e.g., select "Generate trait impl for MyDataChapter"
 ```rs
 // In ./specs/my_data_spec.rs
 use super::traits::{DataSpec, ChapterMethods};
@@ -172,6 +176,18 @@ pub struct MyDataChapter {}
 impl ChapterMethods<MyDataSpec> for MyDataChapter {}
 /* snip */
 ```
+Some `XyzMethods` impls require the "`<MyDataSpec>`", and rust analyzer will communicate this with
+the following phrase:  missing generics for trait `specs::traits::XyzMethods`"
+
+```rs
+// Before: "Missing generics for trait specs::traits::ChapterMethods"
+use super::traits::ChapterMethods;
+impl ChapterMethods for MyDataChapter {}
+
+//After
+impl ChapterMethods<MyDataSpec> for MyDataChapter {}
+```
+
 Then allow the methods to be auto completed using Quick Fix. Here we can see that
 chapters require methods for getting a chapter id. Hovering over the function
 gives you then documentation for what the function is supposed to do. The
@@ -186,13 +202,21 @@ impl ChapterMethods<MyDataSpec> for MyDataChapter {
     /* snip */
 
 ```
+
 ## Replace `Associated*` descriptive types with actual types
 
 In `./specs/my_data_spec.rs`, anything that starts with `Associated*` can
 be replaced with an actual type. After creating the types for MyDataSpec
 and then implementing their required methods (auto-fill), replace
-the descriptive types with the actual types. Both are technicall correct,
+the descriptive types with the actual types. Both are technically correct,
 but the latter are much easier to read.
+
+The easiest way to do this is to generate all the types and implementations first,
+then en-masse find-and-replace the following strings:
+
+- "`<MyDataSpec as DataSpec>::Associated`" -> `MyData`
+- "`T::Associated`" -> `MyData`
+- (less commonly) "`T`" -> "`MyDataSpec`"
 
 For example, the value being returned here is a little hard to read.
 
