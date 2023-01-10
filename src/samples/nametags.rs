@@ -1,11 +1,10 @@
 use std::path::Path;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use anyhow::Result;
 
 use super::traits::SampleObtainerMethods;
-
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NameTagsSampleObtainer;
@@ -19,17 +18,12 @@ impl SampleObtainerMethods for NameTagsSampleObtainer {
         Some(SAMPLE_VOLUMES.to_vec())
     }
 
-    fn get_raw_samples(dir: &Path) -> Result<()> {
-        todo!()
+    fn get_raw_samples(_dir: &Path) -> Result<()> {
+        todo!("Could fetch samples from the full raw data source if needed.")
     }
 }
 
-
-static SAMPLE_VOLUMES: [&str; 2] = [
-    "volume_000_000_000",
-    "volume_000_100_000"
-];
-
+static SAMPLE_VOLUMES: [&str; 2] = ["volume_000_000_000", "volume_000_100_000"];
 
 /// The nametag files present in the ./data/samples/todd_nametags/raw_source_nametags dir.
 pub const SAMPLE_FILENAMES: [&str; 2063] = [

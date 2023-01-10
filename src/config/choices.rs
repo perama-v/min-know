@@ -98,7 +98,7 @@ impl DirNature {
             base_dir_nature_dependent: project.clone(),
             raw_source: project.join(data_kind.raw_source_dir_name()),
             data_dir: project.join(data_kind.interface_id()),
-            data_kind: data_kind,
+            data_kind,
         })
     }
     /// Used for common pattern of sample config setup.
@@ -106,19 +106,19 @@ impl DirNature {
         let project = data_kind.platform_directory()?;
         Ok(ConfigStruct {
             dir_nature: self,
-            base_dir_nature_dependent: project.clone().join("samples"),
+            base_dir_nature_dependent: project.join("samples"),
             raw_source: project
                 .join("samples")
                 .join(data_kind.raw_source_dir_name()),
             data_dir: project.join("samples").join(data_kind.interface_id()),
-            data_kind: data_kind,
+            data_kind,
         })
     }
     /// Used for common pattern of custom config setup.
     fn custom_config(&self, data_kind: DataKind, paths: &PathPair) -> Result<ConfigStruct> {
-        let raw_source = paths.raw_source.join(&data_kind.interface_id());
+        let raw_source = paths.raw_source.join(data_kind.interface_id());
         let base_dir_nature_dependent = paths.processed_data_dir.clone();
-        let data_dir = paths.processed_data_dir.join(&data_kind.interface_id());
+        let data_dir = paths.processed_data_dir.join(data_kind.interface_id());
         Ok(ConfigStruct {
             dir_nature: self.clone(),
             base_dir_nature_dependent,

@@ -51,10 +51,7 @@ impl DataSpec for AAISpec {
     type AssociatedManifest = AAIManifest;
 
     fn spec_matches_input(data_kind: &DataKind) -> bool {
-        match data_kind {
-            DataKind::AddressAppearanceIndex(_) => true,
-            _ => false,
-        }
+        matches!(data_kind, DataKind::AddressAppearanceIndex(_))
     }
 
     fn spec_version() -> String {

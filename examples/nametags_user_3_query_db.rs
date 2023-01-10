@@ -3,15 +3,9 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{
-        address_appearance_index::Network,
-        choices::{DataKind, DirNature},
-    },
+    config::choices::{DataKind, DirNature},
     database::types::Todd,
-    specs::{
-        address_appearance_index::{AAIAppearanceTx, AAISpec},
-        nametags::{Name, NameTagsSpec, Tag},
-    },
+    specs::nametags::NameTagsSpec,
 };
 
 /// Uses local index data to extract transaction identifiers important for a given address.

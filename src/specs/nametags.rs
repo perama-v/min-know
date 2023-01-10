@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs, path::Path, str::from_utf8};
+use std::{fmt::Display, str::from_utf8};
 
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
@@ -8,15 +8,12 @@ use ssz_types::{FixedVector, VariableList};
 
 use crate::{
     config::choices::DataKind,
-    extraction::{
-        nametags::{NameTagsExtractor, RawValue},
-        traits::ExtractorMethods,
-    },
+    extraction::nametags::NameTagsExtractor,
     parameters::nametags::{
         BytesForAddressChars, BytesPerAddress, MaxBytesPerName, MaxBytesPerTag, MaxNamesPerRecord,
         MaxTagsPerRecord, ENTRIES_PER_VOLUME,
     },
-    samples::{nametags::{SAMPLE_FILENAMES, NameTagsSampleObtainer}, traits::SampleObtainerMethods},
+    samples::nametags::NameTagsSampleObtainer,
     utils,
 };
 
@@ -48,10 +45,7 @@ impl DataSpec for NameTagsSpec {
     type AssociatedManifest = NameTagsManifest;
 
     fn spec_matches_input(data_kind: &DataKind) -> bool {
-        match data_kind {
-            DataKind::NameTags => true,
-            _ => false,
-        }
+        matches!(data_kind, DataKind::NameTags)
     }
 
     fn spec_version() -> String {
@@ -174,7 +168,7 @@ impl NameTagsChapterId {
     /// Determines if leading string matches the Chapter.
     pub fn matches(&self, leading: &str) -> bool {
         let s = self.as_str();
-        s.starts_with(&leading)
+        s.starts_with(leading)
     }
 }
 
@@ -283,7 +277,7 @@ impl NameTagsRecordValue {
     /// Turns SSZ bytes into a vector of readable strings.
     pub fn names_as_strings(&self) -> Result<Vec<String>> {
         let mut s = vec![];
-        for n in self.names.to_vec() {
+        for n in &self.names {
             s.push(n.to_utf8_string()?)
         }
         Ok(s)
@@ -291,7 +285,7 @@ impl NameTagsRecordValue {
     /// Turns SSZ bytes into a vector of readable strings.
     pub fn tags_as_strings(&self) -> Result<Vec<String>> {
         let mut s = vec![];
-        for t in self.tags.to_vec() {
+        for t in &self.tags {
             s.push(t.to_utf8_string()?)
         }
         Ok(s)

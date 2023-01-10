@@ -3,15 +3,14 @@ use std::{
     path::Path,
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::{
     parameters::nametags::ENTRIES_PER_VOLUME,
     specs::nametags::{
-        Name, NameTagsChapter, NameTagsChapterId, NameTagsRecord, NameTagsRecordKey,
-        NameTagsRecordValue, NameTagsSpec, NameTagsVolumeId, Tag,
+        NameTagsChapter, NameTagsChapterId, NameTagsRecord, NameTagsRecordKey, NameTagsRecordValue,
+        NameTagsSpec, NameTagsVolumeId,
     },
 };
 
@@ -79,7 +78,7 @@ impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
                 records.push(record);
             }
         }
-        if records.len() == 0 {
+        if records.is_empty() {
             return Ok(None);
         }
         // Make and return NameTagsChapter{}
@@ -108,7 +107,7 @@ fn first_inside_last(count: u32, capacity: u32) -> Result<u32> {
         )
     }
     let complete_vols = count / capacity;
-    let first_address = (capacity * (complete_vols - 1)) as u32;
+    let first_address = capacity * (complete_vols - 1);
     Ok(first_address)
 }
 
