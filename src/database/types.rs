@@ -148,8 +148,12 @@ impl<T: DataSpec> Todd<T> {
             volume_ids.len(),
             chapter_ids.len()
         );
-        let ids: Vec<(&T::AssociatedVolumeId, &T::AssociatedChapterId)> =
-            volume_ids.iter().zip(chapter_ids.iter()).collect();
+        let mut ids: Vec<(&T::AssociatedVolumeId, &T::AssociatedChapterId)> = vec![];
+        for v in volume_ids {
+            for c in chapter_ids {
+                ids.push((v, c))
+            }
+        }
         self.create_specific_chapters(&ids)?;
         Ok(())
     }
