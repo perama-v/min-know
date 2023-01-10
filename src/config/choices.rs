@@ -26,9 +26,9 @@ pub enum DirNature {
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub struct PathPair {
     /// Path for unprocessed data.
-    pub raw_source: PathBuf,
+    pub raw_source: Option<PathBuf>,
     /// Path for processed, formatted, data.
-    pub processed_data_dir: PathBuf,
+    pub processed_data_dir: Option<PathBuf>,
 }
 
 impl DataKind {
@@ -115,10 +115,19 @@ impl DirNature {
         })
     }
     /// Used for common pattern of custom config setup.
+    ///
+    /// Use may pass both, one or none for custom paths in PathPair.
     fn custom_config(&self, data_kind: DataKind, paths: &PathPair) -> Result<ConfigStruct> {
-        let raw_source = paths.raw_source.join(data_kind.interface_id());
-        let base_dir_nature_dependent = paths.processed_data_dir.clone();
-        let data_dir = paths.processed_data_dir.join(data_kind.interface_id());
+        let project = data_kind.platform_directory()?;
+        let base_dir_nature_dependent = match paths.processed_data_dir.clone() {
+            Some(p) => p,
+            None => project.clone(),
+        };
+        let raw_source = match paths.raw_source.clone() {
+            Some(p) => p,
+            None => project.join(data_kind.raw_source_dir_name()),
+        };
+        let data_dir = base_dir_nature_dependent.join(data_kind.interface_id().clone());
         Ok(ConfigStruct {
             dir_nature: self.clone(),
             base_dir_nature_dependent,
@@ -165,13 +174,13 @@ fn config_custom_paths_correct_for_nametags() {
     let src = "source_dir/test_source_subdir";
     let dst = "dest_dir/test_dest_subdir";
     let paths = PathPair {
-        raw_source: PathBuf::from(src),
-        processed_data_dir: PathBuf::from(dst),
+        raw_source: Some(PathBuf::from(src)),
+        processed_data_dir: Some(PathBuf::from(dst)),
     };
     let config = dbg!(DirNature::Custom(paths)
         .to_config(DataKind::NameTags)
         .unwrap());
-    let raw = format!("{}/nametags", src);
+    let raw = format!("{}", src);
     assert!(config.raw_source.to_str().unwrap().ends_with(&raw));
     let data = format!("{}/nametags", dst);
     assert!(config.data_dir.to_str().unwrap().ends_with(&data));
