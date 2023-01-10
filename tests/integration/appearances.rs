@@ -101,8 +101,7 @@ fn sample_header_local_ok() {
     println!("Env is: {:?}", std::env::current_dir());
     // Run test from this dir:
     let db = aai_db();
-    let local_example_dir_raw =
-        PathBuf::from("./data/samples").join(db.config.data_kind.raw_source_dir_name());
+    let local_example_dir_raw = db.config.local_sample_raw_source();
     // Look for this file:
     let index_path = local_example_dir_raw.join("011283653-011286904.bin");
     let target = BlockRange {

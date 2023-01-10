@@ -346,7 +346,7 @@ pub struct NameTagsManifest {
     pub schemas: String,
     pub database_interface_id: String,
     pub latest_volume_identifier: String,
-    pub chapter_metadata: Vec<NameTagsManifestChapter>,
+    pub chapter_cids: Vec<NameTagsManifestChapter>,
 }
 
 impl ManifestMethods<NameTagsSpec> for NameTagsManifest {
@@ -384,7 +384,7 @@ impl ManifestMethods<NameTagsSpec> for NameTagsManifest {
 
     fn cids(&self) -> Result<Vec<ManifestCids<NameTagsSpec>>> {
         let mut result: Vec<ManifestCids<NameTagsSpec>> = vec![];
-        for chapter in &self.chapter_metadata {
+        for chapter in &self.chapter_cids {
             let volume_id = NameTagsVolumeId::from_interface_id(&chapter.volume_interface_id)?;
             let chapter_id = NameTagsChapterId::from_interface_id(&chapter.chapter_interface_id)?;
             result.push(ManifestCids {
@@ -406,10 +406,10 @@ impl ManifestMethods<NameTagsSpec> for NameTagsManifest {
                 chapter_interface_id: chapter_id.interface_id(),
                 cid_v0: cid.to_string(),
             };
-            self.chapter_metadata.push(chapter)
+            self.chapter_cids.push(chapter)
         }
         // Sort by VolumeId, then by ChapterId for ties.
-        self.chapter_metadata.sort_by(|a, b| {
+        self.chapter_cids.sort_by(|a, b| {
             a.volume_interface_id
                 .cmp(&b.volume_interface_id)
                 .then(a.chapter_interface_id.cmp(&b.chapter_interface_id))
