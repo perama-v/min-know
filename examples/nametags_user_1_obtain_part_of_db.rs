@@ -19,7 +19,6 @@ fn main() -> Result<()> {
     env_logger::init();
 
     let db: Todd<NameTagsSpec> = Todd::init(DataKind::NameTags, DirNature::Sample)?;
-    println!("DB is {:#?}", db);
 
     // Addresses important for a user (two random addresses).
     let addresses = [

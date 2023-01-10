@@ -20,7 +20,6 @@ fn main() -> Result<()> {
 
     let data_kind = DataKind::AddressAppearanceIndex(Network::default());
     let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
-    println!("DB is {:#?}", db);
 
     // Addresses important for a user (two random addresses).
     let addresses = [

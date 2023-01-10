@@ -8,7 +8,10 @@ use min_know::{
         choices::{DataKind, DirNature},
     },
     database::types::Todd,
-    specs::{address_appearance_index::{AAIAppearanceTx, AAISpec}, nametags::{Name, Tag, NameTagsSpec}},
+    specs::{
+        address_appearance_index::{AAIAppearanceTx, AAISpec},
+        nametags::{Name, NameTagsSpec, Tag},
+    },
 };
 
 /// Uses local index data to extract transaction identifiers important for a given address.

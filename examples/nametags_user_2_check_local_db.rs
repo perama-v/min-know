@@ -3,12 +3,9 @@ use std::env;
 use anyhow::Result;
 
 use min_know::{
-    config::{
-        address_appearance_index::Network,
-        choices::{DataKind, DirNature},
-    },
+    config::choices::{DataKind, DirNature},
     database::types::Todd,
-    specs::address_appearance_index::AAISpec,
+    specs::nametags::NameTagsSpec,
 };
 
 /// Uses a manifest file to obtain data relevant for a user.
@@ -18,8 +15,7 @@ fn main() -> Result<()> {
     env::set_var("RUST_LOG", "debug");
     env_logger::init();
 
-    let data_kind = DataKind::AddressAppearanceIndex(Network::default());
-    let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
+    let db: Todd<NameTagsSpec> = Todd::init(DataKind::NameTags, DirNature::Sample)?;
 
     let check = db.check_completeness()?;
     println!("Check result: {:?}", check);

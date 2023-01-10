@@ -8,7 +8,7 @@ use min_know::{
         choices::{DataKind, DirNature},
     },
     database::types::Todd,
-    specs::{address_appearance_index::{AAIAppearanceTx, AAISpec}},
+    specs::address_appearance_index::{AAIAppearanceTx, AAISpec},
 };
 
 /// Uses local index data to extract transaction identifiers important for a given address.
@@ -20,7 +20,7 @@ fn main() -> Result<()> {
 
     let data_kind = DataKind::AddressAppearanceIndex(Network::default());
     let db: Todd<AAISpec> = Todd::init(data_kind, DirNature::Sample)?;
-    println!("DB is {:#?}", db);
+
     // A random address.
     let address = "0x846be97d3bf1e3865f3caf55d749864d39e54cb9";
     let values = db.find(address)?;
