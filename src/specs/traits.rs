@@ -252,22 +252,16 @@ pub trait ChapterIdMethods<T: DataSpec>: Sized {
 }
 
 /// Methods that RecordKeys must implement.
-pub trait RecordKeyMethods {
-    /// Returns the key struct that implements this method.
-    fn get(self) -> Self;
-}
+pub trait RecordKeyMethods {}
+
 /// Methods that RecordValues must implement.
 pub trait RecordValueMethods {
-    /// Returns the value struct that implements this method.
-    fn get(self) -> Self;
     /// Returns the value, with all elements as Strings in a vector.
     fn as_strings(&self) -> Vec<String>;
 }
 
 /// Marker trait.
 pub trait RecordMethods<T: DataSpec> {
-    /// Returns the key struct that implements this method.
-    fn get(&self) -> &Self;
     /// Get the RecordKey of the Record.
     fn key(&self) -> &T::AssociatedRecordKey;
     /// Get the RecordValue of the Record.
@@ -285,8 +279,6 @@ pub trait RecordMethods<T: DataSpec> {
 ///
 /// Sourficy: Contract metadata for a specific volume and chapter.
 pub trait ChapterMethods<T: DataSpec> {
-    /// Returns the key struct that implements this method.
-    fn get(self) -> Self;
     /// Get the VolumeId.
     ///
     /// The method likely just returns the relevant struct member, which is

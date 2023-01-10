@@ -205,9 +205,6 @@ pub struct NameTagsRecord {
 }
 
 impl RecordMethods<NameTagsSpec> for NameTagsRecord {
-    fn get(&self) -> &Self {
-        todo!()
-    }
 
     fn key(&self) -> &NameTagsRecordKey {
         todo!()
@@ -223,11 +220,7 @@ pub struct NameTagsRecordKey {
     key: FixedVector<u8, BytesPerAddress>,
 }
 
-impl RecordKeyMethods for NameTagsRecordKey {
-    fn get(self) -> Self {
-        todo!()
-    }
-}
+impl RecordKeyMethods for NameTagsRecordKey {}
 
 impl NameTagsRecordKey {
     pub fn from_address(address: &str) -> Result<Self> {
@@ -288,10 +281,6 @@ impl Tag {
 }
 
 impl RecordValueMethods for NameTagsRecordValue {
-    fn get(self) -> Self {
-        todo!()
-    }
-
     fn as_strings(&self) -> Vec<String> {
         todo!()
     }

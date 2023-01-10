@@ -163,10 +163,6 @@ pub struct AAIChapter {
     pub records: Vec<AAIRecord>,
 }
 impl ChapterMethods<AAISpec> for AAIChapter {
-    fn get(self) -> Self {
-        self
-    }
-
     fn volume_id(&self) -> &AAIVolumeId {
         &self.volume_id
     }
@@ -198,8 +194,8 @@ impl ChapterMethods<AAISpec> for AAIChapter {
     fn filename(&self) -> String {
         format!(
             "{}_{}.ssz",
-            self.volume_id().interface_id(),
-            self.chapter_id().interface_id()
+            self.volume_id.interface_id(),
+            self.chapter_id.interface_id()
         )
     }
 
@@ -254,9 +250,6 @@ pub struct AAIRecord {
     pub value: AAIRecordValue,
 }
 impl RecordMethods<AAISpec> for AAIRecord {
-    fn get(&self) -> &Self {
-        self
-    }
 
     fn key(&self) -> &AAIRecordKey {
         &self.key
@@ -272,9 +265,6 @@ pub struct AAIRecordKey {
     pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
 impl RecordKeyMethods for AAIRecordKey {
-    fn get(self) -> Self {
-        self
-    }
 }
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
@@ -285,9 +275,6 @@ pub struct AAIRecordValue {
     pub value: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
 }
 impl RecordValueMethods for AAIRecordValue {
-    fn get(self) -> Self {
-        self
-    }
     /// Return a String representation of the contents of the RecordValue.
     fn as_strings(&self) -> Vec<String> {
         let mut s: Vec<String> = vec![];
