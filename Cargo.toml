@@ -6,12 +6,9 @@ description = "A library for creating and using distributable databases."
 
 [dependencies]
 anyhow = { version = "1.0.64", features = ["backtrace"] }
-bs58 = "0.4.0"
 byteorder = "1.4.3"
-cbor = "0.4.1"
 cid = "0.8.6"
 directories = "4.0.1"
-eip55 = "0.3.0"
 env_logger = "0.10.0"
 eth2_ssz = "0.4.0"
 eth2_ssz_derive = "0.3.0"
@@ -24,9 +21,7 @@ reqwest = { version = "0.11.12", features = ["stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.87"
 sha3 = "0.10.6"
-snap = "1.0.5"
 tree_hash = "0.4.0"
-tree_hash_derive = "0.4.0"
 tokio = { version = "1.21.2", features = ["full"] }
 web3 = "0.18.0"
 rayon = "1.6.1"
