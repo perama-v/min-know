@@ -11,6 +11,7 @@ peer-to-peer distribution.
   - [Why does this library exist?](#why-does-this-library-exist)
   - [Principles](#principles)
   - [End Users](#end-users)
+  - [Interface](#interface)
   - [Architecture](#architecture)
   - [Examples](#examples)
   - [Databases](#databases)
