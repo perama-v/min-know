@@ -256,7 +256,11 @@ impl RecordMethods<AAISpec> for AAIRecord {
 pub struct AAIRecordKey {
     pub key: FixedVector<u8, DefaultBytesPerAddress>,
 }
-impl RecordKeyMethods for AAIRecordKey {}
+impl RecordKeyMethods for AAIRecordKey {
+    fn summary_string(&self) -> Result<String> {
+        Ok(hex::encode(self.key.to_vec()))
+    }
+}
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
@@ -267,13 +271,13 @@ pub struct AAIRecordValue {
 }
 impl RecordValueMethods for AAIRecordValue {
     /// Return a String representation of the contents of the RecordValue.
-    fn as_strings(&self) -> Vec<String> {
+    fn summary_strings(&self) -> Result<Vec<String>> {
         let mut s: Vec<String> = vec![];
         for v in self.value.iter() {
             let v_str = format!("Tx in block: {}, index: {}", v.block, v.index);
             s.push(v_str)
         }
-        s
+        Ok(s)
     }
 }
 

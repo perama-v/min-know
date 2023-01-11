@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     parameters::nametags::ENTRIES_PER_VOLUME,
-    specs::nametags::{
+    specs::{nametags::{
         NameTagsChapter, NameTagsChapterId, NameTagsRecord, NameTagsRecordKey, NameTagsRecordValue,
         NameTagsSpec, NameTagsVolumeId,
-    },
+    }},
 };
 
 use super::traits::ExtractorMethods;
@@ -53,24 +53,27 @@ impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
         volume_id: &NameTagsVolumeId,
         source_dir: &Path,
     ) -> Result<Option<NameTagsChapter>> {
-        let Ok(dir) = fs::read_dir(source_dir) else {bail!("Couldn't read dir {}", source_dir.display())};
-        // Sort
-        let mut files = vec![];
-        for entry in dir {
-            let file = entry?;
-            files.push(file);
-        }
-        files.sort_by_key(|x| x.file_name());
+        let Ok(dir) = fs::read_dir(source_dir) else {
+            bail!("Couldn't read dir {}", source_dir.display())};
         // Get appropriate range and appropriate files in that range.
-        let leading_char = hex::encode(chapter_id.val.to_vec());
         let mut records: Vec<NameTagsRecord> = vec![];
-        for (index, file) in files.iter().enumerate() {
-            if volume_id.contains_entry(index as u32) && chapter_id.matches(&leading_char) {
+        // Files are ordered deterministically (but not lexicographically),
+        // so picking out the right files by index is ok.
+        let relevant_files = dir
+            .skip(volume_id.first_address as usize)
+            .take(ENTRIES_PER_VOLUME as usize)
+            .collect::<Result<Vec<_>,_>>()?;
+
+        for file in relevant_files {
+            let name = file.file_name();
+            let Some(address) = name.to_str() else {
+                bail!("Couldn't read filename: {}", file.path().display())};
+            // '0xabcd' -> 'ab'
+            let leading_chars: String = address.to_string().chars().skip(2).take(2).collect();
+            if chapter_id.matches(&leading_chars) {
                 // Make NameTagsRecord
                 let contents = fs::read(file.path())?;
                 let data: RawValue = serde_json::from_slice(&contents)?;
-                let name = file.file_name();
-                let Some(address) = name.to_str() else {bail!("Couldn't read filename: {}", file.path().display())};
                 let record = NameTagsRecord {
                     key: NameTagsRecordKey::from_address(address)?,
                     value: data.into_record_value(),

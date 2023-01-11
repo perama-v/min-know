@@ -245,7 +245,11 @@ pub struct NameTagsRecordKey {
     key: FixedVector<u8, BytesPerAddress>,
 }
 
-impl RecordKeyMethods for NameTagsRecordKey {}
+impl RecordKeyMethods for NameTagsRecordKey {
+    fn summary_string(&self) -> Result<String> {
+        Ok(hex::encode(self.key.to_vec()))
+    }
+}
 
 impl NameTagsRecordKey {
     pub fn from_address(address: &str) -> Result<Self> {
@@ -256,10 +260,19 @@ impl NameTagsRecordKey {
     }
 }
 
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
 pub struct NameTagsRecordValue {
     pub names: VariableList<Name, MaxNamesPerRecord>,
     pub tags: VariableList<Tag, MaxTagsPerRecord>,
+}
+
+impl RecordValueMethods for NameTagsRecordValue {
+    fn summary_strings(&self) -> Result<Vec<String>> {
+        let n = format!("names: {:?}", self.names_as_strings()?);
+        let t = format!("tags: {:?}", self.tags_as_strings()?);
+        Ok(vec![n, t])
+    }
 }
 
 impl NameTagsRecordValue {
@@ -328,12 +341,6 @@ impl Tag {
         let v = self.val.to_vec();
         let s = from_utf8(&v)?;
         Ok(s.to_string())
-    }
-}
-
-impl RecordValueMethods for NameTagsRecordValue {
-    fn as_strings(&self) -> Vec<String> {
-        todo!()
     }
 }
 

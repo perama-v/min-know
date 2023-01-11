@@ -20,7 +20,7 @@ use crate::{
     extraction::traits::ExtractorMethods,
     samples::traits::SampleObtainerMethods,
     specs::traits::{
-        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods,
+        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods, RecordValueMethods, RecordKeyMethods,
     },
     utils::{
         download::{download_files, DownloadTask},

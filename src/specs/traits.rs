@@ -261,12 +261,21 @@ pub trait ChapterIdMethods<T: DataSpec>: Sized {
 }
 
 /// Methods that RecordKeys must implement.
-pub trait RecordKeyMethods {}
+pub trait RecordKeyMethods {
+    /// Returns the key as a String.
+    ///
+    /// ## Example
+    /// For example, a basic hex to string conversion:
+    /// ```sh
+    /// hex::encode(self.key.to_vec())
+    /// ```
+    fn summary_string(&self) -> Result<String>;
+}
 
 /// Methods that RecordValues must implement.
 pub trait RecordValueMethods {
     /// Returns the value, with all elements as Strings in a vector.
-    fn as_strings(&self) -> Vec<String>;
+    fn summary_strings(&self) -> Result<Vec<String>>;
 }
 
 /// Marker trait.
