@@ -4,11 +4,13 @@ The following are descriptions of different databases that have been
 implemented in min-know to perform transformation into the TODD-compliant form.
 
 - [Databases](#databases)
-    - [Address appearances index](#address-appearances-index)
-    - [Nametags](#nametags)
+  - [Address appearances index](#address-appearances-index)
+  - [Nametags](#nametags)
+    - [General framework](#general-framework)
+    - [Tradeoffs](#tradeoffs)
 
 
-### Address appearances index
+## Address appearances index
 
 This is an index of which transactions an address was involved in.
 It is a derivative of the Unchained Index
@@ -30,7 +32,9 @@ this blog post series: [https://perama-v.github.io/ethereum/protocol/poking](htt
 Use of the the index can be seen in a demo application here:
 https://github.com/perama-v/PSR_B0943_10
 
-### Nametags
+## Nametags
+
+### General framework
 
 This is a database consisting of names and tags (collectively "nametags") for addresses.
 In the source/raw data, each address is a file containing JSON-encoded data.
@@ -63,5 +67,45 @@ and if the nametag is not already present, adds it to the next Volume to be publ
 - How can a `Volume` be divided (define a `Chapter` definition)
     - By address starting characters (0x00 - 0xff), which equates to 256 cChapters per Volume.
 - How often should `Volumes` be pulbished (define a `Volume` cadence)
-    - Every 10,000 new address additions (E.g., there would be ~72 editions to date).
+    - Every 1,000 new address additions (E.g., there would be ~720 editions to date).
     - This includes appending new nametags to addresses already in the database.
+
+### Tradeoffs
+Variation 1 parameters: 256 Chapters, Volumes with 1000 addresses (720_000/1_000 = 720).
+|Status|Dirs|Files|Footprint|
+|-|-|-|-|
+|DB Pre|1|720_000|2.8 GB|
+|DB Post|256|184_320 (256*720)|722 MB|
+|Manifest|-|-|32 MB|
+|End user|-|720|2.8 MB|
+
+Comments:
+- By encoding the data with SSZ the data is represented in 1/4th the space.
+- The manifest is large (32 MB) because the volumes are small and there are many chapters.
+
+Variation 2 parameters: 16 Chapters, Volumes with 1000 addresses (720_000/1_000 = 720).
+|Status|Dirs|Files|Footprint|
+|-|-|-|-|
+|DB Pre|1|720_000|2.8 GB|
+|DB Post|16|11_520 (16*720)|? 722 MB|
+|Manifest|-|-|? 2 MB|
+|End user|-|720|? 44.8 MB|
+
+Comments:
+- Untested
+- Fewer chapters make for larger user footprint, but easier to check manifest.
+
+
+Variation 3 parameters: 256 Chapters, Volumes with 10_000 addresses (720_000/10_000 = 72).
+|Status|Dirs|Files|Footprint|
+|-|-|-|-|
+|DB Pre|1|720_000|2.8 GB|
+|DB Post|256|18_432 (256*72)|? 722 MB|
+|Manifest|-|-|? 3.2 MB|
+|End user|-|72|? 28 MB|
+
+Comments:
+- Untested
+- Larger Volumes (10_000 addresses) makes publishing less frequent. If
+someone has <10_000 they cannot publish, unless they find more, by waiting
+or coordinating to get more data.
