@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Result};
+use ssz_rs::{List, Vector};
 
 use crate::{
     parameters::address_appearance_index::BLOCKS_PER_VOLUME,
@@ -35,7 +36,7 @@ impl ExtractorMethods<AAISpec> for AAIExtractor {
             return Ok(None)
         };
         // Get appearances from files.
-        let leading_char = hex::encode(chapter_id.val.to_vec());
+        let leading_char = hex::encode(&chapter_id.val);
         // This (RelicChapter->AAIChapter) is a workaround to use existing code.
         // Ideally get_relevant_appearances() returns AAIChapter directly.
         let relic_chapter: RelicChapter =
@@ -84,7 +85,7 @@ pub fn get_relevant_appearances(
     let mut addresses: Vec<RelicAddressAppearances> = relevant_appearances
         .into_iter()
         .map(|(key, val)| RelicAddressAppearances {
-            address: <_>::from(key),
+            address: Vector::from_iter(key),
             appearances: {
                 // Start with Vec<TransactionId>
                 // Get Vec<AppearanceTx>
@@ -96,7 +97,7 @@ pub fn get_relevant_appearances(
                     })
                     .collect();
                 // Get AppearanceTxList
-                <_>::from(t)
+                List::from_iter(t)
             },
         })
         .collect();
@@ -105,11 +106,11 @@ pub fn get_relevant_appearances(
 
     let address_as_hex = hex::decode(leading_char)?;
     let res = RelicChapter {
-        address_prefix: <_>::from(address_as_hex),
+        address_prefix: Vector::from_iter(address_as_hex),
         identifier: RelicVolumeIdentifier {
             oldest_block: desired.old,
         },
-        addresses: <_>::from(addresses),
+        addresses: List::from_iter(addresses),
     };
     Ok(res)
 }

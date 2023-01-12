@@ -1,5 +1,4 @@
 //! Constants used in the library.
-use ssz_types::typenum::{U1, U1073741824, U20};
 
 /// Number of blocks in a group of appearances. Data is stored in discrete ranges
 /// so that as the chain progresses it is clear how new appearances are to be stored.
@@ -22,7 +21,7 @@ pub const ADDRESS_CHARS_SIMILARITY_DEPTH: u32 = 2;
 /// Number of bytes per address. Value may be different in some networks.
 ///
 /// For EVM-based chains this is usually 20 bytes. Used by types::NetworkConfig.
-pub const DEFAULT_BYTES_PER_ADDRESS: u32 = 20;
+pub const DEFAULT_BYTES_PER_ADDRESS: usize = 20;
 
 /// Number of valid ASCII bytes a network name may use.
 pub const MAX_NETWORK_NAME_BYTES: u32 = 32;
@@ -39,7 +38,12 @@ pub const NUM_CHAPTERS: u32 = HEX_BASE.pow(ADDRESS_CHARS_SIMILARITY_DEPTH);
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MaxAddressesPerVolume = U1073741824;
+pub const MAX_ADDRESSES_PER_VOLUME: usize = 1073741824;
+
+/// Derived from MAX_ADDRESSES_PER_VOLUME
+///
+/// If the all the data was in one chapter, this is the maximum size of that Chapter.
+pub const MAX_RECORDS_PER_CHAPTER: usize = MAX_ADDRESSES_PER_VOLUME;
 
 /// This type is defined in the [specification][1].
 ///
@@ -48,7 +52,7 @@ pub type MaxAddressesPerVolume = U1073741824;
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type DefaultBytesPerAddress = U20;
+pub const MAX_TXS_PER_VOLUME: usize = 1073741824;
 
 /// This type is defined in the [specification][1].
 ///
@@ -57,13 +61,4 @@ pub type DefaultBytesPerAddress = U20;
 /// for ssz operations.
 ///
 /// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type MaxTxsPerVolume = U1073741824;
-
-/// This type is defined in the [specification][1].
-///
-/// # Typed Number
-/// `Un` is the number `n`, not an `n`-bit integer. It is a helper type
-/// for ssz operations.
-///
-/// [1]: https://github.com/perama-v/address-appearance-index-specs#constants
-pub type NumCommonBytes = U1;
+pub const NUM_COMMON_BYTES: usize = 1;

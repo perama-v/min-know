@@ -20,7 +20,7 @@ use crate::{
     extraction::traits::ExtractorMethods,
     samples::traits::SampleObtainerMethods,
     specs::traits::{
-        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods, RecordValueMethods, RecordKeyMethods,
+        ChapterIdMethods, ChapterMethods, DataSpec, ManifestMethods, RecordMethods, VolumeIdMethods,
     },
     utils::{
         download::{download_files, DownloadTask},
@@ -30,14 +30,14 @@ use crate::{
 };
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Todd<T: DataSpec> {
     chapters: Vec<T::AssociatedChapter>,
     pub config: ConfigStruct,
 }
 
 /// Implement generic methods common to all databases.
-impl<T: DataSpec> Todd<T> {
+impl<T: DataSpec + Default> Todd<T> {
     /// Initialise the database library with the given configuration.
     pub fn init(data_kind: DataKind, directories: DirNature) -> Result<Self> {
         assert!(
@@ -46,7 +46,7 @@ impl<T: DataSpec> Todd<T> {
         );
 
         // Use the spec to then get the DataConfig.
-        let config = directories.to_config(data_kind)?;
+        let config = directories.into_config(data_kind)?;
         Ok(Self {
             chapters: vec![],
             config,
@@ -359,7 +359,7 @@ impl<T: DataSpec> Todd<T> {
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
         let chapter_dir_path = &self.config.chapter_dir_path(chapter.chapter_id());
         fs::create_dir_all(chapter_dir_path)?;
-        let encoded = chapter.as_serialized_bytes();
+        let encoded = chapter.as_serialized_bytes()?;
         let filename = chapter.filename();
         debug!(
             "Saving chapter: {}, with {} records ({} bytes).",
@@ -600,7 +600,7 @@ pub enum AbsentFile<T: DataSpec> {
 ///
 /// Files are considered absent if they are present in the manifest and
 /// absent in the file system.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct CompletenessAudit<T: DataSpec> {
     /// VolumeIds in the Manifest that do not appear anywhere in the file system.
     pub absent_volume_ids: Vec<T::AssociatedVolumeId>,

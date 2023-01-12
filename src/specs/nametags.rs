@@ -1,17 +1,16 @@
-use std::{fmt::Display, str::from_utf8};
+use std::str::from_utf8;
 
 use anyhow::{bail, Result};
-use serde::{Deserialize, Serialize};
-use ssz::{Decode, Encode};
-use ssz_derive::{Decode, Encode};
-use ssz_types::{FixedVector, VariableList};
+use ssz_rs::prelude::*;
 
+use crate::manifest::nametags::NameTagsManifest;
+use crate::parameters::nametags::MAX_RECORDS_PER_CHAPTER;
 use crate::{
     config::choices::DataKind,
     extraction::nametags::NameTagsExtractor,
     parameters::nametags::{
-        BytesForAddressChars, BytesPerAddress, MaxBytesPerName, MaxBytesPerTag, MaxNamesPerRecord,
-        MaxTagsPerRecord, ENTRIES_PER_VOLUME,
+        BYTES_FOR_ADDRESS_CHARS, BYTES_PER_ADDRESS, ENTRIES_PER_VOLUME, MAX_BYTES_PER_NAME,
+        MAX_BYTES_PER_TAG, MAX_NAMES_PER_RECORD, MAX_TAGS_PER_RECORD,
     },
     samples::nametags::NameTagsSampleObtainer,
     utils,
@@ -19,7 +18,7 @@ use crate::{
 
 use super::traits::*;
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct NameTagsSpec {}
 
 // Uncomment the line below to start adding a new database to this library.
@@ -61,23 +60,23 @@ impl DataSpec for NameTagsSpec {
     ) -> Result<Self::AssociatedChapterId> {
         let bytes = record_key.key[0..2].to_vec();
         Ok(NameTagsChapterId {
-            val: <_>::from(bytes),
+            val: Vector::from_iter(bytes),
         })
     }
 
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
         Ok(NameTagsRecordKey {
-            key: <_>::from(raw_bytes),
+            key: Vector::from_iter(raw_bytes),
         })
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct NameTagsChapter {
     pub chapter_id: NameTagsChapterId,
     pub volume_id: NameTagsVolumeId,
-    pub records: Vec<NameTagsRecord>,
+    pub records: List<NameTagsRecord, MAX_RECORDS_PER_CHAPTER>,
 }
 
 impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
@@ -93,8 +92,8 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
         &self.records
     }
 
-    fn as_serialized_bytes(&self) -> Vec<u8> {
-        self.as_ssz_bytes()
+    fn as_serialized_bytes(&self) -> Result<Vec<u8>> {
+        Ok(serialize::<Self>(self)?)
     }
 
     fn from_file(data: Vec<u8>) -> Result<Self>
@@ -102,7 +101,7 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
         Self: Sized,
     {
         // Files are ssz encoded.
-        let chapter = match NameTagsChapter::from_ssz_bytes(&data) {
+        let chapter = match deserialize::<Self>(&data) {
             Ok(c) => c,
             Err(e) => bail!(
                 "Could not decode the SSZ data. Check that the library
@@ -125,14 +124,14 @@ impl ChapterMethods<NameTagsSpec> for NameTagsChapter {
         NameTagsChapter {
             chapter_id: chapter_id.clone(),
             volume_id: volume_id.clone(),
-            records: vec![],
+            records: List::default(),
         }
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct NameTagsChapterId {
-    pub val: FixedVector<u8, BytesForAddressChars>,
+    pub val: Vector<u8, BYTES_FOR_ADDRESS_CHARS>,
 }
 
 impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
@@ -140,7 +139,7 @@ impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
         let string = id_string.trim_start_matches("addresses_0x");
         let bytes = hex::decode(string)?;
         Ok(NameTagsChapterId {
-            val: <_>::from(bytes),
+            val: Vector::from_iter(bytes),
         })
     }
 
@@ -153,17 +152,16 @@ impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
             bail!("'n' must be <= NUM_CHAPTERS")
         }
         let byte_vec = vec![n as u8];
-        let Ok(fv) = FixedVector::<u8, BytesForAddressChars>::new(byte_vec) else {
-            bail!("Provided vector is too long for Fixed Vector.")
-        };
-        Ok(NameTagsChapterId { val: fv })
+        Ok(NameTagsChapterId {
+            val: Vector::from_iter(byte_vec),
+        })
     }
 }
 
 impl NameTagsChapterId {
     /// Returns the ChapterId as a hex string (no 0x prefix).
     pub fn as_str(&self) -> String {
-        hex::encode(self.val.to_vec())
+        hex::encode(&self.val)
     }
     /// Determines if leading string matches the Chapter.
     pub fn matches(&self, leading: &str) -> bool {
@@ -172,9 +170,7 @@ impl NameTagsChapterId {
     }
 }
 
-#[derive(
-    Clone, Debug, Default, PartialEq, Serialize, Deserialize, Hash, PartialOrd, Encode, Decode,
-)]
+#[derive(Clone, Debug, Default, PartialEq, Hash, PartialOrd, SimpleSerialize)]
 pub struct NameTagsVolumeId {
     /// Refers to the first address in the Volume. It is index of the address
     /// where all volumes are ordered oldest to youngest.
@@ -208,23 +204,23 @@ impl VolumeIdMethods<NameTagsSpec> for NameTagsVolumeId {
 
     fn nth_id(n: u32) -> Result<NameTagsVolumeId> {
         Ok(NameTagsVolumeId {
-            first_address: n * ENTRIES_PER_VOLUME,
+            first_address: n * ENTRIES_PER_VOLUME as u32,
         })
     }
 
     fn is_nth(&self) -> Result<u32> {
-        Ok(self.first_address / ENTRIES_PER_VOLUME)
+        Ok(self.first_address / ENTRIES_PER_VOLUME as u32)
     }
 }
 
 impl NameTagsVolumeId {
     /// Determines if a globally-indexed entry is present in a volume.
     pub fn contains_entry(&self, index: u32) -> bool {
-        index >= self.first_address && index < (self.first_address + ENTRIES_PER_VOLUME)
+        index >= self.first_address && index < (self.first_address + ENTRIES_PER_VOLUME as u32)
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct NameTagsRecord {
     pub key: NameTagsRecordKey,
     pub value: NameTagsRecordValue,
@@ -240,14 +236,14 @@ impl RecordMethods<NameTagsSpec> for NameTagsRecord {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct NameTagsRecordKey {
-    key: FixedVector<u8, BytesPerAddress>,
+    key: Vector<u8, BYTES_PER_ADDRESS>,
 }
 
 impl RecordKeyMethods for NameTagsRecordKey {
     fn summary_string(&self) -> Result<String> {
-        Ok(hex::encode(self.key.to_vec()))
+        Ok(hex::encode(&self.key))
     }
 }
 
@@ -255,16 +251,15 @@ impl NameTagsRecordKey {
     pub fn from_address(address: &str) -> Result<Self> {
         let raw_bytes = hex::decode(address.trim_start_matches("0x"))?;
         Ok(NameTagsRecordKey {
-            key: <_>::from(raw_bytes),
+            key: Vector::from_iter(raw_bytes),
         })
     }
 }
 
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct NameTagsRecordValue {
-    pub names: VariableList<Name, MaxNamesPerRecord>,
-    pub tags: VariableList<Tag, MaxTagsPerRecord>,
+    pub names: List<Name, MAX_NAMES_PER_RECORD>,
+    pub tags: List<Tag, MAX_TAGS_PER_RECORD>,
 }
 
 impl RecordValueMethods for NameTagsRecordValue {
@@ -286,14 +281,14 @@ impl NameTagsRecordValue {
             tag_vec.push(Tag::from_string(&t))
         }
         NameTagsRecordValue {
-            names: <_>::from(name_vec),
-            tags: <_>::from(tag_vec),
+            names: List::from_iter(name_vec),
+            tags: List::from_iter(tag_vec),
         }
     }
     /// Turns SSZ bytes into a vector of readable strings.
     pub fn names_as_strings(&self) -> Result<Vec<String>> {
         let mut s = vec![];
-        for n in &self.names {
+        for n in &self.names.to_vec() {
             s.push(n.to_utf8_string()?)
         }
         Ok(s)
@@ -301,22 +296,22 @@ impl NameTagsRecordValue {
     /// Turns SSZ bytes into a vector of readable strings.
     pub fn tags_as_strings(&self) -> Result<Vec<String>> {
         let mut s = vec![];
-        for t in &self.tags {
+        for t in &self.tags.to_vec() {
             s.push(t.to_utf8_string()?)
         }
         Ok(s)
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct Name {
-    pub val: VariableList<u8, MaxBytesPerName>,
+    pub val: List<u8, MAX_BYTES_PER_NAME>,
 }
 
 impl Name {
     pub fn from_string(s: &str) -> Self {
         Name {
-            val: <_>::from(s.as_bytes().to_vec()),
+            val: List::from_iter(s.as_bytes().to_vec()),
         }
     }
     pub fn to_utf8_string(&self) -> Result<String> {
@@ -326,15 +321,15 @@ impl Name {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct Tag {
-    pub val: VariableList<u8, MaxBytesPerTag>,
+    pub val: List<u8, MAX_BYTES_PER_TAG>,
 }
 
 impl Tag {
     pub fn from_string(s: &str) -> Self {
         Tag {
-            val: <_>::from(s.as_bytes().to_vec()),
+            val: List::from_iter(s.as_bytes().to_vec()),
         }
     }
     pub fn to_utf8_string(&self) -> Result<String> {
@@ -342,88 +337,4 @@ impl Tag {
         let s = from_utf8(&v)?;
         Ok(s.to_string())
     }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsManifest {
-    pub spec_version: String,
-    pub schemas: String,
-    pub database_interface_id: String,
-    pub latest_volume_identifier: String,
-    pub chapter_cids: Vec<NameTagsManifestChapter>,
-}
-
-impl ManifestMethods<NameTagsSpec> for NameTagsManifest {
-    fn spec_version(&self) -> &str {
-        &self.spec_version
-    }
-
-    fn set_spec_version(&mut self, version: String) {
-        self.spec_version = version
-    }
-
-    fn schemas(&self) -> &str {
-        &self.schemas
-    }
-
-    fn set_schemas(&mut self, schemas: String) {
-        self.schemas = schemas
-    }
-
-    fn database_interface_id(&self) -> &str {
-        &self.database_interface_id
-    }
-
-    fn set_database_interface_id(&mut self, id: String) {
-        self.database_interface_id = id;
-    }
-
-    fn latest_volume_identifier(&self) -> &str {
-        &self.latest_volume_identifier
-    }
-
-    fn set_latest_volume_identifier(&mut self, volume_interface_id: String) {
-        self.latest_volume_identifier = volume_interface_id
-    }
-
-    fn cids(&self) -> Result<Vec<ManifestCids<NameTagsSpec>>> {
-        let mut result: Vec<ManifestCids<NameTagsSpec>> = vec![];
-        for chapter in &self.chapter_cids {
-            let volume_id = NameTagsVolumeId::from_interface_id(&chapter.volume_interface_id)?;
-            let chapter_id = NameTagsChapterId::from_interface_id(&chapter.chapter_interface_id)?;
-            result.push(ManifestCids {
-                cid: chapter.cid_v0.clone(),
-                volume_id,
-                chapter_id,
-            })
-        }
-        Ok(result)
-    }
-
-    fn set_cids<U: AsRef<str> + Display>(
-        &mut self,
-        cids: &[(U, NameTagsVolumeId, NameTagsChapterId)],
-    ) {
-        for (cid, volume_id, chapter_id) in cids {
-            let chapter = NameTagsManifestChapter {
-                volume_interface_id: volume_id.interface_id(),
-                chapter_interface_id: chapter_id.interface_id(),
-                cid_v0: cid.to_string(),
-            };
-            self.chapter_cids.push(chapter)
-        }
-        // Sort by VolumeId, then by ChapterId for ties.
-        self.chapter_cids.sort_by(|a, b| {
-            a.volume_interface_id
-                .cmp(&b.volume_interface_id)
-                .then(a.chapter_interface_id.cmp(&b.chapter_interface_id))
-        })
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct NameTagsManifestChapter {
-    pub volume_interface_id: String,
-    pub chapter_interface_id: String,
-    pub cid_v0: String,
 }

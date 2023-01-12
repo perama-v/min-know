@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced ssz crate with ssz_rs to have natural constants rather than Typenums.
+- Moved manifest related code to manifest module for separation of serialization.
+
 ### Fix
 
 - Fixed incorrect check of raw nametag filename matching a chapter.
+- *Chapter.records struct members now use SSZ List for spec conformity.
 
 ## [0.1.0] - 2022-01-09
 

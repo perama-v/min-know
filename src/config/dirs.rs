@@ -113,7 +113,7 @@ impl ConfigStruct {
 
 #[test]
 fn config_local_paths_correct_for_nametags() {
-    let config = DirNature::Sample.to_config(DataKind::NameTags).unwrap();
+    let config = DirNature::Sample.into_config(DataKind::NameTags).unwrap();
     let raw = "/data/samples/todd_nametags/raw_source_nametags";
     let path = dbg!(config.local_sample_raw_source());
     assert!(path.to_str().unwrap().ends_with(raw));

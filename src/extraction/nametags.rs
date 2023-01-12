@@ -5,13 +5,14 @@ use std::{
 
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
+use ssz_rs::List;
 
 use crate::{
     parameters::nametags::ENTRIES_PER_VOLUME,
-    specs::{nametags::{
+    specs::nametags::{
         NameTagsChapter, NameTagsChapterId, NameTagsRecord, NameTagsRecordKey, NameTagsRecordValue,
         NameTagsSpec, NameTagsVolumeId,
-    }},
+    },
 };
 
 use super::traits::ExtractorMethods;
@@ -61,8 +62,8 @@ impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
         // so picking out the right files by index is ok.
         let relevant_files = dir
             .skip(volume_id.first_address as usize)
-            .take(ENTRIES_PER_VOLUME as usize)
-            .collect::<Result<Vec<_>,_>>()?;
+            .take(ENTRIES_PER_VOLUME)
+            .collect::<Result<Vec<_>, _>>()?;
 
         for file in relevant_files {
             let name = file.file_name();
@@ -88,14 +89,14 @@ impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
         Ok(Some(NameTagsChapter {
             chapter_id: chapter_id.clone(),
             volume_id: volume_id.clone(),
-            records,
+            records: List::from_iter(records),
         }))
     }
 
     fn latest_possible_volume(source_dir: &Path) -> Result<NameTagsVolumeId> {
         let Ok(dir) = read_dir(source_dir) else {bail!("Can't read: {}", source_dir.display())};
         let count = dir.count() as u32;
-        let first_address = first_inside_last(count, ENTRIES_PER_VOLUME)?;
+        let first_address = first_inside_last(count, ENTRIES_PER_VOLUME as u32)?;
         Ok(NameTagsVolumeId { first_address })
     }
 }

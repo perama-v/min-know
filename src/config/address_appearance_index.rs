@@ -39,7 +39,7 @@ impl Default for Network {
     /// Default network is mainnet.
     fn default() -> Self {
         Network::Mainnet(Params {
-            bytes_per_address: DEFAULT_BYTES_PER_ADDRESS,
+            bytes_per_address: DEFAULT_BYTES_PER_ADDRESS as u32,
             network_name: String::from("mainnet"),
         })
     }

@@ -24,32 +24,17 @@ pub trait SszDecode {}
 /// Related but not included:
 /// - Send + Sync + Unpin
 /// - Eq + Ord
-pub trait UsefulTraits<'a>:
-    Clone + Debug + Default + PartialEq + PartialOrd + Hash + Serialize + Deserialize<'a> + Send + Sync
+pub trait UsefulTraits:
+    Clone + Debug + Default + PartialEq + PartialOrd + Hash + Send + Sync
 {
 }
-impl<'a, T> UsefulTraits<'a> for T where
-    T: Clone
-        + Debug
-        + Default
-        + PartialEq
-        + PartialOrd
-        + Hash
-        + Serialize
-        + Deserialize<'a>
-        + Send
-        + Sync
+impl<T> UsefulTraits for T where
+    T: Clone + Debug + Default + PartialEq + PartialOrd + Hash + Send + Sync
 {
 }
 
-pub trait BasicUsefulTraits<'a>:
-    Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a> + Send + Sync
-{
-}
-impl<'a, T> BasicUsefulTraits<'a> for T where
-    T: Clone + Debug + Default + PartialEq + Serialize + Deserialize<'a> + Send + Sync
-{
-}
+pub trait BasicUsefulTraits: Clone + Debug + Default + PartialEq + Send + Sync {}
+impl<T> BasicUsefulTraits for T where T: Clone + Debug + Default + PartialEq + Send + Sync {}
 
 /// A trait for specifying a new type of data.
 ///
@@ -76,18 +61,21 @@ pub trait DataSpec: Sized {
 
     // Associated types. They must meet certain trait bounds. (Alias: Bound).
 
-    type AssociatedChapter: ChapterMethods<Self> + for<'a> BasicUsefulTraits<'a>;
-    type AssociatedChapterId: ChapterIdMethods<Self> + for<'a> BasicUsefulTraits<'a>;
-    type AssociatedVolumeId: VolumeIdMethods<Self> + for<'a> UsefulTraits<'a>;
+    type AssociatedChapter: ChapterMethods<Self> + BasicUsefulTraits;
+    type AssociatedChapterId: ChapterIdMethods<Self> + BasicUsefulTraits;
+    type AssociatedVolumeId: VolumeIdMethods<Self> + UsefulTraits;
 
-    type AssociatedRecord: RecordMethods<Self> + for<'a> BasicUsefulTraits<'a>;
-    type AssociatedRecordKey: RecordKeyMethods + for<'a> BasicUsefulTraits<'a>;
-    type AssociatedRecordValue: RecordValueMethods + for<'a> BasicUsefulTraits<'a>;
+    type AssociatedRecord: RecordMethods<Self> + BasicUsefulTraits;
+    type AssociatedRecordKey: RecordKeyMethods + BasicUsefulTraits;
+    type AssociatedRecordValue: RecordValueMethods + BasicUsefulTraits;
 
     type AssociatedExtractor: ExtractorMethods<Self>;
     type AssociatedSampleObtainer: SampleObtainerMethods;
 
-    type AssociatedManifest: ManifestMethods<Self> + for<'a> BasicUsefulTraits<'a>;
+    type AssociatedManifest: ManifestMethods<Self>
+        + BasicUsefulTraits
+        + Serialize
+        + for<'de> Deserialize<'de>;
     /// Checks if the enum variant matches the spec for the database.
     ///
     /// This is used in coordinating platform-specific directories. It ensures
@@ -135,14 +123,6 @@ pub trait DataSpec: Sized {
     /// If the key is a hex string, it might convert that to
     /// a struct capable of ssz encoding.
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey>;
-}
-
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Deserialize)]
-pub(crate) enum SpecId {
-    #[default]
-    AddressAppearanceIndex,
-    Sourcify,
-    FourByte,
 }
 
 /**
@@ -312,7 +292,7 @@ pub trait ChapterMethods<T: DataSpec> {
     /// Chapter struct as byte representation for storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)
-    fn as_serialized_bytes(&self) -> Vec<u8>;
+    fn as_serialized_bytes(&self) -> Result<Vec<u8>>;
     /// Chapter struct from byte representation from storage.
     ///
     /// This allows databases to have custom methods (SSZ, SSZ+snappy, etc.)

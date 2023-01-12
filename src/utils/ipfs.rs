@@ -12,6 +12,7 @@ pub fn cid_v0_string_from_bytes(bytes: &[u8]) -> Result<String> {
 }
 
 /// Computes the CIDv1 for the given bytes.
+#[allow(dead_code)]
 pub fn cid_v1_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let h = Code::Sha2_256.digest(bytes);
     const RAW: u64 = 0x55;
@@ -20,6 +21,7 @@ pub fn cid_v1_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 }
 
 /// Computes the CIDv0 for the given bytes.
+#[allow(dead_code)]
 pub fn cid_v0_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let h = Code::Sha2_256.digest(bytes);
     let cid = Cid::new_v0(h)?;

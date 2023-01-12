@@ -47,12 +47,9 @@ impl DataKind {
     /// The interface ID is the database kind in string form by default.
     /// Some databases may add additional parameters.
     pub(crate) fn interface_id(&self) -> String {
-        let db_name = self.as_string();
-        match self {
-            DataKind::AddressAppearanceIndex(network) => {
-                format!("{}_{}", db_name, network.name())
-            }
-            _ => db_name.to_string(),
+        match self.params_as_string() {
+            Some(p) => format!("{}_{}", self.as_string(), p),
+            None => self.as_string().to_string(),
         }
     }
     pub(crate) fn raw_source_dir_name(&self) -> String {
@@ -82,7 +79,7 @@ impl DirNature {
     /// Creates a config, according to the database kind.
     ///
     /// Combines the DataKind and DirNature enums to get specific dir paths and settings.
-    pub(crate) fn to_config(self, data_kind: DataKind) -> Result<ConfigStruct> {
+    pub(crate) fn into_config(self, data_kind: DataKind) -> Result<ConfigStruct> {
         let config = match self {
             DirNature::Sample => self.sample_config(data_kind)?,
             DirNature::Default => self.default_config(data_kind)?,
@@ -127,7 +124,7 @@ impl DirNature {
             Some(p) => p,
             None => project.join(data_kind.raw_source_dir_name()),
         };
-        let data_dir = base_dir_nature_dependent.join(data_kind.interface_id().clone());
+        let data_dir = base_dir_nature_dependent.join(data_kind.interface_id());
         Ok(ConfigStruct {
             dir_nature: self.clone(),
             base_dir_nature_dependent,
@@ -142,7 +139,7 @@ impl DirNature {
 fn config_default_paths_correctly_formed() {
     let data_kind = DataKind::AddressAppearanceIndex(Network::default());
     let dir_nature = DirNature::Default;
-    let config = dir_nature.to_config(data_kind).unwrap();
+    let config = dir_nature.into_config(data_kind).unwrap();
     let raw = "todd_address_appearance_index/raw_source_address_appearance_index_mainnet";
     assert!(config.raw_source.to_str().unwrap().ends_with(raw));
     let data = "todd_address_appearance_index/address_appearance_index_mainnet";
@@ -153,7 +150,7 @@ fn config_default_paths_correctly_formed() {
 fn config_sample_paths_correctly_formed() {
     let data_kind = DataKind::AddressAppearanceIndex(Network::default());
     let dir_nature = DirNature::Sample;
-    let config = dir_nature.to_config(data_kind).unwrap();
+    let config = dir_nature.into_config(data_kind).unwrap();
     let raw = "todd_address_appearance_index/samples/raw_source_address_appearance_index_mainnet";
     assert!(config.raw_source.to_str().unwrap().ends_with(raw));
     let data = "todd_address_appearance_index/samples/address_appearance_index_mainnet";
@@ -162,7 +159,7 @@ fn config_sample_paths_correctly_formed() {
 
 #[test]
 fn config_sample_paths_correct_for_nametags() {
-    let config = DirNature::Sample.to_config(DataKind::NameTags).unwrap();
+    let config = DirNature::Sample.into_config(DataKind::NameTags).unwrap();
     let raw = "todd_nametags/samples/raw_source_nametags";
     assert!(config.raw_source.to_str().unwrap().ends_with(raw));
     let data = "todd_nametags/samples/nametags";
@@ -178,7 +175,7 @@ fn config_custom_paths_correct_for_nametags() {
         processed_data_dir: Some(PathBuf::from(dst)),
     };
     let config = dbg!(DirNature::Custom(paths)
-        .to_config(DataKind::NameTags)
+        .into_config(DataKind::NameTags)
         .unwrap());
     let raw = format!("{}", src);
     assert!(config.raw_source.to_str().unwrap().ends_with(&raw));

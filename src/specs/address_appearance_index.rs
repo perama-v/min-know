@@ -1,21 +1,16 @@
 //! Address Appearance Index (AAI)
-use std::fmt::Display;
 
 use anyhow::{bail, Result};
-use serde::{Deserialize, Serialize};
-use ssz::{Decode, Encode};
-use ssz_derive::{Decode, Encode};
-use ssz_types::{
-    typenum::{U1073741824, U20},
-    FixedVector, VariableList,
-};
+use ssz_rs::prelude::*;
 use web3::types::{BlockId, BlockNumber, TransactionId};
 
 use crate::{
     config::choices::DataKind,
     extraction::address_appearance_index::AAIExtractor,
+    manifest::address_appearance_index::AAIManifest,
     parameters::address_appearance_index::{
-        MaxAddressesPerVolume, NumCommonBytes, BLOCKS_PER_VOLUME, NUM_CHAPTERS,
+        BLOCKS_PER_VOLUME, DEFAULT_BYTES_PER_ADDRESS, MAX_ADDRESSES_PER_VOLUME,
+        MAX_RECORDS_PER_CHAPTER, MAX_TXS_PER_VOLUME, NUM_CHAPTERS, NUM_COMMON_BYTES,
     },
     samples::address_appearance_index::AAISampleObtainer,
     utils::{self, unchained::types::BlockRange},
@@ -24,7 +19,7 @@ use crate::{
 use super::traits::*;
 
 /// Spec for the Address Appearance Index database.
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash)]
 pub struct AAISpec {}
 
 impl DataSpec for AAISpec {
@@ -67,21 +62,19 @@ impl DataSpec for AAISpec {
     ) -> Result<Self::AssociatedChapterId> {
         let bytes = record_key.key[0..2].to_vec();
         Ok(AAIChapterId {
-            val: <_>::from(bytes),
+            val: Vector::from_iter(bytes),
         })
     }
 
     fn raw_key_as_record_key(key: &str) -> Result<Self::AssociatedRecordKey> {
         let raw_bytes = hex::decode(key.trim_start_matches("0x"))?;
         Ok(AAIRecordKey {
-            key: <_>::from(raw_bytes),
+            key: Vector::from_iter(raw_bytes),
         })
     }
 }
 
-#[derive(
-    Clone, Debug, Default, PartialEq, PartialOrd, Hash, Serialize, Deserialize, Encode, Decode,
-)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd, Hash, SimpleSerialize)]
 pub struct AAIVolumeId {
     pub oldest_block: u32,
 }
@@ -121,13 +114,13 @@ impl AAIVolumeId {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct AAIChapterId {
-    pub val: FixedVector<u8, NumCommonBytes>,
+    pub val: Vector<u8, NUM_COMMON_BYTES>,
 }
 impl ChapterIdMethods<AAISpec> for AAIChapterId {
     fn interface_id(&self) -> String {
-        let chars = hex::encode(self.val.to_vec());
+        let chars = hex::encode(&self.val);
         format!("chapter_0x{}", chars)
     }
     fn nth_id(n: u32) -> Result<Self> {
@@ -135,25 +128,24 @@ impl ChapterIdMethods<AAISpec> for AAIChapterId {
             bail!("'n' must be <= NUM_CHAPTERS")
         }
         let byte_vec = vec![n as u8];
-        let Ok(fv) = FixedVector::<u8, NumCommonBytes>::new(byte_vec) else {
-            bail!("Provided vector is too long for Fixed Vector.")
-        };
-        Ok(AAIChapterId { val: fv })
+        Ok(AAIChapterId {
+            val: Vector::from_iter(byte_vec),
+        })
     }
     fn from_interface_id(id_string: &str) -> Result<Self> {
         let string = id_string.trim_start_matches("chapter_0x");
         let bytes = hex::decode(string)?;
         Ok(AAIChapterId {
-            val: <_>::from(bytes),
+            val: Vector::from_iter(bytes),
         })
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct AAIChapter {
     pub chapter_id: AAIChapterId,
     pub volume_id: AAIVolumeId,
-    pub records: Vec<AAIRecord>,
+    pub records: List<AAIRecord, MAX_RECORDS_PER_CHAPTER>,
 }
 impl ChapterMethods<AAISpec> for AAIChapter {
     fn volume_id(&self) -> &AAIVolumeId {
@@ -168,13 +160,13 @@ impl ChapterMethods<AAISpec> for AAIChapter {
         &self.records
     }
 
-    fn as_serialized_bytes(&self) -> Vec<u8> {
-        self.as_ssz_bytes()
+    fn as_serialized_bytes(&self) -> Result<Vec<u8>> {
+        Ok(serialize::<Self>(self)?)
     }
     /// Reads a Chapter from file. Currently reads Relic file structure.
     fn from_file(data: Vec<u8>) -> Result<Self> {
         // Files are ssz encoded.
-        let chapter = match AAIChapter::from_ssz_bytes(&data) {
+        let chapter = match deserialize::<Self>(&data) {
             Ok(c) => c,
             Err(e) => bail!(
                 "Could not decode the SSZ data. Check that the library
@@ -196,7 +188,7 @@ impl ChapterMethods<AAISpec> for AAIChapter {
         AAIChapter {
             chapter_id: chapter_id.clone(),
             volume_id: volume_id.clone(),
-            records: vec![],
+            records: List::default(),
         }
     }
 }
@@ -209,7 +201,7 @@ impl AAIChapter {
     /// the move to generics and can replaced eventually.
     pub(crate) fn from_relic(data: RelicChapter) -> Self {
         let chapter_id = AAIChapterId {
-            val: <_>::from(data.address_prefix.to_vec()),
+            val: Vector::from_iter(data.address_prefix.to_vec()),
         };
         let volume_id = AAIVolumeId {
             oldest_block: data.identifier.oldest_block,
@@ -218,10 +210,10 @@ impl AAIChapter {
         for item in data.addresses.iter() {
             let r = AAIRecord {
                 key: AAIRecordKey {
-                    key: <_>::from(item.address.to_vec()),
+                    key: Vector::from_iter(item.address.to_vec()),
                 },
                 value: AAIRecordValue {
-                    value: <_>::from(item.appearances.to_vec()),
+                    value: List::from_iter(item.appearances.to_vec()),
                 },
             };
             records.push(r)
@@ -229,15 +221,12 @@ impl AAIChapter {
         AAIChapter {
             chapter_id,
             volume_id,
-            records,
+            records: List::from_iter(records),
         }
     }
 }
 
-pub type DefaultBytesPerAddress = U20;
-pub type MaxTxsPerVolume = U1073741824;
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct AAIRecord {
     pub key: AAIRecordKey,
     pub value: AAIRecordValue,
@@ -252,22 +241,22 @@ impl RecordMethods<AAISpec> for AAIRecord {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct AAIRecordKey {
-    pub key: FixedVector<u8, DefaultBytesPerAddress>,
+    pub key: Vector<u8, DEFAULT_BYTES_PER_ADDRESS>,
 }
 impl RecordKeyMethods for AAIRecordKey {
     fn summary_string(&self) -> Result<String> {
-        Ok(hex::encode(self.key.to_vec()))
+        Ok(hex::encode(&self.key))
     }
 }
 
 /// Equivalent to AddressAppearances. Consists of a single address and some
 /// number of transaction identfiers (appearances).
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct AAIRecordValue {
     /// The transactions where the address appeared.
-    pub value: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
+    pub value: List<AAIAppearanceTx, MAX_TXS_PER_VOLUME>,
 }
 impl RecordValueMethods for AAIRecordValue {
     /// Return a String representation of the contents of the RecordValue.
@@ -284,7 +273,7 @@ impl RecordValueMethods for AAIRecordValue {
 /// An identifier for a single transaction.
 ///
 /// Consists of block number and index within that block.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, Encode, Decode)]
+#[derive(Clone, Debug, Default, PartialEq, SimpleSerialize)]
 pub struct AAIAppearanceTx {
     /// The Ethereum execution block number.
     pub block: u32,
@@ -309,111 +298,27 @@ impl AAIAppearanceTx {
 //
 //
 
-#[derive(PartialEq, Debug, Encode, Decode, Clone)]
+#[derive(PartialEq, Debug, Default, SimpleSerialize, Clone)]
 pub struct RelicChapter {
     /// Prefix common to all addresses that this data covers.
-    pub address_prefix: FixedVector<u8, DefaultBytesPerAddress>,
+    pub address_prefix: Vector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The blocks that this chunk data covers.
     pub identifier: RelicVolumeIdentifier,
     /// The addresses that appeared in this range and the relevant transactions.
-    pub addresses: VariableList<RelicAddressAppearances, MaxAddressesPerVolume>,
+    pub addresses: List<RelicAddressAppearances, MAX_ADDRESSES_PER_VOLUME>,
 }
 
-#[derive(Debug, Default, PartialEq, Clone, Encode, Decode)]
+#[derive(Debug, Default, PartialEq, Clone, SimpleSerialize)]
 pub struct RelicAddressAppearances {
     /// The address that appeared in a transaction.
-    pub address: FixedVector<u8, DefaultBytesPerAddress>,
+    pub address: Vector<u8, DEFAULT_BYTES_PER_ADDRESS>,
     /// The transactions where the address appeared.
-    pub appearances: VariableList<AAIAppearanceTx, MaxTxsPerVolume>,
+    pub appearances: List<AAIAppearanceTx, MAX_TXS_PER_VOLUME>,
 }
 
-#[derive(Clone, Copy, Debug, Decode, Encode, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Default, SimpleSerialize)]
 pub struct RelicVolumeIdentifier {
     pub oldest_block: u32,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct AAIManifest {
-    pub spec_version: String,
-    pub schemas: String,
-    pub database_interface_id: String,
-    pub latest_volume_identifier: String,
-    pub chapter_cids: Vec<AAIManifestChapter>,
-}
-
-impl ManifestMethods<AAISpec> for AAIManifest {
-    fn spec_version(&self) -> &str {
-        &self.spec_version
-    }
-
-    fn set_spec_version(&mut self, version: String) {
-        self.spec_version = version
-    }
-
-    fn schemas(&self) -> &str {
-        &self.schemas
-    }
-
-    fn set_schemas(&mut self, schemas: String) {
-        self.schemas = schemas
-    }
-
-    fn database_interface_id(&self) -> &str {
-        &self.database_interface_id
-    }
-
-    fn set_database_interface_id(&mut self, id: String) {
-        self.database_interface_id = id;
-    }
-
-    fn latest_volume_identifier(&self) -> &str {
-        &self.latest_volume_identifier
-    }
-
-    fn set_latest_volume_identifier(&mut self, volume_interface_id: String) {
-        self.latest_volume_identifier = volume_interface_id
-    }
-
-    fn cids(&self) -> Result<Vec<ManifestCids<AAISpec>>> {
-        let mut result: Vec<ManifestCids<AAISpec>> = vec![];
-        for chapter in &self.chapter_cids {
-            let volume_id = AAIVolumeId::from_interface_id(&chapter.volume_interface_id)?;
-            let chapter_id = AAIChapterId::from_interface_id(&chapter.chapter_interface_id)?;
-            result.push(ManifestCids {
-                cid: chapter.cid_v0.clone(),
-                volume_id,
-                chapter_id,
-            })
-        }
-        Ok(result)
-    }
-
-    fn set_cids<C>(&mut self, cids: &[(C, AAIVolumeId, AAIChapterId)])
-    where
-        C: AsRef<str> + Display,
-    {
-        for (cid, volume_id, chapter_id) in cids {
-            let chapter = AAIManifestChapter {
-                volume_interface_id: volume_id.interface_id(),
-                chapter_interface_id: chapter_id.interface_id(),
-                cid_v0: cid.to_string(),
-            };
-            self.chapter_cids.push(chapter)
-        }
-        // Sort by VolumeId, then by ChapterId for ties.
-        self.chapter_cids.sort_by(|a, b| {
-            a.volume_interface_id
-                .cmp(&b.volume_interface_id)
-                .then(a.chapter_interface_id.cmp(&b.chapter_interface_id))
-        })
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct AAIManifestChapter {
-    pub volume_interface_id: String,
-    pub chapter_interface_id: String,
-    pub cid_v0: String,
 }
 
 #[test]
@@ -423,8 +328,8 @@ fn encode_decode() -> Result<()> {
         block: 122455,
         index: 23,
     };
-    let encoded = data_in.clone().as_ssz_bytes();
-    let data_out: AAIAppearanceTx = <_>::from_ssz_bytes(&encoded).unwrap();
+    let encoded = serialize(&data_in).unwrap();
+    let data_out: AAIAppearanceTx = deserialize(&encoded).unwrap();
     assert_eq!(data_in, data_out);
     Ok(())
 }

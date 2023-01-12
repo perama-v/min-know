@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, fs::canonicalize};
+use std::{env, fs::canonicalize, path::PathBuf};
 
 use anyhow::Result;
 
@@ -16,12 +16,12 @@ fn main() -> Result<()> {
 
     let data_kind = DataKind::NameTags;
     let rolo = canonicalize(PathBuf::from("../../../Repos/RolodETH/data"))?;
-    let paths = PathPair{
+    let paths = PathPair {
         raw_source: Some(rolo),
-        processed_data_dir: None
+        processed_data_dir: None,
     };
     let db: Todd<NameTagsSpec> = Todd::init(data_kind, DirNature::Custom(paths))?;
-    
+
     db.full_transformation()?;
 
     Ok(())

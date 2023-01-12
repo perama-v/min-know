@@ -1,23 +1,24 @@
-use ssz_types::typenum::{U1, U20, U256, U32};
-
 /// Number of additions present in a single Volume.
 ///
 /// This is a count of addresses, and includes additions to
 /// addresses already present in the database.
-pub const ENTRIES_PER_VOLUME: u32 = 1_000;
+pub const ENTRIES_PER_VOLUME: usize = 1_000;
+
+/// Derived from ENTRIES_PER_VOLUME.
+pub const MAX_RECORDS_PER_CHAPTER: usize = ENTRIES_PER_VOLUME;
 
 /// Number of bytes required to describe a chapter. As defined in the spec.
 ///
 /// https://github.com/perama-v/TODD/blob/main/example_specs/nametag.md
-pub type BytesForAddressChars = U1;
+pub const BYTES_FOR_ADDRESS_CHARS: usize = 1;
 
 /// Number of bytes for an address.
-pub type BytesPerAddress = U20;
+pub const BYTES_PER_ADDRESS: usize = 20;
 
-pub type MaxBytesPerName = U32;
+pub const MAX_BYTES_PER_NAME: usize = 32;
 
-pub type MaxBytesPerTag = U32;
+pub const MAX_BYTES_PER_TAG: usize = 32;
 
-pub type MaxTagsPerRecord = U256;
+pub const MAX_TAGS_PER_RECORD: usize = 256;
 
-pub type MaxNamesPerRecord = U256;
+pub const MAX_NAMES_PER_RECORD: usize = 256;
