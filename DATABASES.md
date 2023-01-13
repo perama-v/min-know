@@ -65,7 +65,7 @@ and if the nametag is not already present, adds it to the next Volume to be publ
 - What does a user get? (define a `RecordValue`)
     - Names and Tags
 - How can a `Volume` be divided (define a `Chapter` definition)
-    - By address starting characters (0x00 - 0xff), which equates to 256 cChapters per Volume.
+    - By address starting characters (0x00 - 0xff), which equates to 256 Chapters per Volume.
 - How often should `Volumes` be pulbished (define a `Volume` cadence)
     - Every 1,000 new address additions (E.g., there would be ~720 editions to date).
     - This includes appending new nametags to addresses already in the database.
@@ -132,3 +132,33 @@ Comments:
 - Larger Volumes (10_000 addresses) makes publishing less frequent. If
 someone has <10_000 they cannot publish, unless they find more, by waiting
 or coordinating to get more data.
+
+## Signatures
+
+The source/raw database consists of 534_574 files (2.1 GB). Filenames are four byte hex signatures (allowed have 20 byte filenames), containing text that represent the source
+of the signature (`keccak(contents)`)
+
+The database allows a user to start with a signature and get useful text:
+```sh
+"dd62ed3e" => "allowance(address,address)"
+ ^ signature   ^ text
+```
+Raw data samples (./samples/todd_signatures/raw_source_signatures)
+consists of 2099 files sampled from
+https://github.com/ethereum-lists/4bytes/tree/master/signatures.
+It includes files that have collisions (text is delineated by ';' within those files.)
+
+Publishers/maintainers can add additional text for signatures. This takes an existing manifest
+and a directory of raw signature files. The extend method in min-know will check each file
+and if the text is not already present, adds it to the next Volume to be published.
+
+- What does a user start with? (define a `RecordKey`)
+    - A signature (4 byte hex string, e.g., `dd62ed3e`).
+- What does a user get? (define a `RecordValue`)
+    - Text (source of the signature e.g., `allowance(address,address)`)
+- How can a `Volume` be divided (define a `Chapter` definition)
+    - By signature starting characters (0x00 - 0xff), which equates to 256 Chapters per Volume.
+- How often should `Volumes` be pulbished (define a `Volume` cadence)
+    - Every 1,000 new signature additions (E.g., there would be ~530 editions to date from this
+    database alone).
+    - This includes appending new text for signatures already in the database.
