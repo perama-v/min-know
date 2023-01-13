@@ -71,6 +71,27 @@ and if the nametag is not already present, adds it to the next Volume to be publ
     - This includes appending new nametags to addresses already in the database.
 
 ### Tradeoffs
+
+Note that the source database has additional data that is not included in the new database:
+
+```json
+{
+    "description",
+    "erc20_symbol",
+    "twitterUsername",
+    "name",
+    "tags",
+    "imageURL",
+    "erc721_symbol",
+    "externalUrl",
+    "proxy",
+    "imageUrl",
+    "discordUrl",
+    "erc20_decimals",
+    "ens"
+}
+```
+
 Variation 1 parameters: 256 Chapters, Volumes with 1000 addresses (720_000/1_000 = 720).
 |Status|Dirs|Files|Footprint|
 |-|-|-|-|
@@ -80,7 +101,9 @@ Variation 1 parameters: 256 Chapters, Volumes with 1000 addresses (720_000/1_000
 |End user|-|720|2.8 MB|
 
 Comments:
-- By encoding the data with SSZ the data is represented in 1/4th the space.
+- The new data occupies 1/4th the original size, factors include:
+    - Only "names" and "tags" from the original data are included.
+    - The data is SSZ-encoded, which may be more efficient than JSON.
 - The manifest is large (32 MB) because the volumes are small and there are many chapters.
 
 Variation 2 parameters: 16 Chapters, Volumes with 1000 addresses (720_000/1_000 = 720).
