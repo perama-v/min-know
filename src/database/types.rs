@@ -347,7 +347,7 @@ impl<T: DataSpec + Default> Todd<T> {
         };
 
         let Some(chapter) = chapter_option else {
-            /* No raw data for this volume_id/chapter_id combo (skip). */
+            debug!("No raw data (skipping) relevant to {}.", current_chapter);
             return
         };
 
@@ -356,6 +356,7 @@ impl<T: DataSpec + Default> Todd<T> {
             Err(e) => error!("Error processing {}: {}", current_chapter, e),
         }
     }
+    /// Writes a chapter to a file.
     fn save_chapter(&self, chapter: T::AssociatedChapter) -> Result<()> {
         let chapter_dir_path = &self.config.chapter_dir_path(chapter.chapter_id());
         fs::create_dir_all(chapter_dir_path)?;

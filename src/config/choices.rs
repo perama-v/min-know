@@ -9,9 +9,8 @@ use super::{address_appearance_index::Network, dirs::ConfigStruct};
 #[derive(Clone, Debug, PartialEq, PartialOrd, Hash, Deserialize, Serialize)]
 pub enum DataKind {
     AddressAppearanceIndex(Network),
-    Sourcify,
-    FourByte,
     NameTags,
+    Signatures,
 }
 
 /// Helper for setting up a config.
@@ -35,8 +34,7 @@ impl DataKind {
     pub(crate) fn as_string(&self) -> &str {
         match self {
             DataKind::AddressAppearanceIndex(_) => "address_appearance_index",
-            DataKind::Sourcify => "sourcify",
-            DataKind::FourByte => "four_byte",
+            DataKind::Signatures => "signatures",
             DataKind::NameTags => "nametags",
         }
     }

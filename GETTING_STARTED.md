@@ -11,7 +11,9 @@ In the example below, this database will be called "MyData".
   - [End goal](#end-goal)
   - [Overview](#overview)
   - [Existing specs and data](#existing-specs-and-data)
-  - [Begin](#begin)
+  - [Raw data](#raw-data)
+  - [Make modules](#make-modules)
+  - [Make a `MyDataSpec`](#make-a-mydataspec)
   - [Provide types for the spec implementation](#provide-types-for-the-spec-implementation)
   - [Provide implementations for types](#provide-implementations-for-types)
   - [Replace `Associated*` descriptive types with actual types](#replace-associated-descriptive-types-with-actual-types)
@@ -67,7 +69,7 @@ Once those decisions are made, a new module can be added to this library.
 ```sh
 ./specs
     - address_appearance_index.rs (an existing spec for address appearances)
-    - my_data_spec.rs
+    - my_database.rs
 ```
 
 The heart of the library is the `DataSpec`. The type system will
@@ -102,29 +104,62 @@ into TODD-compliant data.
 The common theme with the above data is that there are users who only want
 part of the whole. Yet the whole also keeps growing as new data is added.
 
-## Begin
+## Raw data
+
+The library is designed to work with real and sample data.
+
+Sample data may be placed inside the repo and should ideally be anough to make
+a small number of volumes (e.g., more than 1, less than 6).  Place raw sample data
+in `./data/samples/todd_my_database/raw_source_my_database`, where `my_database` is the database
+interface ID defined in the TODD-compliant spec.
+
+## Make modules
+
+Decide on a name for files for your data. E.g,. "my_database.rs"
+Make the following modules as shown below:
+```sh
+.
+├── extraction
+│   ├── my_database.rs
+│   ├── mod.rs
+│   └── traits.rs
+├── lib.rs
+├── manifest
+│   ├── my_database.rs
+│   ├── mod.rs
+├── parameters
+│   ├── my_database.rs
+│   ├── mod.rs
+├── samples
+│   ├── my_database.rs
+│   ├── mod.rs
+│   └── traits.rs
+└─── specs
+    ├── mod.rs
+    ├── my_database.rs
+    └── traits.rs
+```
+Inside each `mod.rs` add `pub mod my_database;`
+
+## Make a `MyDataSpec`
 
 To begin, write the following:
 
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 use super::traits::DataSpec;
 
 pub struct MyDataSpec {}
 
 impl DataSpec for MyDataSpec {}
 ```
-Add it to the specs module:
-```rs
-// In ./specs/mod.rs
-pub mod my_data_spec
-```
+
 Then allow [Rust Analyzer](https://github.com/rust-lang/rust-analyzer)
 in the IDE to auto-complete the required methods. For example in [VS Code](https://code.visualstudio.com/) the "[Quick Fix](https://code.visualstudio.com/docs/editor/refactoring)"
 shortcut gives you the option to "Implement Default Members".
 
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 pub struct MyDataSpec {}
 
 impl DataSpec for MyDataSpec {
@@ -141,7 +176,7 @@ The new spec now has all the associated constants, associated types and methods 
 For constants, provide a value. For associated types provide a new empty struct.
 
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 pub struct MyDataSpec {}
 
 pub struct MyDataChapter {}
@@ -154,8 +189,51 @@ impl DataSpec for MyDataSpec {
 }
 ```
 
-The easiest way to do this is to replace "`Associated`" with "`MyData`", where MyData
+The easiest way to do this is to copy all the "type Associated *" and
+replace "`Associated`" with "`MyData`", where MyData
 will be unique to your database.
+
+Before
+```rs
+impl DataSpec for MyDataSpec {
+    type AssociatedChapter;
+    type AssociatedChapterId;
+    // ...
+}
+```
+...
+After:
+```rs
+impl DataSpec for MyDataSpec {
+    type AssociatedChapter = MyDataChapter;
+    type AssociatedChapterId = MyDataChapterId;
+    // ...
+}
+```
+Then create a new struct for each (e.g., MyDataChapter, MyDataChapterId, ...)
+
+## Move structs to modules
+
+Some structs can be moved to modules created earlier:
+- Extraction
+- Manifest
+- Samples
+
+Any struct that doesn't match these can remain in ./specs/my_database.rs
+
+E.g., `pub struct MyDataExtractor {}` belongs in the extraction module.
+
+## Add required procedural macros
+
+For all the structs just created, provide `#[derive(xyz)]` as indicated in `./specs/traits.rs`.
+These will be something like:
+
+```
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MyDataChapter {}
+```
+
+Then import those in `./specs/traits.rs`. This just keeps the `./specs/traits.rs` file smaller.
 
 ## Provide implementations for types
 
@@ -166,7 +244,7 @@ the trait `specs::traits::ChapterMethods<MyDataSpec>` is not implemented for `My
 ```
 Provide the implementation by using QuickFix e.g., select "Generate trait impl for MyDataChapter"
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 use super::traits::{DataSpec, ChapterMethods};
 
 pub struct MyDataSpec {}
@@ -194,7 +272,7 @@ gives you then documentation for what the function is supposed to do. The
 other specs can also be inspected to see how they have implemented it.
 
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 impl ChapterMethods<MyDataSpec> for MyDataChapter {
     fn chapter_id(&self) -> &<MyDataSpec as DataSpec>::AssociatedChapterId {
         todo!()
@@ -205,7 +283,7 @@ impl ChapterMethods<MyDataSpec> for MyDataChapter {
 
 ## Replace `Associated*` descriptive types with actual types
 
-In `./specs/my_data_spec.rs`, anything that starts with `Associated*` can
+In `./specs/my_database.rs`, anything that starts with `Associated*` can
 be replaced with an actual type. After creating the types for MyDataSpec
 and then implementing their required methods (auto-fill), replace
 the descriptive types with the actual types. Both are technically correct,
@@ -232,7 +310,7 @@ But the way it is saying it is as follows:
 "It returns a reference to the ChapterId that is associated with your DataSpec"
 
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 impl ChapterMethods<MyDataSpec> for MyDataChapter {
     fn chapter_id(&self) -> &<MyDataSpec as DataSpec>::AssociatedChapterId {
         todo!()
@@ -254,7 +332,7 @@ fn chapter_id(&self) -> &MyDataChapterId
 
 Seeing these three types (spec, chapter and chapter id) and how they related to each other:
 ```rs
-// In ./specs/my_data_spec.rs
+// In ./specs/my_database.rs
 pub struct MyDataSpec {}
 
 pub struct MyDataChapter {}
@@ -292,30 +370,16 @@ If parameters/constants are required for the database, they can be added
 to the `./parameters` module:
 
 ```rs
-// In ./parameters/mod.rs
-pub mod my_data_spec
-```
-
-
-```rs
-// In ./parameters/my_data_spec.rs
+// In ./parameters/my_database.rs
 pub const MAX_THING: u32 = 42;
 ```
 
 ## Add extractor
 
-The `AssociatedExtractor` extractor lives in a separate module because
-it may require more code to implement.
-
-```rs
-// In ./extraction/mod.rs
-pub mod my_data_spec
-```
-
 Provide a type and then implement the required methods, just like
-in `./specs/my_data_spec.rs`
+in `./specs/my_database.rs`
 ```rs
-// In ./extraction/my_data_spec.rs
+// In ./extraction/my_database.rs
 pub struct MyDataExtractor {}
 
 impl Extractor<MyDataSpec> for MyDataExtractor {
@@ -324,19 +388,10 @@ impl Extractor<MyDataSpec> for MyDataExtractor {
 ```
 ## Add sample handler
 
-
-The `AssociatedSampleObtainer` sample handler lives in a separate module because
-it may require more code to implement.
-
-```rs
-// In ./samples/mod.rs
-pub mod my_data_spec
-```
-
 Provide a type and then implement the required methods, just like
-in `./specs/my_data_spec.rs`
+in `./specs/my_database.rs`
 ```rs
-// In ./samples/my_data_spec.rs
+// In ./samples/my_database.rs
 pub struct MyDataSampleObtainer {}
 
 impl SampleObtainer<MyDataSpec> for MyDataSampleObtainer {
@@ -352,3 +407,51 @@ that are the basis for configuring the library for use.
 Add MyData as an enum variant in `DataKind` then be guided to handle the
 places where this new variant arises. For example, adding path configuration
 in the `DirNature` implementation.
+
+```rs
+pub enum DataKind {
+    // ...
+    MyData
+}
+```
+
+## Create examples
+
+In `./examples` make the following files:
+
+- `my_database_get_sample_data`
+- `my_database_user_1_obtain_part_of_db.rs`
+- `my_database_user_2_check_local_db.rs`
+- `my_database_user_3_query_db.rs`
+- `my_database_maintainer_create_db.rs`
+
+Copy the structure of the other example files.
+
+Run the sample data getter example:
+```sh
+cargo run --release --example appearances_get_sample_data
+```
+Implement `todo!()`s until it works for the raw data. This moves the
+raw data from the local repo into the platform-specific directory.
+
+Then run
+```sh
+cargo run --release --example appearances_maintainer_create_db
+```
+Implement `todo!()`s until it works. That will create the processed
+todd-compliant data. Now copy that data to
+`/data/samples/todd_my_database/my_database`. The sample getter example
+should now run.
+
+Then run
+```sh
+cargo run --example appearances_user_3_query_db
+```
+If querying a key that has data in the sample data, this should
+return an appropriate value.
+
+Later these can also be made:
+
+- `my_database_maintainer_extend_db.rs`
+- `my_database_maintainer_generate_manifest.rs`
+- `my_database_maintainer_repair_index.rs`

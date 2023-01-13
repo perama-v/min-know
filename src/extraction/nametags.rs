@@ -70,8 +70,8 @@ impl ExtractorMethods<NameTagsSpec> for NameTagsExtractor {
             let Some(address) = name.to_str() else {
                 bail!("Couldn't read filename: {}", file.path().display())};
             // '0xabcd' -> 'ab'
-            let leading_chars: String = address.to_string().chars().skip(2).take(2).collect();
-            if chapter_id.matches(&leading_chars) {
+            let candidate: String = address.to_string().chars().skip(2).take(2).collect();
+            if chapter_id.matches(&candidate) {
                 // Make NameTagsRecord
                 let contents = fs::read(file.path())?;
                 let data: RawValue = serde_json::from_slice(&contents)?;
