@@ -6,3 +6,4 @@
 // separation makes procedural macros simple in this instance.
 pub mod address_appearance_index;
 pub mod nametags;
+pub mod signatures;

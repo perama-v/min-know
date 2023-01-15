@@ -144,7 +144,7 @@ impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
     }
 
     fn interface_id(&self) -> String {
-        format!("addresses_0x{}", self.as_str())
+        format!("addresses_0x{}", self.as_string())
     }
 
     fn nth_id(n: u32) -> Result<NameTagsChapterId> {
@@ -160,13 +160,12 @@ impl ChapterIdMethods<NameTagsSpec> for NameTagsChapterId {
 
 impl NameTagsChapterId {
     /// Returns the ChapterId as a hex string (no 0x prefix).
-    pub fn as_str(&self) -> String {
+    pub fn as_string(&self) -> String {
         hex::encode(&self.val)
     }
-    /// Determines if leading string matches the Chapter.
-    pub fn matches(&self, leading: &str) -> bool {
-        let s = self.as_str();
-        s.starts_with(leading)
+    /// Returns true if the candidate string starts with the ChapterId.
+    pub fn matches(&self, candidate: &str) -> bool {
+        candidate.starts_with(&self.as_string())
     }
 }
 
