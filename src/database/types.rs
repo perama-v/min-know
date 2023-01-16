@@ -2,7 +2,7 @@ use std::{
     fmt::Debug,
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, marker::PhantomData,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -32,12 +32,14 @@ use crate::{
 /// The definition for the entire new database.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Todd<T: DataSpec> {
-    chapters: Vec<T::AssociatedChapter>,
+    spec: PhantomData<T>,
     pub config: ConfigStruct,
 }
 
 /// Implement generic methods common to all databases.
-impl<T: DataSpec + Default> Todd<T> {
+impl<T> Todd<T>
+    where T: DataSpec + Default + Sync
+    {
     /// Initialise the database library with the given configuration.
     pub fn init(data_kind: DataKind, directories: DirNature) -> Result<Self> {
         assert!(
@@ -48,7 +50,7 @@ impl<T: DataSpec + Default> Todd<T> {
         // Use the spec to then get the DataConfig.
         let config = directories.into_config(data_kind)?;
         Ok(Self {
-            chapters: vec![],
+            spec: PhantomData,
             config,
         })
     }
