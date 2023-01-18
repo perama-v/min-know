@@ -30,7 +30,7 @@ use crate::{
 };
 
 /// The definition for the entire new database.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Todd<T: DataSpec> {
     spec: PhantomData<T>,
     pub config: ConfigStruct,
