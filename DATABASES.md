@@ -32,6 +32,39 @@ this blog post series: [https://perama-v.github.io/ethereum/protocol/poking](htt
 Use of the the index can be seen in a demo application here:
 https://github.com/perama-v/PSR_B0943_10
 
+### Manifest
+This is the first few lines of the manifest for the sample data
+```json
+{
+  "spec_version": "0.1.0",
+  "schemas": "https://github.com/perama-v/address-index/tree/main/address_appearance_index",
+  "database_interface_id": "address_appearance_index_mainnet",
+  "latest_volume_identifier": "volume_014_400_000",
+  "chapter_cids": [
+    {
+      "volume_interface_id": "volume_011_200_000",
+      "chapter_interface_id": "chapter_0x00",
+      "cid_v0": "QmaGbMhGwC2tnCHmiu3xtnLbdWquNC7VT5U4kQGLxy6qEh"
+    },
+    {
+      "volume_interface_id": "volume_011_200_000",
+      "chapter_interface_id": "chapter_0x01",
+      "cid_v0": "QmfRS4DBAHodAcJhUYJ8RDN2YqNLxcdwqgW5pxsh4rjjhA"
+    },
+    {
+      "volume_interface_id": "volume_011_200_000",
+      "chapter_interface_id": "chapter_0x02",
+      "cid_v0": "QmfUjasa9ePSFJa9cryUZDy8ifeGhiBE1R67JPcPCAKWUw"
+    },
+    ...
+    {
+      "volume_interface_id": "volume_014_400_000",
+      "chapter_interface_id": "chapter_0xff",
+      "cid_v0": "QmWUZp2ZHoVhkhdFSkBnyynpv6PREGZgU49QFMcdxegsvz"
+    }
+  ]
+}
+```
 ## Nametags
 
 ### General framework
@@ -133,6 +166,49 @@ Comments:
 someone has <10_000 they cannot publish, unless they find more, by waiting
 or coordinating to get more data.
 
+### Manifest
+This is the first few lines of the manifest for the sample data
+```json
+{
+  "spec_version": "0.1.0",
+  "schemas": "https://github.com/perama-v/TODD/blob/main/example_specs/nametag.md",
+  "database_interface_id": "nametags",
+  "latest_volume_identifier": "nametags_from_000_001_000",
+  "chapter_cids": [
+    {
+      "volume_interface_id": "nametags_from_000_000_000",
+      "chapter_interface_id": "addresses_0x00",
+      "cid_v0": "QmQtTcM2RnitEgrJCz9NUE4vEoxPh5XX1ZQyFSopun7iAL"
+    },
+    {
+      "volume_interface_id": "nametags_from_000_000_000",
+      "chapter_interface_id": "addresses_0x01",
+      "cid_v0": "QmfHPw1gttig7n3V1os9UTpYagXxZCdaTAUM2HZLqhFG2z"
+    },
+    {
+      "volume_interface_id": "nametags_from_000_000_000",
+      "chapter_interface_id": "addresses_0x02",
+      "cid_v0": "QmYmJvkz6SF5LRwCF234SH9222ohzUXnYETHZPV35a8i9Q"
+    },
+    {
+      "volume_interface_id": "nametags_from_000_000_000",
+      "chapter_interface_id": "addresses_0x03",
+      "cid_v0": "QmPmw1AUst3Zm3oci8KBPmMZqCsmn4VKFe112zFWC16VAv"
+    },
+    {
+      "volume_interface_id": "nametags_from_000_000_000",
+      "chapter_interface_id": "addresses_0x04",
+      "cid_v0": "QmQAezhkitssjybrpt6NydR6FeAPjhfFq1pvebyWLESTHq"
+    },
+    ...
+    {
+      "volume_interface_id": "nametags_from_000_001_000",
+      "chapter_interface_id": "addresses_0xff",
+      "cid_v0": "QmPbUjpauoCwCDeLiuzkBC1WPTFErj6ieKTiGGjF84jCi3"
+    }
+  ]
+}
+```
 ## Signatures
 
 The source/raw database consists of 534_574 files (2.1 GB). Filenames are four byte hex signatures (allowed have 20 byte filenames), containing text that represent the source
@@ -162,3 +238,42 @@ and if the text is not already present, adds it to the next Volume to be publish
     - Every 1,000 new signature additions (E.g., there would be ~530 editions to date from this
     database alone).
     - This includes appending new text for signatures already in the database.
+
+### Manifest
+This is the first few lines of the manifest for the sample data
+```json
+{
+  "spec_version": "0.1.0",
+  "schemas": "https://github.com/perama-v/TODD/blob/main/example_specs/signatures.md",
+  "database_interface_id": "signatures",
+  "latest_volume_identifier": "mappings_starting_000_001_000",
+  "chapter_cids": [
+    {
+      "volume_interface_id": "mappings_starting_000_000_000",
+      "chapter_interface_id": "signatures_0x00",
+      "cid_v0": "QmdrYLVjdqh58AbNaAWifGn8YUinUWJyFRgdQkKecSzdyx"
+    },
+    {
+      "volume_interface_id": "mappings_starting_000_000_000",
+      "chapter_interface_id": "signatures_0x01",
+      "cid_v0": "QmZ9nrpnk2DsDpWTSmXdZXYdrWow8rAGUQDJiY78CZk56h"
+    },
+    {
+      "volume_interface_id": "mappings_starting_000_000_000",
+      "chapter_interface_id": "signatures_0x02",
+      "cid_v0": "QmSnpf5J6JyziyPn9ncZfp7gYwFraMquSdW32wvGYKNw4v"
+    },
+    {
+      "volume_interface_id": "mappings_starting_000_000_000",
+      "chapter_interface_id": "signatures_0x03",
+      "cid_v0": "QmX9tjYhUY1V7cAgP7URySk5kTn78NbK3YWEwgTieasmQT"
+    },
+    ...
+    {
+      "volume_interface_id": "mappings_starting_000_001_000",
+      "chapter_interface_id": "signatures_0xff",
+      "cid_v0": "QmcMH95qzqaNvgAqFCm5RZ8Z1HwFRy2sMdMHFsb627yzR8"
+    }
+  ]
+}
+```

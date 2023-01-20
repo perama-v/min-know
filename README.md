@@ -70,8 +70,10 @@ Volumes are added over time:
     - ...
     - &#x1F4D9; `0xff` Last Chapter (256th)
 
-A `Manifest` &#x1F4DC; exists that lists all Chapters for all Volumes. A user can check the manifest and find which `Chapter` is right for
-them.
+A `Manifest` &#x1F4DC; exists that lists all Chapters for all Volumes. A manifest
+simple contains IPFS hashes for data (see [example manifests](./DATABASES.md#manifest)).
+A user can check the manifest and find which `Chapter` is right for
+them. They can ignore the IPFS hashes that don't match their needs.
 
 &#x1F4DC;&#x1F50D;&#x1F41F;
 
@@ -163,7 +165,7 @@ a new database.
 ## Manifest coordination using a smart contract
 
 TODD-compilance is about coordination by default (e.g., having a Schelling point for
-a distributed database)
+a distributed database).
 
 The manifest contains the CIDs of all the Chapters for a given database. A new
 manifest is created when a database is updated and new CIDs are added. Old CIDs
@@ -177,10 +179,32 @@ To broadcast that you are going to publish, you can perform a single transaction
 to a broadcasting contract ([https://github.com/perama-v/GAMB](https://github.com/perama-v/GAMB))
 to record your
 IPNS name with the topic you wish to publish (the name of the database you are
-publishing).
+publishing). An example GAMB-compliant contract might look like:
+[PublisherRegistry.sol](https://github.com/perama-v/publisher-registry/blob/main/src/PublisherRegistry.sol), with main functions as follows:
+
+```ts
+/// @notice Record the IPNS of a publisher who will publish for a topic.
+/// @dev Maps the given IPNS to the specified topic, appending to existing submissions.
+function registerPublisher(string memory topic, string memory ipns_of_publisher) public {
+    topics.push(topic);
+    publisherHashMap[topic].push(Publisher({submitted_by: msg.sender, ipns: ipns_of_publisher}));
+    emit NewPublisher(msg.sender, topic, ipns_of_publisher);
+}
+/// @notice Gets all publishers for a topic.
+/// @dev Gets the Publishers that are mapped to the given topic string.
+/// @return Returns an array of Publishers.
+function getPublishersForTopic(string memory topic) public view returns (Publisher[] memory) {
+    return publisherHashMap[topic];
+}
+```
 
 After this single transaction, you can update your IPNS to the latest manifest
 hash for free.
+
+The purpose of the contract is two-fold:
+
+1. Discovery (anyone can find publishers for a topic from a single "meeting point".)
+2. Censorshiop resistance (no one can stop you from posting your IPNS to a topic.)
 
 Anyone else can also submit their IPNS name to the contract and publish new
 volumes for the database. While not yet implmemented, the process of

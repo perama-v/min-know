@@ -70,3 +70,38 @@ No one can censor a publisher, they can only be ignored. The IPNSs are posted on
 ## What if the IPNS key is lost?
 
 The publisher can generate a new IPNS key and submit that to the broadcasting contract as a transaction.
+
+## How do I get data, starting with a manifest?
+
+The manifest gives you IPFS hashes for Chapters in Volumes. These Chapters are blobs of data
+with some specified format (e.g., SSZ). The blobs contain key-value pairs.
+
+A user gets the Chapters that match their need, and then they look in each Chapter using their
+key. If the Chapter has data for that key, they use it and then check the next Chapter.
+
+In other words, relevant Chapters MAY contain desirable data. However, irrelevant Chapters
+definitely do not, so you can ignore those.
+
+So with a key (e.g., an address), each Chapter that was downloaded is checked. A value, if
+present, depends on the database in question, but might be something like a transaction id, a name/tag, a signature or some source code.
+
+## Why should I download data that is not relevant to me?
+
+The idea is that users can strengthen a distributed database, rather than relying
+on a few "big rigs" that share the whole database.
+
+Users get a good deal - they only have to get a fraction of the database (e.g., 1/256).
+
+1/256th is also large enough to be useful (to share back to the network). It would take
+256 of these users to represent the whole database. Some users might even need a bit more,
+and can then share more. So the number might be ~100 users or less. Yet, no individual
+user has to wear the burden of the whole, complete database.
+
+If a user only fetched a single key-value pair for a database, this might only represent
+1/1000000th of the data. It would take a million of these users to share the whole database.
+In this situation, users can only take. There's nothing meaningful to contribute without
+storing the whole database.
+
+In this way, 256 is a "sweet spot". Not too little, not too much. This is why the
+databases in Min-know are divided into this many. Multiples of 16 also
+work well with the hexadecimal keys (all keys starting with 0x** results in 256 divisions).
