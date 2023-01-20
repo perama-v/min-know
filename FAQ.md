@@ -7,6 +7,8 @@
   - [How does a user know which publisher to trust?](#how-does-a-user-know-which-publisher-to-trust)
   - [Can publishers be censored?](#can-publishers-be-censored)
   - [What if the IPNS key is lost?](#what-if-the-ipns-key-is-lost)
+  - [How do I get data, starting with a manifest?](#how-do-i-get-data-starting-with-a-manifest)
+  - [Why should I download data that is not relevant to me?](#why-should-i-download-data-that-is-not-relevant-to-me)
 
 
 ## How is the database maintained?
